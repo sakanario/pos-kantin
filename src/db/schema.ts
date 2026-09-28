@@ -20,6 +20,8 @@ export const tapEvent = sqliteTable("tap_event", {
   waktu: integer("waktu").notNull(),
   jenis: text("jenis", { enum: ["kopi", "kopi_sendiri", "bb_sendiri"] }).notNull(),
   delta: integer("delta").notNull(),
+  // true = diisi manual dari tab Kopi (untuk hari sebelumnya), false = tap langsung
+  manual: integer("manual", { mode: "boolean" }).notNull().default(false),
 });
 
 export const belanja = sqliteTable("belanja", {

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SaldoCard } from "@/components/saldo-card";
 import { getHargaAktif, getPeriodeBerjalan } from "@/lib/data";
 import { rupiah, tanggalJam } from "@/lib/format";
 import { TapPanel } from "./tap-panel";
@@ -46,6 +47,8 @@ export default async function Beranda() {
         </dl>
         <p className="text-xs text-muted">Sisa Beng Beng sebenarnya dihitung saat tutup buku.</p>
       </section>
+
+      <SaldoCard />
 
       {hariSejakTutup >= 7 && (
         <Link href="/tutup-buku" className="card block border-accent bg-accent-soft text-sm">

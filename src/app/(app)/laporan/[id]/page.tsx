@@ -5,12 +5,15 @@ import { PageHeader } from "@/components/page-header";
 import { BelanjaList } from "@/components/belanja-list";
 import { getDataPeriode, getRiwayatTutupBuku } from "@/lib/data";
 import { tanggalJam } from "@/lib/format";
+import { BatalkanTutupBukuButton } from "./batalkan-button";
 
 export default async function DetailLaporan(props: PageProps<"/laporan/[id]">) {
   const { id } = await props.params;
-  const r = (await getRiwayatTutupBuku()).find((x) => x.id === Number(id));
+  const riwayat = await getRiwayatTutupBuku();
+  const r = riwayat.find((x) => x.id === Number(id));
   if (!r?.hasil) notFound();
-  const { belanja } = await getDataPeriode(r.dari ?? 0, r.waktu);
+  const terakhir = riwayat[0].id === r.id;
+  const { belanja } = await getDataPeriode(r.dariData, r.waktu);
   return (
     <main>
       <PageHeader title="Laporan periode" sub={`${r.dari ? tanggalJam(r.dari) : "?"} – ${tanggalJam(r.waktu)}`} />
@@ -23,6 +26,7 @@ export default async function DetailLaporan(props: PageProps<"/laporan/[id]">) {
         <Link href="/laporan" className="btn-ghost w-full">
           ← Semua laporan
         </Link>
+        {terakhir && <BatalkanTutupBukuButton id={r.id} saldo={r.saldoKantong} sisaBb={r.sisaBb} />}
       </div>
     </main>
   );

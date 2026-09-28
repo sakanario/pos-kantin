@@ -22,6 +22,7 @@ Aturan kebiasaan:
 - Pembeli yang transfer diberi **nomor rekening Kantong Kantin**. Transfer yang nyasar ke rekening utama dipindahkan manual.
 - Belanja **sebaiknya dibayar dari Kantong Kantin**. Belanja yang dibayar dari rekening pribadi tetap boleh, dan dicatat dengan sumber "pribadi" (otomatis dianggap setor modal).
 - Konversi cash ke saldo kantong **tidak dicatat** di aplikasi. Itu hanya perpindahan bentuk omzet.
+- Cash **selalu** disetor (ditransfer) ke Kantong Kantin sebelum tutup buku, jadi tidak ada input "cash belum disetor" (kolom `cash_belum_disetor` selalu 0).
 
 ## 3. Produk
 
@@ -55,7 +56,7 @@ Form:
 - Dibayar dari: `Kantong Kantin` (default) / `Pribadi`
 - Catatan (opsional)
 
-Daftar belanja bisa difilter per periode/kategori, dan bisa diedit/dihapus selama periodenya belum ditutup.
+Daftar belanja bisa difilter per bulan/kategori. Semua catatan (belanja & kas) bisa diedit/dihapus kapan saja, termasuk yang tanggalnya ada di periode yang sudah ditutup (lihat §4.4).
 
 ### 4.3 Kas (Setor Modal / Tarik)
 - **Setor Modal**: uang pribadi masuk ke Kantong Kantin (misal modal awal)
@@ -63,17 +64,23 @@ Daftar belanja bisa difilter per periode/kategori, dan bisa diedit/dihapus selam
 - Field: tanggal, jenis, nominal, catatan
 
 ### 4.4 Tutup Buku (wizard, idealnya seminggu sekali)
-1. Pengingat: *hitung cash di kotak → transfer nominal yang sama dari rekening utama ke Kantong Kantin*
-2. Input **saldo Kantong Kantin** saat ini
-3. Input **sisa Beng Beng** (pcs)
-4. (Opsional) **Cash belum disetor**, jika belum sempat ditransfer, sebagai omzet tambahan
-5. Tampilkan hasil perhitungan (lihat §5), lalu konfirmasi → periode dikunci
+1. Input **saldo Kantong Kantin** saat ini, dengan pengingat: *pastikan cash di kotak sudah ditransfer ke kantong sebelum melihat saldo*
+2. Input **sisa Beng Beng** (pcs)
+3. Tampilkan hasil perhitungan (lihat §5), lalu konfirmasi → periode disimpan (`cash_belum_disetor = 0`)
 
-Periode = dari tutup buku sebelumnya sampai tutup buku ini. Setelah dikunci, data di periode itu tidak bisa diedit.
+Periode = dari tutup buku sebelumnya sampai tutup buku ini. Catatan masuk periode sesuai **tanggal aslinya**, jadi input telat (H+1, H+sekian) tetap masuk periode yang benar:
+- Tanggal tanpa tutup buku → dianggap jam 12:00 WIB hari itu (hari ini → jam sekarang).
+- Tanggal yang ada tutup bukunya → pengguna memilih *sebelum* atau *sesudah* tutup buku.
+- Tanggal sebelum setup awal → masuk periode pertama.
+
+Kalau catatan di periode yang sudah ditutup ditambah/diubah/dihapus, laporan periode itu dan semua periode sesudahnya **dihitung ulang otomatis**. Input tutup buku (saldo, sisa Beng Beng) tidak berubah; yang berubah hasil hitungan dan modal rata-rata Beng Beng yang berantai. Tap (+1 Kopi, dll.) selalu tercatat di waktu tap dan tidak bisa diinput mundur.
+
+**Batalkan tutup buku terakhir** (tombol di detail laporan periode terakhir): baris tutup buku dihapus, periodenya menyatu lagi dengan periode berjalan. Catatan di dalamnya tidak ikut terhapus. Hanya tutup buku terakhir yang bisa dibatalkan (bisa diulang untuk membatalkan beberapa, dari yang terbaru), jadi tidak perlu hitung ulang. Setup awal tidak bisa dibatalkan.
 
 > Catatan: pencairan GoPay terjadi jam 22:00, jadi penjualan QRIS setelah itu baru masuk besoknya. Idealnya tutup buku dilakukan setelah pencairan (misal pagi hari sebelum jualan).
 
 ### 4.5 Laporan
+- Kartu **Saldo Kantong Kantin** (juga di Beranda, sesudah kartu periode berjalan): saldo yang diinput di tutup buku terakhir (atau setup awal) beserta waktunya, lalu daftar setor/tarik **sejak itu** (tap → halaman edit). Setor/tarik tidak dijumlahkan ke saldo, karena uang jualan tidak dicatat sehingga saldo saat ini tidak diketahui; efeknya dihitung di tutup buku berikutnya.
 - Per periode tutup buku (lihat format di §5.5)
 - Rekap bulanan (gabungan periode yang tutup bukunya jatuh di bulan tersebut)
 - Grafik sederhana: kopi terjual per hari, profit per periode
@@ -97,7 +104,7 @@ Periode = dari tutup buku sebelumnya sampai tutup buku ini. Setelah dikunci, dat
 | Simbol | Arti |
 |---|---|
 | `S0`, `S1` | Saldo kantong awal (tutup buku sebelumnya) & akhir |
-| `C` | Cash belum disetor (akhir); `C0` dari periode sebelumnya |
+| `C` | Cash belum disetor (akhir); `C0` dari periode sebelumnya. Sejak CR-001 selalu 0 (data lama bisa berisi nilai) |
 | `M` | Total Setor Modal |
 | `T` | Total Tarik (uang) |
 | `Bk` | Belanja dibayar dari kantong |

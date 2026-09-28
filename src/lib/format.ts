@@ -14,6 +14,11 @@ export function tanggal(ms: number): string {
   return new Date(ms).toLocaleDateString("id-ID", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
 }
 
+/** "29 Sep" (tanpa tahun). */
+export function tanggalPendek(ms: number): string {
+  return new Date(ms).toLocaleDateString("id-ID", { timeZone: TZ, day: "numeric", month: "short" });
+}
+
 export function tanggalJam(ms: number): string {
   return new Date(ms).toLocaleString("id-ID", {
     timeZone: TZ,

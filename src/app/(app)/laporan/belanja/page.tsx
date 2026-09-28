@@ -94,7 +94,7 @@ export default async function RiwayatBelanjaPage(props: PageProps<"/laporan/bela
         </section>
 
         <p className="text-xs text-muted">
-          Untuk menghapus catatan, buka menu Catat. Hanya catatan di periode yang belum ditutup yang bisa dihapus.
+          Tap catatan untuk mengubah atau menghapus.
         </p>
       </div>
     </main>

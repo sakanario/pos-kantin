@@ -14,6 +14,16 @@ npm run dev
 Buka http://localhost:3000. Pertama kali akan diarahkan ke halaman **Setup awal**.
 
 Buka dari HP (satu WiFi): pakai alamat `Network` yang muncul di terminal, misal `http://192.168.x.x:3000`.
+IP laptop otomatis diizinkan lewat `allowedDevOrigins` di `next.config.ts`. Kalau IP laptop berubah (pindah WiFi), restart `npm run dev`.
+
+## Data dummy (untuk mencoba)
+
+```bash
+npm run seed:dummy   # buat ulang dummy.db: simulasi jualan 27 Jul – hari ini, tutup buku tiap Senin
+npm run dev:dummy    # jalankan aplikasi dengan dummy.db (matikan `npm run dev` dulu)
+```
+
+`local.db` tidak tersentuh. PIN untuk dummy.db ada di `scripts/seed-dummy.ts`.
 
 ## Perintah lain
 

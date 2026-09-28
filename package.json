@@ -9,7 +9,9 @@
     "lint": "eslint",
     "test": "node --test src/lib/*.test.ts",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "seed:dummy": "node scripts/seed-dummy.ts",
+    "dev:dummy": "node scripts/dev-dummy.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",

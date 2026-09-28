@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { isLoggedIn } from "@/lib/auth";
 import { isSetupDone } from "@/lib/settings";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage() {
+  await connection();
   if (!(await isSetupDone())) redirect("/setup");
   if (await isLoggedIn()) redirect("/");
   return (
