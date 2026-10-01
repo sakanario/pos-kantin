@@ -18,7 +18,7 @@ export default function LoadingBeranda() {
             </div>
             <Bone className="h-4 w-20" />
           </div>
-          <Bone className="h-8 w-24 rounded-full" />
+          <Bone className="h-8 w-24 rounded-[var(--r-ctl)]" />
         </div>
         <div className="card divide-y divide-line p-0">
           {[0, 1].map((i) => (
@@ -27,16 +27,16 @@ export default function LoadingBeranda() {
                 <Bone className={`h-5 ${i ? "w-1/2" : "w-2/3"}`} />
                 <Bone className="h-3.5 w-1/4" />
               </div>
-              <Bone className="h-14 w-24 rounded-full" />
+              <Bone className="h-14 w-24 rounded-[var(--r-ctl)] poster:w-16" />
             </div>
           ))}
         </div>
         <div>
           <h2 className="mb-2 text-xs font-semibold text-muted">Sendiri (diminum / dimakan, tester, terbuang)</h2>
           <div className="flex flex-wrap gap-2">
-            <Bone className="h-10 w-44 rounded-full" />
-            <Bone className="h-10 w-36 rounded-full" />
-            <Bone className="h-10 w-32 rounded-full" />
+            <Bone className="h-10 w-44 rounded-[var(--r-ctl)]" />
+            <Bone className="h-10 w-36 rounded-[var(--r-ctl)]" />
+            <Bone className="h-10 w-32 rounded-[var(--r-ctl)]" />
           </div>
         </div>
       </section>

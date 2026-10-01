@@ -18,7 +18,7 @@ export function SisaKemasan({
   return (
     <div className="space-y-1">
       <div
-        className="grid grid-cols-10 gap-1 rounded-full border-[3px] border-outline bg-card-raised p-1"
+        className={`meter ${menipis ? "is-low" : ""}`}
         role="progressbar"
         aria-valuenow={Math.round(persen)}
         aria-valuemin={0}
@@ -26,12 +26,8 @@ export function SisaKemasan({
         aria-label="Sisa kemasan"
       >
         {Array.from({ length: SEGMEN }, (_, i) => (
-          <span
-            key={i}
-            className={`h-3.5 rounded-md first:rounded-l-full last:rounded-r-full ${
-              i >= terisi ? "bg-line" : menipis ? "bg-warn" : i < 4 ? "bg-accent" : i < 7 ? "bg-accent-2" : "bg-accent-3"
-            }`}
-          />
+          // warna & bentuk segmen per gaya: .meter di globals.css
+          <span key={i} className={i < terisi ? "on" : undefined} />
         ))}
       </div>
       <div className={`num ${menipis ? "text-bad" : ""}`}>

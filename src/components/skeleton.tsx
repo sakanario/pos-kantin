@@ -30,7 +30,7 @@ export function ListSkeleton({ rows = 4, meter = false }: { rows?: number; meter
           <div className="min-w-0 flex-1 space-y-2">
             <Bone className={`h-5 ${i % 2 ? "w-1/3" : "w-1/2"}`} />
             <Bone className="h-3.5 w-2/3" />
-            {meter && <Bone className="h-6 w-full rounded-full" />}
+            {meter && <Bone className="h-6 w-full rounded-[var(--r-ctl)]" />}
           </div>
           <Bone className="h-5 w-16" />
         </div>
@@ -44,7 +44,7 @@ export function FieldSkeleton({ label }: { label?: string }) {
   return (
     <div>
       {label ? <span className="label">{label}</span> : <Bone className="mb-2 h-3.5 w-28" />}
-      <div className="h-12 rounded-2xl border-[3px] border-outline bg-card-raised p-3">
+      <div className="h-12 rounded-[var(--r-md)] border-[length:var(--stroke-input)] border-outline bg-card-raised p-3">
         <Bone className="h-full w-1/3" />
       </div>
     </div>

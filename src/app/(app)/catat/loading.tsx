@@ -5,7 +5,7 @@ export default function LoadingCatat() {
   return (
     <main aria-busy="true">
       <HeaderSkeleton title="Catat" />
-      <div className="mx-4 mb-4 grid grid-cols-3 gap-1 rounded-full border-[3px] border-outline bg-card-raised p-1 text-sm shadow-pop">
+      <div className="mx-4 mb-4 grid grid-cols-3 gap-1 rounded-[var(--r-ctl)] border-[length:var(--stroke)] border-outline bg-card-raised p-1 text-sm shadow-pop">
         {["Belanja", "Penjualan", "Setor / Tarik"].map((t) => (
           <span key={t} className="py-2 text-center font-bold text-muted">
             {t}

@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useOptimistic, useTransition } from "react";
-import { aturTemaAction, gantiPinAction, hitungUlangSemuaAction } from "@/app/actions";
-import { dataTheme, type Tema } from "@/lib/tema";
+import { aturGayaAction, aturTemaAction, gantiPinAction, hitungUlangSemuaAction } from "@/app/actions";
+import { dataTheme, type Gaya, type Tema } from "@/lib/tema";
 import { FormMessage, SubmitButton } from "@/components/form";
 
 export function GantiPinForm() {
@@ -36,31 +36,83 @@ const pilihanTema: [Tema, string][] = [
   ["hp", "Ikut HP"],
 ];
 
-/** Pilihan tema langsung diterapkan ke halaman, lalu disimpan sebagai cookie di perangkat ini. */
-export function TemaPicker({ tema }: { tema: Tema }) {
-  const [tampil, setTampil] = useOptimistic(tema);
+const pilihanGaya: [Gaya, string][] = [
+  ["pop", "Pop"],
+  ["poster", "Poster"],
+];
+
+/** Deretan tombol pilihan; yang dipilih langsung tampil (optimistic), lalu disimpan lewat `simpan`. */
+function Pilihan<T extends string>({
+  nilai,
+  opsi,
+  label,
+  terapkan,
+  simpan,
+}: {
+  nilai: T;
+  opsi: [T, string][];
+  label: string;
+  terapkan: (v: T) => void;
+  simpan: (v: T) => Promise<void>;
+}) {
+  const [tampil, setTampil] = useOptimistic(nilai);
   const [, startTransition] = useTransition();
   return (
-    <div className="grid grid-cols-3 gap-1 rounded-full border-[3px] border-outline bg-card-raised p-1 text-sm shadow-pop">
-      {pilihanTema.map(([t, label]) => (
+    <div
+      role="group"
+      aria-label={label}
+      className="grid gap-1 rounded-[var(--r-ctl)] border-[length:var(--stroke)] border-outline bg-card-raised p-1 text-sm shadow-pop"
+      style={{ gridTemplateColumns: `repeat(${opsi.length}, 1fr)` }}
+    >
+      {opsi.map(([v, teks]) => (
         <button
-          key={t}
+          key={v}
           type="button"
-          aria-pressed={tampil === t}
+          aria-pressed={tampil === v}
           onClick={() =>
             startTransition(async () => {
-              setTampil(t);
-              const d = dataTheme(t);
-              if (d) document.documentElement.dataset.theme = d;
-              else delete document.documentElement.dataset.theme;
-              await aturTemaAction(t);
+              setTampil(v);
+              terapkan(v);
+              await simpan(v);
             })
           }
-          className={`rounded-full py-2 text-center font-bold ${tampil === t ? "bg-accent text-accent-fg" : "text-muted"}`}
+          className={`rounded-[var(--r-ctl)] py-2 text-center font-bold ${tampil === v ? "bg-accent text-accent-fg" : "text-muted"}`}
         >
-          {label}
+          {teks}
         </button>
       ))}
     </div>
+  );
+}
+
+/** Tema & gaya langsung diterapkan ke <html>, lalu disimpan sebagai cookie di perangkat ini. */
+export function TemaPicker({ tema }: { tema: Tema }) {
+  return (
+    <Pilihan
+      nilai={tema}
+      opsi={pilihanTema}
+      label="Tema"
+      terapkan={(t) => {
+        const d = dataTheme(t);
+        if (d) document.documentElement.dataset.theme = d;
+        else delete document.documentElement.dataset.theme;
+      }}
+      simpan={aturTemaAction}
+    />
+  );
+}
+
+export function GayaPicker({ gaya }: { gaya: Gaya }) {
+  return (
+    <Pilihan
+      nilai={gaya}
+      opsi={pilihanGaya}
+      label="Gaya"
+      terapkan={(g) => {
+        if (g === "pop") delete document.documentElement.dataset.gaya;
+        else document.documentElement.dataset.gaya = g;
+      }}
+      simpan={aturGayaAction}
+    />
   );
 }

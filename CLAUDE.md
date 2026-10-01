@@ -84,6 +84,10 @@ scripts/seed-dummy.ts  generator dummy.db (pakai calc.ts yang sama)
 - **`Date.now()` di render** ditolak lint (react-hooks/purity) → hitung di `lib/data.ts`.
 - **Akses dari HP** (IP LAN): `allowedDevOrigins` di `next.config.ts` diisi IP laptop otomatis;
   tanpa itu JS diblokir di dev dan tombol tidak berfungsi. IP berubah → restart dev server.
+- **Gaya & tema tampilan** (cookie per perangkat, Setelan): `data-gaya="poster"` dan `data-theme` di <html>
+  (root layout). Design system di `docs/design-system/{pop,poster}/`. Bentuk yang beda per gaya pakai variabel
+  (`--r-sm/md/lg/ctl`, `--stroke*`, `--pop-shadow*`, `--font-ui/judul`) atau varian `poster:`; jangan pakai
+  `--radius-*`/`--shadow-*` untuk variabel sendiri (bentrok dengan tema bawaan Tailwind).
 - **Tailwind v4**: kelas kustom (`card`, `input`, `btn-primary`, …) didefinisikan dengan `@utility`
   di `globals.css`, bukan `@layer components`.
 - Next.js menolak dua `next dev` di folder yang sama.

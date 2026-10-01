@@ -8,8 +8,9 @@ export default function LoadingSetelan() {
         <CardSkeleton rows={2} />
         <div className="card space-y-3">
           <h2 className="font-bold">Tampilan</h2>
-          <Bone className="h-3.5 w-full" />
-          <Bone className="h-12 rounded-full" />
+          <Bone className="h-3.5 w-1/2" />
+          <Bone className="h-12 rounded-[var(--r-ctl)]" />
+          <Bone className="h-12 rounded-[var(--r-ctl)]" />
         </div>
         <CardSkeleton title="Laporan" rows={2} />
         <CardSkeleton title="Ganti PIN" rows={2} />

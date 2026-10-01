@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { logoutAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { getTema } from "@/lib/tema-server";
-import { GantiPinForm, HitungUlangForm, TemaPicker } from "./forms";
+import { getGaya, getTema } from "@/lib/tema-server";
+import { GantiPinForm, GayaPicker, HitungUlangForm, TemaPicker } from "./forms";
 
 export default async function SetelanPage() {
-  const tema = await getTema();
+  const [gaya, tema] = await Promise.all([getGaya(), getTema()]);
   return (
     <main>
       <PageHeader title="Setelan" back="/lainnya" />
@@ -22,15 +22,21 @@ export default async function SetelanPage() {
           .
         </p>
 
-        <section className="card space-y-3">
+        <section className="card space-y-4">
           <div>
             <h2 className="font-bold">Tampilan</h2>
-            <p className="text-xs text-muted">
-              Terang = latar kuning, Gelap = latar navy. &ldquo;Ikut HP&rdquo; mengikuti mode gelap HP. Berlaku untuk
-              perangkat ini saja.
-            </p>
+            <p className="text-xs text-muted">Berlaku untuk perangkat ini saja.</p>
           </div>
-          <TemaPicker tema={tema} />
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold">Gaya</p>
+            <GayaPicker gaya={gaya} />
+            <p className="text-xs text-muted">Pop = kuning-biru, tepi tebal. Poster = kuning mustard, label arang, huruf sempit.</p>
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-sm font-semibold">Tema</p>
+            <TemaPicker tema={tema} />
+            <p className="text-xs text-muted">&ldquo;Ikut HP&rdquo; mengikuti mode gelap HP.</p>
+          </div>
         </section>
 
         <section className="card space-y-3">

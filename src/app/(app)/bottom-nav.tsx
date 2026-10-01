@@ -45,7 +45,7 @@ export function BottomNav() {
   const path = usePathname();
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
-      <ul className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-full border-[3px] border-outline bg-card-raised p-1.5 shadow-pop">
+      <ul className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-full border-[length:var(--stroke)] border-outline bg-card-raised p-1.5 shadow-pop poster:rounded-[var(--r-lg)] poster:bg-card poster:shadow-pop-lg">
         {items.map((it) => {
           const cocok = (h: string) => path === h || path.startsWith(`${h}/`);
           const active = it.href === "/" ? path === "/" : [it.href, ...(it.juga ?? [])].some(cocok);
@@ -54,7 +54,7 @@ export function BottomNav() {
               <Link
                 href={it.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex flex-col items-center gap-0.5 rounded-full py-1.5 text-[11px] font-bold ${active ? "bg-accent text-accent-fg" : "text-muted"}`}
+                className={`flex flex-col items-center gap-0.5 rounded-[var(--r-ctl)] py-1.5 text-[11px] font-bold poster:font-display poster:text-[13px] poster:font-semibold ${active ? "bg-accent text-accent-fg poster:bg-sun poster:text-on-sun" : "text-muted"}`}
               >
                 <svg
                   viewBox="0 0 24 24"

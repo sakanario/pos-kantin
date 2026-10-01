@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* `poster:` = hanya saat gaya Kantin Poster dipilih */
+@custom-variant poster (&:where([data-gaya="poster"] *));
+
 /* Design system "Kantin Pop" — docs/design-system/pop/ (tokens.json, README.md) */
 :root {
   --bg: #ffdf4f;
@@ -21,6 +24,36 @@
   --bad: #b3202a;
   --bad-soft: #ffe1dc;
   --warn: #f0a81c;
+
+  /* bentuk Kantin Pop: tepi tebal, bayangan keras, sudut bulat besar */
+  --font-ui: var(--font-jakarta);
+  --font-judul: var(--font-montserrat);
+  --stroke: 3px;
+  --stroke-input: 3px;
+  --stroke-chip: 2px;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-ctl: 999px;
+  --press: 4px;
+  --pop-shadow: 0 4px 0 0 var(--outline);
+  --pop-shadow-lg: 0 8px 0 0 var(--outline);
+  --shadow-chip: 0 3px 0 0 var(--outline);
+  --btn-solid-border: var(--outline);
+  --chip-bg: var(--card-raised);
+  --chip-fg: var(--fg);
+  --chip-badge-bg: var(--accent-soft);
+  --chip-badge-fg: var(--accent);
+  --bg-pattern: radial-gradient(var(--bg-dot) 2px, transparent 2.5px);
+  --bg-pattern-size: 16px 16px;
+  --meter-gap: 4px;
+  --meter-pad: 4px;
+  --meter-track: var(--card-raised);
+  --meter-h: 14px;
+  --meter-seg-radius: 6px;
+  --meter-1: var(--accent);
+  --meter-2: var(--accent-2);
+  --meter-3: var(--accent-3);
 }
 
 /* Tema gelap: ikut HP (tanpa data-theme) atau dipaksa lewat Setelan (data-theme="dark"). */
@@ -72,6 +105,110 @@
   color-scheme: dark;
 }
 
+/* Gaya "Kantin Poster" — docs/design-system/poster/. Dipilih di Setelan (data-gaya="poster"). */
+:root[data-gaya="poster"] {
+  --bg: #f2d03f;
+  --bg-dot: #f7df72;
+  --card: #ffffff;
+  --card-raised: #f6f4ee;
+  --fg: #2b2b2b;
+  --muted: #514e48;
+  --outline: #8a857a;
+  --line: #ebe7dd;
+  --accent: #333333;
+  --accent-fg: #ffffff;
+  --accent-soft: #efece3;
+  --accent-2: #4f8a57;
+  --accent-3: #c9dcc4;
+  --sun: #f2d03f;
+  --on-sun: #2b2b2b;
+  --good: #3f7a47;
+  --bad: #c9303a;
+  --bad-soft: #fbe3e3;
+  --warn: #e8a33a;
+
+  /* bentuk Kantin Poster: tanpa tepi, bayangan lembut, sudut kecil, huruf sempit */
+  --font-ui: var(--font-barlow);
+  --font-judul: var(--font-barlow-condensed);
+  --stroke: 0px;
+  --stroke-input: 1.5px;
+  --stroke-chip: 0px;
+  --r-sm: 4px;
+  --r-md: 6px;
+  --r-lg: 10px;
+  --r-ctl: 6px;
+  --press: 1px;
+  --shadow-ink: rgb(30 28 24 / 0.28);
+  --pop-shadow: 0 2px 6px var(--shadow-ink);
+  --pop-shadow-lg: 0 6px 18px var(--shadow-ink);
+  --shadow-chip: 0 2px 6px var(--shadow-ink);
+  --btn-solid-border: transparent;
+  --chip-bg: var(--accent);
+  --chip-fg: var(--accent-fg);
+  --chip-badge-bg: var(--card);
+  --chip-badge-fg: var(--fg);
+  --bg-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --bg-pattern-size: 160px 160px;
+  --meter-gap: 0px;
+  --meter-pad: 0px;
+  --meter-track: var(--line);
+  --meter-h: 12px;
+  --meter-seg-radius: 0px;
+  --meter-1: var(--accent);
+  --meter-2: var(--accent);
+  --meter-3: var(--accent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-gaya="poster"]:not([data-theme="light"]) {
+    --bg: #1f1e1b;
+    --bg-dot: #2a2924;
+    --card: #2c2b28;
+    --card-raised: #36352f;
+    --fg: #f4f1e8;
+    --muted: #b9b4a8;
+    --outline: #807a6f;
+    --line: #3d3b36;
+    --accent: #f2d03f;
+    --accent-fg: #1f1e1b;
+    --accent-soft: #3a3523;
+    --accent-2: #7fb685;
+    --accent-3: #4c6f50;
+    --sun: #f2d03f;
+    --on-sun: #1f1e1b;
+    --good: #7fc488;
+    --bad: #ff7f86;
+    --bad-soft: #4a2226;
+    --warn: #f0b44f;
+    --shadow-ink: rgb(0 0 0 / 0.55);
+    color-scheme: dark;
+  }
+}
+
+:root[data-gaya="poster"][data-theme="dark"] {
+  --bg: #1f1e1b;
+  --bg-dot: #2a2924;
+  --card: #2c2b28;
+  --card-raised: #36352f;
+  --fg: #f4f1e8;
+  --muted: #b9b4a8;
+  --outline: #807a6f;
+  --line: #3d3b36;
+  --accent: #f2d03f;
+  --accent-fg: #1f1e1b;
+  --accent-soft: #3a3523;
+  --accent-2: #7fb685;
+  --accent-3: #4c6f50;
+  --sun: #f2d03f;
+  --on-sun: #1f1e1b;
+  --good: #7fc488;
+  --bad: #ff7f86;
+  --bad-soft: #4a2226;
+  --warn: #f0b44f;
+  --shadow-ink: rgb(0 0 0 / 0.55);
+  color-scheme: dark;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-bg-dot: var(--bg-dot);
@@ -92,16 +229,16 @@
   --color-bad: var(--bad);
   --color-bad-soft: var(--bad-soft);
   --color-warn: var(--warn);
-  --font-sans: var(--font-body);
-  --font-display: var(--font-heading);
-  --shadow-pop: 0 4px 0 0 var(--outline);
-  --shadow-pop-lg: 0 8px 0 0 var(--outline);
+  --font-sans: var(--font-ui);
+  --font-display: var(--font-judul);
+  --shadow-pop: var(--pop-shadow);
+  --shadow-pop-lg: var(--pop-shadow-lg);
 }
 
 body {
   background-color: var(--bg);
-  background-image: radial-gradient(var(--bg-dot) 2px, transparent 2.5px);
-  background-size: 16px 16px;
+  background-image: var(--bg-pattern);
+  background-size: var(--bg-pattern-size);
   background-attachment: fixed;
   color: var(--fg);
   -webkit-tap-highlight-color: transparent;
@@ -110,7 +247,7 @@ body {
 h1,
 h2,
 h3 {
-  font-family: var(--font-heading);
+  font-family: var(--font-judul);
 }
 
 :focus-visible {
@@ -120,22 +257,24 @@ h3 {
 
 /* v4: @utility agar bisa di-@apply satu sama lain */
 @utility card {
-  @apply rounded-3xl border-[3px] border-outline bg-card p-4 shadow-pop-lg;
+  @apply rounded-[var(--r-lg)] border-[length:var(--stroke)] border-outline bg-card p-4 shadow-pop-lg;
 }
 @utility input {
-  @apply min-h-12 w-full rounded-2xl border-[3px] border-outline bg-card-raised px-4 py-2.5 text-base outline-none placeholder:text-muted focus:border-accent focus:shadow-pop;
+  @apply min-h-12 w-full rounded-[var(--r-md)] border-[length:var(--stroke-input)] border-outline bg-card-raised px-4 py-2.5 text-base outline-none placeholder:text-muted focus:border-accent focus:shadow-pop;
 }
 @utility label {
   @apply mb-1 block text-sm font-semibold text-muted;
 }
 @utility btn {
-  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-[3px] border-outline px-4 py-2.5 font-bold shadow-pop transition-[transform,box-shadow] duration-75 active:translate-y-1 active:shadow-none disabled:translate-y-0 disabled:opacity-45;
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--r-md)] border-[length:var(--stroke-input)] border-outline px-4 py-2.5 font-bold shadow-pop transition-[transform,box-shadow] duration-75 active:translate-y-[var(--press)] active:shadow-none disabled:translate-y-0 disabled:opacity-45;
 }
 @utility btn-primary {
   @apply btn bg-accent text-accent-fg;
+  border-color: var(--btn-solid-border);
 }
 @utility btn-sun {
   @apply btn bg-sun text-on-sun;
+  border-color: var(--btn-solid-border);
 }
 @utility btn-ghost {
   @apply btn bg-card-raised text-fg;
@@ -144,10 +283,12 @@ h3 {
   @apply btn bg-card-raised text-bad;
 }
 @utility chip {
-  @apply inline-flex items-center gap-2 rounded-full border-2 border-outline bg-card-raised text-sm font-semibold shadow-[0_3px_0_0_var(--outline)] active:translate-y-[3px] active:shadow-none disabled:translate-y-0;
+  @apply inline-flex items-center gap-2 rounded-[var(--r-ctl)] border-[length:var(--stroke-chip)] border-outline text-sm font-semibold shadow-[var(--shadow-chip)] active:translate-y-[var(--press)] active:shadow-none disabled:translate-y-0;
+  background-color: var(--chip-bg);
+  color: var(--chip-fg);
 }
 @utility badge {
-  @apply inline-flex items-center rounded-full border-2 border-outline px-2.5 py-0.5 text-xs font-bold;
+  @apply inline-flex items-center rounded-[var(--r-ctl)] border-[length:var(--stroke-chip)] border-outline px-2.5 py-0.5 text-xs font-bold;
 }
 /* Placeholder loading: `fg` tipis dengan kilau bergerak; terlihat di latar, kartu, dan kedua tema. */
 @utility skeleton {
@@ -171,6 +312,47 @@ h3 {
     background-position: 0% 0;
   }
 }
+@utility chip-badge {
+  background-color: var(--chip-badge-bg);
+  color: var(--chip-badge-fg);
+}
 @utility num {
   font-variant-numeric: tabular-nums;
+}
+
+/* Bar sisa kemasan (lainnya/bahan/sisa-kemasan.tsx): 10 segmen di Pop, bar polos di Poster. */
+.meter {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: var(--meter-gap);
+  padding: var(--meter-pad);
+  border: var(--stroke) solid var(--outline);
+  border-radius: var(--r-ctl);
+  background: var(--meter-track);
+  overflow: hidden;
+}
+.meter > span {
+  height: var(--meter-h);
+  border-radius: var(--meter-seg-radius);
+  background: var(--line);
+}
+.meter > span:first-child {
+  border-top-left-radius: var(--r-ctl);
+  border-bottom-left-radius: var(--r-ctl);
+}
+.meter > span:last-child {
+  border-top-right-radius: var(--r-ctl);
+  border-bottom-right-radius: var(--r-ctl);
+}
+.meter > span.on {
+  background: var(--meter-1);
+}
+.meter > span.on:nth-child(n + 5) {
+  background: var(--meter-2);
+}
+.meter > span.on:nth-child(n + 8) {
+  background: var(--meter-3);
+}
+.meter.is-low > span.on {
+  background: var(--warn);
 }

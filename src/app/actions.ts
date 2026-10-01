@@ -12,7 +12,7 @@ import { awalData, getDataPeriode, getHppCtx, getSemuaHarga, getTutupTerakhir, p
 import { hitungUlangSejak } from "@/lib/hitung-ulang";
 import { awalHariWib, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
 import { getSetting, isSetupDone, setSetting } from "@/lib/settings";
-import { COOKIE_TEMA, isTema, type Tema } from "@/lib/tema";
+import { COOKIE_GAYA, COOKIE_TEMA, isGaya, isTema, type Gaya, type Tema } from "@/lib/tema";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -57,6 +57,13 @@ export async function aturTemaAction(tema: Tema) {
   await requireAuth();
   if (!isTema(tema)) return;
   (await cookies()).set(COOKIE_TEMA, tema, { path: "/", maxAge: 60 * 60 * 24 * 365 * 5, sameSite: "lax" });
+  revalidatePath("/", "layout");
+}
+
+export async function aturGayaAction(gaya: Gaya) {
+  await requireAuth();
+  if (!isGaya(gaya)) return;
+  (await cookies()).set(COOKIE_GAYA, gaya, { path: "/", maxAge: 60 * 60 * 24 * 365 * 5, sameSite: "lax" });
   revalidatePath("/", "layout");
 }
 

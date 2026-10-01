@@ -84,7 +84,7 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
           type="button"
           aria-pressed={koreksi}
           onClick={() => setKoreksi((k) => !k)}
-          className={`chip px-3 py-1.5 text-xs ${koreksi ? "bg-bad text-card" : "text-muted"}`}
+          className={`chip px-3 py-1.5 text-xs ${koreksi ? "bg-bad text-card" : "bg-card-raised text-muted"}`}
         >
           {koreksi ? "Batal koreksi" : "Koreksi −1"}
         </button>
@@ -112,7 +112,7 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
                   type="button"
                   disabled={!bisa}
                   onClick={() => tap(m.id, "terjual")}
-                  className={`h-14 w-24 shrink-0 rounded-full font-display text-2xl font-extrabold ${koreksi ? "btn-danger" : "btn-primary"}`}
+                  className={`h-14 w-24 shrink-0 rounded-[var(--r-ctl)] font-display text-2xl font-extrabold poster:w-16 ${koreksi ? "btn-danger" : "btn-primary"}`}
                 >
                   {koreksi ? "−1" : "+1"}
                 </button>
@@ -139,9 +139,9 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
                 <span>
                   {m.jenis === "racikan" ? "🙋" : "🍫"} {m.nama}
                 </span>
-                <span className="num text-muted">{s.hariIni.sendiri}</span>
+                <span className="num opacity-70">{s.hariIni.sendiri}</span>
                 <span
-                  className={`num badge ${koreksi ? "bg-bad text-card" : "bg-accent-soft text-accent"}`}
+                  className={`num badge ${koreksi ? "bg-bad text-card" : "chip-badge"}`}
                 >
                   {koreksi ? "−1" : "+1"}
                 </span>
@@ -155,14 +155,14 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
 
       {terakhir && (
         <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-20 mx-auto max-w-md px-4">
-          <div className="flex items-center justify-between gap-3 rounded-2xl border-[3px] border-outline bg-fg px-4 py-3 text-sm font-semibold text-card shadow-pop">
+          <div className="flex items-center justify-between gap-3 rounded-[var(--r-md)] border-[length:var(--stroke)] border-outline bg-fg px-4 py-3 text-sm font-semibold text-card shadow-pop">
             <span className="min-w-0 truncate">
               {terakhir.batal
                 ? "Dibatalkan"
                 : `${terakhir.delta === 1 ? "+1" : "−1"} ${terakhir.nama}${terakhir.jenis === "sendiri" ? " (sendiri)" : ""}`}
             </span>
             {!terakhir.batal && (
-              <button type="button" onClick={batalkan} className="shrink-0 rounded-full border-2 border-outline bg-sun px-3 py-1 font-bold text-on-sun">
+              <button type="button" onClick={batalkan} className="shrink-0 rounded-[var(--r-ctl)] border-[length:var(--stroke-chip)] border-outline bg-sun px-3 py-1 font-bold text-on-sun">
                 Batalkan
               </button>
             )}
