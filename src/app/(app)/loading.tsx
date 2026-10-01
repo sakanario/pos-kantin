@@ -7,12 +7,14 @@ export default function LoadingBeranda() {
         <h1 className="text-xl font-semibold">Kantin</h1>
         <Bone className="h-4 w-32" />
       </header>
-      <Bone className="mx-auto h-4 w-40" />
-      <div className="grid grid-cols-2 gap-3">
-        <Bone className="h-52 rounded-2xl" />
-        <Bone className="h-52 rounded-2xl" />
-        <Bone className="h-32 rounded-2xl" />
-        <Bone className="h-32 rounded-2xl" />
+      <div className="space-y-1">
+        <Bone className="h-8 w-40" />
+        <Bone className="h-4 w-24" />
+      </div>
+      <Bone className="h-40 rounded-2xl" />
+      <div className="flex flex-wrap gap-2">
+        <Bone className="h-9 w-40 rounded-full" />
+        <Bone className="h-9 w-32 rounded-full" />
       </div>
       <CardSkeleton rows={4} />
       <CardSkeleton rows={2} />

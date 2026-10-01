@@ -65,10 +65,14 @@ Tab **Lainnya** (`/lainnya`) berisi daftar: 🍽️ Menu (§4.6), 🧂 Bahan (§
 `/setelan`; halaman di bawahnya punya tombol "‹ Kembali".
 
 ### 4.1 Beranda (tap counter)
-- Grid 2 kolom, satu kartu per menu aktif (urut `urutan`):
-  - Racikan: jumlah terjual hari ini, **+1** terjual, −1 koreksi, **🙋 Sendiri** +1 / −1.
-  - Barang jadi: hanya **🙋 Sendiri** +1 / −1 (terjual dihitung saat tutup buku).
-- Di atas grid: total racikan terjual hari ini · omzet.
+- Di atas: total racikan **terjual hari ini** (besar) · omzet.
+- Daftar baris, satu per racikan aktif (urut `urutan`): nama, "N terjual · 🙋 N", tombol **+1** besar di kanan.
+- Di bawahnya deretan tombol **Sendiri** (diminum / dimakan, tester, terbuang) untuk semua menu aktif, termasuk
+  barang jadi (barang jadi terjual dihitung saat tutup buku, jadi tidak punya baris +1).
+- Tidak ada tombol −1 di tiap menu:
+  - Setiap tap memunculkan notifikasi ±5 detik "+1 Creamy Latte · **Batalkan**" (Batalkan = tap kebalikannya).
+  - Koreksi telat: tombol **Koreksi −1** di pojok → semua tombol berubah jadi −1 (merah) untuk **satu** tekan,
+    lalu kembali normal. Tombol yang hitungan periodenya 0 tidak bisa dikurangi.
 - Kartu "Periode berjalan": untung hari ini & periode ini, terjual per racikan, belanja, stok tersedia per barang jadi.
 - **Untung** (hari ini / periode ini) = Σ racikan terjual × (jual − HPP saat tap) − Σ racikan sendiri × HPP − barang
   jadi sendiri × modal rata-rata terakhir. Untung barang jadi terjual baru dihitung saat tutup buku.

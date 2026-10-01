@@ -1,6 +1,6 @@
 "use client";
 
-import { useOptimistic, useState, useTransition } from "react";
+import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { tapAction } from "@/app/actions";
 
 type Jenis = "terjual" | "sendiri";
@@ -14,12 +14,17 @@ export type MenuTap = {
   periode: Hitung;
 };
 type State = Record<number, { hariIni: Hitung; periode: Hitung }>;
+type Tap = { id: number; jenis: Jenis; delta: 1 | -1 };
 
-/** Kartu tap per menu aktif: racikan +1 terjual / +1 sendiri, barang jadi +1 sendiri saja. */
+/**
+ * Tap penjualan: satu baris per racikan dengan tombol +1 besar, lalu deretan tombol "Sendiri" untuk semua
+ * menu (termasuk barang jadi). Salah tekan dibatalkan lewat notifikasi "Batalkan"; koreksi yang telat
+ * lewat mode Koreksi (tombol berubah jadi −1 untuk satu kali tekan).
+ */
 export function TapPanel({ menu }: { menu: MenuTap[] }) {
   const [optimistic, apply] = useOptimistic(
     Object.fromEntries(menu.map((m) => [m.id, { hariIni: m.hariIni, periode: m.periode }])) as State,
-    (s, { id, jenis, delta }: { id: number; jenis: Jenis; delta: 1 | -1 }) => ({
+    (s, { id, jenis, delta }: Tap) => ({
       ...s,
       [id]: {
         hariIni: { ...s[id].hariIni, [jenis]: s[id].hariIni[jenis] + delta },
@@ -29,16 +34,38 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
   );
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [koreksi, setKoreksi] = useState(false);
+  const [terakhir, setTerakhir] = useState<(Tap & { nama: string; batal?: boolean }) | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  function tap(id: number, jenis: Jenis, delta: 1 | -1) {
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  function kirim(t: Tap) {
+    startTransition(async () => {
+      apply(t);
+      const r = await tapAction(t.id, t.jenis, t.delta);
+      if (r?.error) setError(r.error);
+    });
+  }
+
+  function tap(id: number, jenis: Jenis) {
+    const delta = koreksi ? -1 : 1;
     if (delta === -1 && optimistic[id].periode[jenis] <= 0) return;
     setError(null);
     if (delta === 1) navigator.vibrate?.(15);
-    startTransition(async () => {
-      apply({ id, jenis, delta });
-      const r = await tapAction(id, jenis, delta);
-      if (r?.error) setError(r.error);
-    });
+    setKoreksi(false);
+    kirim({ id, jenis, delta });
+    setTerakhir({ id, jenis, delta, nama: menu.find((m) => m.id === id)?.nama ?? "" });
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setTerakhir(null), 5000);
+  }
+
+  function batalkan() {
+    if (!terakhir || terakhir.batal) return;
+    kirim({ id: terakhir.id, jenis: terakhir.jenis, delta: terakhir.delta === 1 ? -1 : 1 });
+    setTerakhir({ ...terakhir, batal: true });
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => setTerakhir(null), 2000);
   }
 
   const racikan = menu.filter((m) => m.jenis === "racikan");
@@ -47,75 +74,101 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
 
   return (
     <section className="space-y-3">
-      {racikan.length > 0 && (
-        <p className="text-center text-sm text-muted">
-          <span className="num text-base font-semibold text-fg">{terjual}</span> terjual hari ini · Rp{" "}
-          {omzet.toLocaleString("id-ID")}
-        </p>
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <span className="num text-3xl font-semibold">{terjual}</span>
+          <span className="ml-1.5 text-sm text-muted">terjual hari ini</span>
+          <div className="num text-sm text-muted">Rp {omzet.toLocaleString("id-ID")}</div>
+        </div>
+        <button
+          type="button"
+          aria-pressed={koreksi}
+          onClick={() => setKoreksi((k) => !k)}
+          className={`rounded-full border px-3 py-1.5 text-xs ${koreksi ? "border-bad bg-bad text-card" : "border-line text-muted"}`}
+        >
+          {koreksi ? "Batal koreksi" : "Koreksi −1"}
+        </button>
+      </div>
+
+      {koreksi && (
+        <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">Mode koreksi: tombol berikutnya mengurangi 1.</p>
       )}
-      <div className="grid grid-cols-2 gap-3">
-        {menu.map((m) => {
-          const s = optimistic[m.id];
-          return m.jenis === "racikan" ? (
-            <div key={m.id} className="card flex flex-col gap-2 p-3">
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-sm font-medium leading-tight">{m.nama}</span>
-                <span className="num text-2xl font-semibold">{s.hariIni.terjual}</span>
-              </div>
-              <button onClick={() => tap(m.id, "terjual", 1)} className="btn-primary h-16 w-full text-lg shadow-sm">
-                +1
-              </button>
+
+      {racikan.length > 0 && (
+        <ul className={`card divide-y divide-line p-0 ${koreksi ? "border-bad" : ""}`}>
+          {racikan.map((m) => {
+            const s = optimistic[m.id];
+            const bisa = !koreksi || s.periode.terjual > 0;
+            return (
+              <li key={m.id} className="flex items-center gap-3 py-2.5 pl-4 pr-2.5">
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium">{m.nama}</div>
+                  <div className="num text-sm text-muted">
+                    <span className="font-semibold text-fg">{s.hariIni.terjual}</span> terjual
+                    {s.hariIni.sendiri !== 0 && ` · 🙋 ${s.hariIni.sendiri}`}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={!bisa}
+                  onClick={() => tap(m.id, "terjual")}
+                  className={`h-14 w-24 shrink-0 text-xl shadow-sm ${koreksi ? "btn border border-bad bg-card text-bad" : "btn-primary"}`}
+                >
+                  {koreksi ? "−1" : "+1"}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      <div>
+        <h2 className="mb-1.5 text-xs text-muted">Sendiri (diminum / dimakan, tester, terbuang)</h2>
+        <div className="flex flex-wrap gap-2">
+          {menu.map((m) => {
+            const s = optimistic[m.id];
+            const bisa = !koreksi || s.periode.sendiri > 0;
+            return (
               <button
-                onClick={() => tap(m.id, "terjual", -1)}
-                disabled={s.periode.terjual <= 0}
-                className="btn-ghost w-full py-1.5 text-xs"
+                key={m.id}
+                type="button"
+                disabled={!bisa}
+                onClick={() => tap(m.id, "sendiri")}
+                className={`flex items-center gap-2 rounded-full border bg-card py-1.5 pl-3 pr-1.5 text-sm disabled:opacity-40 ${koreksi ? "border-bad" : "border-line"}`}
               >
-                −1 (koreksi)
+                <span>
+                  {m.jenis === "racikan" ? "🙋" : "🍫"} {m.nama}
+                </span>
+                <span className="num text-muted">{s.hariIni.sendiri}</span>
+                <span
+                  className={`num rounded-full px-2 py-0.5 text-xs font-semibold ${koreksi ? "bg-bad text-card" : "bg-accent-soft text-accent"}`}
+                >
+                  {koreksi ? "−1" : "+1"}
+                </span>
               </button>
-              <Sendiri
-                label="🙋 Sendiri"
-                value={s.hariIni.sendiri}
-                onPlus={() => tap(m.id, "sendiri", 1)}
-                onMinus={() => tap(m.id, "sendiri", -1)}
-                canMinus={s.periode.sendiri > 0}
-              />
-            </div>
-          ) : (
-            <div key={m.id} className="card flex flex-col justify-between gap-2 p-3">
-              <span className="text-sm font-medium leading-tight">🍫 {m.nama}</span>
-              <p className="text-xs text-muted">Terjual dihitung saat tutup buku.</p>
-              <Sendiri
-                label="🙋 Sendiri"
-                value={s.hariIni.sendiri}
-                onPlus={() => tap(m.id, "sendiri", 1)}
-                onMinus={() => tap(m.id, "sendiri", -1)}
-                canMinus={s.periode.sendiri > 0}
-              />
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {error && <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
-    </section>
-  );
-}
 
-function Sendiri(props: { label: string; value: number; onPlus: () => void; onMinus: () => void; canMinus: boolean }) {
-  return (
-    <div className="space-y-1 border-t border-line pt-2">
-      <div className="flex items-center justify-between text-xs">
-        <span className="text-muted">{props.label}</span>
-        <span className="num font-semibold">{props.value}</span>
-      </div>
-      <div className="grid grid-cols-[1fr_2fr] gap-2">
-        <button onClick={props.onMinus} disabled={!props.canMinus} className="btn-ghost px-0 py-1.5 text-sm">
-          −1
-        </button>
-        <button onClick={props.onPlus} className="btn-ghost border-accent px-0 py-1.5 text-sm font-semibold text-accent">
-          +1
-        </button>
-      </div>
-    </div>
+      {terakhir && (
+        <div className="fixed inset-x-0 bottom-20 z-20 mx-auto max-w-md px-4">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-card px-4 py-3 text-sm shadow-lg">
+            <span className="min-w-0 truncate">
+              {terakhir.batal
+                ? "Dibatalkan"
+                : `${terakhir.delta === 1 ? "+1" : "−1"} ${terakhir.nama}${terakhir.jenis === "sendiri" ? " (sendiri)" : ""}`}
+            </span>
+            {!terakhir.batal && (
+              <button type="button" onClick={batalkan} className="shrink-0 font-semibold text-accent">
+                Batalkan
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }
