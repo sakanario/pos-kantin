@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useState } from "react";
 import {
   hapusBahanAction,
   pakaiKemasanAction,
@@ -9,6 +9,7 @@ import {
   ubahBahanAction,
 } from "@/app/actions";
 import { FormMessage, SubmitButton } from "@/components/form";
+import { KonfirmasiButton } from "@/components/konfirmasi";
 import { TanggalField, type InfoTutup } from "@/app/(app)/catat/forms";
 import { desimal } from "@/lib/format";
 
@@ -64,26 +65,10 @@ export function BahanForm({ edit }: { edit?: { id: number; nama: string; satuan:
 }
 
 export function HapusBahanButton({ id }: { id: number }) {
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
   return (
-    <div className="space-y-2">
-      <button
-        type="button"
-        disabled={pending}
-        className="btn-ghost w-full text-bad"
-        onClick={() => {
-          if (!confirm("Hapus bahan ini?")) return;
-          startTransition(async () => {
-            const r = await hapusBahanAction(id);
-            if (r?.error) setError(r.error);
-          });
-        }}
-      >
-        {pending ? "Menghapus…" : "Hapus bahan"}
-      </button>
-      {error && <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
-    </div>
+    <KonfirmasiButton pesan="Hapus bahan ini?" ya="Ya, hapus" onConfirm={async () => (await hapusBahanAction(id))?.error}>
+      Hapus bahan
+    </KonfirmasiButton>
   );
 }
 

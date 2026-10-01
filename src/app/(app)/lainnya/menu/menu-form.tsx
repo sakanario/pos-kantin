@@ -4,6 +4,7 @@ import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { aturAktifMenuAction, simpanMenuAction } from "@/app/actions";
 import { FormMessage, RupiahInput } from "@/components/form";
+import { KonfirmasiButton } from "@/components/konfirmasi";
 import { angka, desimal, parseDesimal, parseRupiah, rupiah } from "@/lib/format";
 
 export type BahanResep = { id: number; nama: string; satuan: "gr" | "pcs"; hargaSekarang: number };
@@ -175,20 +176,24 @@ export function MenuForm({ bahan, edit, urutanBaru }: { bahan: BahanResep[]; edi
 function AktifButton({ id, aktif }: { id: number; aktif: boolean }) {
   const [pending, startTransition] = useTransition();
   const router = useRouter();
+  const ubah = async () => {
+    await aturAktifMenuAction(id, !aktif);
+    router.refresh();
+  };
+  if (aktif) {
+    return (
+      <KonfirmasiButton
+        pesan="Nonaktifkan menu ini? Hilang dari Beranda & form; riwayat tetap ada di laporan."
+        ya="Ya, nonaktifkan"
+        onConfirm={ubah}
+      >
+        Nonaktifkan
+      </KonfirmasiButton>
+    );
+  }
   return (
-    <button
-      type="button"
-      disabled={pending}
-      className={`btn-ghost w-full ${aktif ? "text-bad" : ""}`}
-      onClick={() => {
-        if (aktif && !confirm("Nonaktifkan menu ini? Hilang dari Beranda & form; riwayat tetap ada di laporan.")) return;
-        startTransition(async () => {
-          await aturAktifMenuAction(id, !aktif);
-          router.refresh();
-        });
-      }}
-    >
-      {pending ? "Menyimpan…" : aktif ? "Nonaktifkan" : "Aktifkan lagi"}
+    <button type="button" disabled={pending} className="btn-ghost w-full" onClick={() => startTransition(ubah)}>
+      {pending ? "Menyimpan…" : "Aktifkan lagi"}
     </button>
   );
 }

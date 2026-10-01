@@ -48,7 +48,7 @@ export async function KopiTab({ hariIni, info, menu }: { hariIni: string; info: 
           <h2 className="mb-2 text-sm font-medium text-muted">Input manual terakhir</h2>
           <ul className="card divide-y divide-line p-0">
             {manual.map((m) => (
-              <li key={m.id} className="flex items-center gap-3 px-4 py-3">
+              <li key={m.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
                 <div className="min-w-0 flex-1">
                   <div className="font-medium">
                     {namaMenu(m.menuId)} · {m.jenis === "terjual" ? "terjual" : "🙋 sendiri"}

@@ -12,6 +12,7 @@ import {
   type FormState,
 } from "@/app/actions";
 import { FormMessage, RupiahInput, SubmitButton } from "@/components/form";
+import { KonfirmasiButton } from "@/components/konfirmasi";
 
 /** Tanggal-tanggal tutup buku, untuk menentukan catatan masuk periode mana. */
 export type InfoTutup = { setup: string; tutup: string[] };
@@ -146,26 +147,18 @@ export function KasForm({ hariIni, info, edit }: { hariIni: string; info: InfoTu
 
 export function HapusDanKembali({ id, jenis }: { id: number; jenis: "belanja" | "kas" }) {
   const router = useRouter();
-  const [pending, setPending] = useState(false);
   return (
-    <button
-      type="button"
-      disabled={pending}
-      className="btn-ghost w-full text-bad"
-      onClick={async () => {
-        if (!confirm("Hapus catatan ini?")) return;
-        setPending(true);
+    <KonfirmasiButton
+      pesan="Hapus catatan ini?"
+      ya="Ya, hapus"
+      onConfirm={async () => {
         const r = jenis === "belanja" ? await hapusBelanjaAction(id) : await hapusKasAction(id);
-        if (r?.error) {
-          alert(r.error);
-          setPending(false);
-          return;
-        }
+        if (r?.error) return r.error;
         router.push(jenis === "belanja" ? "/catat" : "/catat?tab=kas");
       }}
     >
-      {pending ? "Menghapus…" : "Hapus catatan"}
-    </button>
+      Hapus catatan
+    </KonfirmasiButton>
   );
 }
 
@@ -247,22 +240,15 @@ export function KopiForm({
 }
 
 export function HapusManualButton({ id }: { id: number }) {
-  const [pending, setPending] = useState(false);
   return (
-    <button
-      type="button"
-      aria-label="Hapus"
-      disabled={pending}
-      className="rounded-lg px-2 py-1 text-muted hover:text-bad disabled:opacity-40"
-      onClick={async () => {
-        if (!confirm("Hapus input manual ini?")) return;
-        setPending(true);
-        const r = await hapusPenjualanManualAction(id);
-        if (r?.error) alert(r.error);
-        setPending(false);
-      }}
+    <KonfirmasiButton
+      ariaLabel="Hapus"
+      className="rounded-lg px-2 py-1 text-muted hover:text-bad"
+      pesan="Hapus input manual ini?"
+      ya="Ya, hapus"
+      onConfirm={async () => (await hapusPenjualanManualAction(id))?.error}
     >
       ✕
-    </button>
+    </KonfirmasiButton>
   );
 }
