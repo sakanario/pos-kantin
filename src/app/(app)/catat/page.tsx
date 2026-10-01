@@ -32,7 +32,7 @@ export default async function CatatPage(props: PageProps<"/catat">) {
               <section>
                 <div className="mb-2 flex items-baseline justify-between">
                   <h2 className="text-sm font-medium text-muted">Belanja periode ini</h2>
-                  <Link href="/laporan/belanja" className="text-sm text-accent">
+                  <Link href="/lainnya/pengeluaran" className="text-sm text-accent">
                     Riwayat semua →
                   </Link>
                 </div>

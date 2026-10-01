@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { SaldoCard } from "@/components/saldo-card";
 import { getKopiPerHari, getRiwayatTutupBuku } from "@/lib/data";
 import { LaporanBasi } from "@/components/laporan-basi";
 import { bulanWib, namaBulan, plus, rupiah, tanggal } from "@/lib/format";
@@ -35,14 +34,6 @@ export default async function LaporanPage() {
       <PageHeader title="Laporan" />
       <div className="space-y-4 px-4">
         {adaBasi && <LaporanBasi />}
-        <SaldoCard />
-        <Link href="/laporan/belanja" className="card flex items-center justify-between">
-          <span>
-            <span className="font-medium">🧾 Riwayat Pengeluaran</span>
-            <span className="block text-sm text-muted">Semua belanja per bulan</span>
-          </span>
-          <span className="text-muted">›</span>
-        </Link>
         <section className="card">
           <h2 className="mb-3 font-medium">Kopi terjual, 14 hari terakhir</h2>
           <div className="flex h-32 items-end gap-1">

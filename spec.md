@@ -39,6 +39,11 @@ Semua harga bisa diubah dan **disimpan beserta tanggal berlakunya**, sehingga la
 
 ## 4. Fitur
 
+Navigasi bawah: ☕ Beranda · 📝 Catat · 🔒 Tutup Buku · 📊 Laporan · ☰ Lainnya.
+Tab **Lainnya** (`/lainnya`) berisi daftar: 💰 Uang & Barang (§4.8), 🧾 Riwayat Pengeluaran
+(`/lainnya/pengeluaran`), ⚙️ Setelan (`/setelan`). Tab ini aktif di `/lainnya*` dan `/setelan`;
+halaman di bawahnya punya tombol "‹ Kembali" ke `/lainnya`.
+
 ### 4.1 Beranda (tap counter)
 - Tombol besar **+1 Kopi** (penjualan)
 - Tombol kecil **+1 Kopi Sendiri** dan **+1 Beng Beng Sendiri** (konsumsi pribadi)
@@ -65,7 +70,7 @@ Form:
 - Dibayar dari: `Kantong Kantin` (default) / `Pribadi`
 - Catatan (opsional)
 
-Daftar belanja bisa difilter per bulan/kategori. Semua catatan (belanja & kas) bisa diedit/dihapus kapan saja, termasuk yang tanggalnya ada di periode yang sudah ditutup (lihat §4.4).
+Daftar belanja (Riwayat Pengeluaran, `/lainnya/pengeluaran`) bisa difilter per bulan/kategori. Semua catatan (belanja & kas) bisa diedit/dihapus kapan saja, termasuk yang tanggalnya ada di periode yang sudah ditutup (lihat §4.4).
 
 ### 4.3 Kas (Setor Modal / Tarik)
 - **Setor Modal**: uang pribadi masuk ke Kantong Kantin (misal modal awal)
@@ -89,14 +94,15 @@ Kalau catatan di periode yang sudah ditutup ditambah/diubah/dihapus, laporan per
 > Catatan: pencairan GoPay terjadi jam 22:00, jadi penjualan QRIS setelah itu baru masuk besoknya. Idealnya tutup buku dilakukan setelah pencairan (misal pagi hari sebelum jualan).
 
 ### 4.5 Laporan
-- Kartu **Saldo Kantong Kantin** (juga di Beranda, sesudah kartu periode berjalan): saldo yang diinput di tutup buku terakhir (atau setup awal) beserta waktunya, lalu daftar setor/tarik **sejak itu** (tap → halaman edit). Setor/tarik tidak dijumlahkan ke saldo, karena uang jualan tidak dicatat sehingga saldo saat ini tidak diketahui; efeknya dihitung di tutup buku berikutnya.
+Fokus ke laporan saja (kartu saldo & Riwayat Pengeluaran pindah ke Lainnya, CR-004).
+
+- Kartu **Saldo Kantong Kantin** (di Beranda sesudah kartu periode berjalan, dan di Uang & Barang): saldo yang diinput di tutup buku terakhir (atau setup awal) beserta waktunya, lalu daftar setor/tarik **sejak itu** (tap → halaman edit). Setor/tarik tidak dijumlahkan ke saldo, karena uang jualan tidak dicatat sehingga saldo saat ini tidak diketahui; efeknya dihitung di tutup buku berikutnya.
 - Per periode tutup buku (lihat format di §5.5)
 - Rekap bulanan (gabungan periode yang tutup bukunya jatuh di bulan tersebut)
 - Angka utama tiap periode & bulan: **untung jualan**; angka kedua (lebih kecil): **uang bersih**
 - Grafik sederhana: kopi terjual per hari
-- Rincian belanja per kategori
 
-### 4.6 Pengaturan
+### 4.6 Pengaturan (dibuka dari tab Lainnya)
 - Harga jual Beng Beng & Kopi (dengan tanggal berlaku)
 - HPP estimasi kopi pribadi (dengan tanggal berlaku)
 - Isi per dus Beng Beng
@@ -108,6 +114,23 @@ Kalau catatan di periode yang sudah ditutup ditambah/diubah/dihapus, laporan per
 - Saldo awal Kantong Kantin
 - Stok awal Beng Beng + modal per pcs
 - Harga jual awal
+
+### 4.8 Uang & Barang (`/lainnya/uang-barang`)
+Uang yang sekarang berbentuk saldo dan barang, **per tutup buku terakhir** (atau setup awal):
+```
+Saldo Kantong Kantin                 Rp125.000
+Barang (modal)                        Rp21.618    ← sisa × modal rata-rata (tutup_buku.sisa_bb × avg_modal_bb)
+Total                                Rp146.618
+
+🍫 Beng Beng     10 pcs × Rp2.162     Rp21.618
+   Potensi omzet  10 × Rp3.000        Rp30.000    ← sisa × harga jual sekarang
+   Potensi untung                     +Rp8.382
+```
+- Bila ada pembelian / tap Beng Beng Sendiri sesudah tutup buku: "Beng Beng sejak tutup buku: +34 pcs dibeli,
+  1 dimakan sendiri (yang terjual baru ketahuan saat tutup buku)". Stok 0 → "Tidak ada stok barang".
+- Bahan kopi, alat, dan barang yang tidak dijual tidak dihitung. Angka ini tidak masuk untung jualan maupun uang bersih.
+- Di bawahnya kartu Saldo Kantong Kantin (dengan setor/tarik sejak tutup buku).
+- Berbentuk daftar barang (`getUangBarang()`), siap diisi barang jadi lain di CR-003.
 
 ## 5. Perhitungan (per periode)
 

@@ -12,7 +12,7 @@ function geserBulan(ym: string, n: number): string {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-export default async function RiwayatBelanjaPage(props: PageProps<"/laporan/belanja">) {
+export default async function RiwayatBelanjaPage(props: PageProps<"/lainnya/pengeluaran">) {
   const sp = await props.searchParams;
   const sekarang = bulanSekarang();
   const bulan = typeof sp.bulan === "string" && /^\d{4}-\d{2}$/.test(sp.bulan) ? sp.bulan : sekarang;
@@ -34,12 +34,12 @@ export default async function RiwayatBelanjaPage(props: PageProps<"/laporan/bela
     if (b !== sekarang) q.set("bulan", b);
     if (k) q.set("kategori", k);
     const s = q.toString();
-    return `/laporan/belanja${s ? `?${s}` : ""}`;
+    return `/lainnya/pengeluaran${s ? `?${s}` : ""}`;
   };
 
   return (
     <main>
-      <PageHeader title="Riwayat Pengeluaran" />
+      <PageHeader title="Riwayat Pengeluaran" back="/lainnya" />
       <div className="space-y-4 px-4">
         <div className="flex items-center justify-between">
           {adaSebelum ? (

@@ -16,9 +16,10 @@ export function CardSkeleton({ rows = 3, className = "" }: { rows?: number; clas
 }
 
 /** Judul halaman asli + subjudul placeholder, sama tata letaknya dengan PageHeader. */
-export function HeaderSkeleton({ title, sub = true }: { title: string; sub?: boolean }) {
+export function HeaderSkeleton({ title, sub = true, back }: { title: string; sub?: boolean; back?: boolean }) {
   return (
     <header className="px-4 pb-3 pt-6">
+      {back && <span className="-ml-1 mb-1 inline-block text-sm text-accent">‹ Kembali</span>}
       <h1 className="text-xl font-semibold">{title}</h1>
       {sub && <Bone className="mt-1 h-4 w-48" />}
     </header>

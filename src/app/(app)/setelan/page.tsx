@@ -17,7 +17,7 @@ export default async function SetelanPage() {
 
   return (
     <main>
-      <PageHeader title="Setelan" />
+      <PageHeader title="Setelan" back="/lainnya" />
       <div className="space-y-4 px-4">
         <section className="card space-y-4">
           <div>

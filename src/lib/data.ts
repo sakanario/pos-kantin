@@ -249,3 +249,34 @@ export async function getBep() {
     setorSejak: total(setor, (x) => x.nominal, true),
   };
 }
+
+/**
+ * Uang & barang per tutup buku terakhir (atau setup awal): saldo + modal barang yang masih ada.
+ * Berbentuk daftar barang supaya barang jadi lain (CR-003) tinggal ditambahkan.
+ */
+export async function getUangBarang() {
+  const terakhir = await getTutupTerakhir();
+  if (!terakhir) return null;
+  const [beli, taps, hargaJual] = await Promise.all([
+    db.select().from(belanja).where(and(eq(belanja.kategori, "bb"), gt(belanja.waktu, terakhir.waktu))),
+    db.select().from(tapEvent).where(and(eq(tapEvent.jenis, "bb_sendiri"), gt(tapEvent.waktu, terakhir.waktu))),
+    getHargaAktif(),
+  ]);
+  return {
+    saldo: terakhir.saldoKantong,
+    waktu: terakhir.waktu,
+    dariSetup: terakhir.hasilJson === null,
+    barang: [
+      {
+        nama: "Beng Beng",
+        icon: "🍫",
+        sisa: terakhir.sisaBb,
+        modalPerPcs: terakhir.avgModalBb,
+        hargaJual: hargaJual.jualBb,
+        // Pergerakan sesudah tutup buku; yang terjual baru diketahui saat tutup buku berikutnya
+        dibeliSejak: beli.reduce((a, b) => a + (b.qtyPcs ?? 0), 0),
+        sendiriSejak: taps.reduce((a, t) => a + t.delta, 0),
+      },
+    ],
+  };
+}

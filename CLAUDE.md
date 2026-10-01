@@ -46,7 +46,7 @@ src/lib/data.ts        query baca (periode berjalan, riwayat, ringkasan harian, 
 src/lib/hitung-ulang.ts hitung ulang hasil semua tutup buku sejak waktu tertentu
 src/app/actions.ts     semua server action (tulis). Setiap action memanggil requireAuth()
 src/app/(app)/         halaman setelah login: beranda, catat (belanja/kopi/kas + edit), tutup-buku,
-                       laporan (+ /belanja riwayat, /[id] detail), setelan
+                       laporan (+ /[id] detail), lainnya (+ /uang-barang, /pengeluaran), setelan
 src/app/login, setup   tanpa login
 src/db/schema.ts       6 tabel: settings, harga, tap_event, belanja, kas, tutup_buku
 scripts/seed-dummy.ts  generator dummy.db (pakai calc.ts yang sama)
