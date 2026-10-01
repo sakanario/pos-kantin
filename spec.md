@@ -4,7 +4,7 @@ Aplikasi pencatatan untuk menghitung **profit usaha** tanpa perlu merekap setiap
 
 ## 1. Prinsip
 
-1. **Profit dihitung dari uang nyata**: `profit = omzet − modal`. Omzet dibaca dari saldo, bukan dari rekap transaksi.
+1. **Dua angka per periode** (CR-002): **untung jualan** (perkiraan per cup, angka utama) dan **uang bersih** (uang nyata: omzet − belanja; dijumlah = balik modal). Omzet nyata dibaca dari saldo, bukan dari rekap transaksi.
 2. **Semua uang usaha ada di satu tempat**: Kantong "Kantin" di Bank Jago.
 3. **Pencatatan seminimal mungkin**: tap saat bikin kopi, catat saat belanja, lalu tutup buku seminggu sekali.
 4. **Hitungan "seharusnya" dipakai sebagai pembanding** untuk mendeteksi uang yang hilang, bukan sebagai angka utama.
@@ -43,7 +43,16 @@ Semua harga bisa diubah dan **disimpan beserta tanggal berlakunya**, sehingga la
 - Tombol besar **+1 Kopi** (penjualan)
 - Tombol kecil **+1 Kopi Sendiri** dan **+1 Beng Beng Sendiri** (konsumsi pribadi)
 - Tombol **−1** untuk koreksi masing-masing
-- Menampilkan: jumlah kopi hari ini, jumlah kopi di periode berjalan, dan ringkasan periode berjalan (belanja, estimasi stok Beng Beng)
+- Menampilkan: jumlah kopi hari ini, jumlah kopi di periode berjalan, dan ringkasan periode berjalan (untung kopi hari ini & periode ini, belanja, estimasi stok Beng Beng)
+- **Untung kopi** (hari ini / periode ini) = Σ tap kopi × (jual − HPP saat tap) − Σ kopi sendiri × HPP − Beng Beng sendiri × modal rata-rata terakhir. Untung Beng Beng terjual baru dihitung saat tutup buku.
+- Kartu **Balik modal** (sesudah kartu saldo), uang nyata saja, sampai tutup buku terakhir:
+  ```
+  modal_masuk  = saldo_awal_setup + cash_awal_setup + Σ setor + Σ belanja dari uang pribadi
+  uang_kembali = saldo_kantong_terakhir + cash_terakhir + Σ tarik
+  posisi       = uang_kembali − modal_masuk        // = Σ uang_bersih semua periode
+  ```
+  `posisi < 0` → "Sisa modal belum kembali" + progress `uang_kembali / modal_masuk`; `posisi ≥ 0` → "Sudah balik modal, untung bersih sejak mulai".
+  Belanja pribadi / setor sesudah tutup buku terakhir ditampilkan terpisah ("masuk di tutup buku berikutnya"). Stok tidak dihitung.
 - Setiap tap disimpan sebagai event (`+1` / `−1`) dengan timestamp
 
 ### 4.2 Belanja
@@ -83,13 +92,15 @@ Kalau catatan di periode yang sudah ditutup ditambah/diubah/dihapus, laporan per
 - Kartu **Saldo Kantong Kantin** (juga di Beranda, sesudah kartu periode berjalan): saldo yang diinput di tutup buku terakhir (atau setup awal) beserta waktunya, lalu daftar setor/tarik **sejak itu** (tap → halaman edit). Setor/tarik tidak dijumlahkan ke saldo, karena uang jualan tidak dicatat sehingga saldo saat ini tidak diketahui; efeknya dihitung di tutup buku berikutnya.
 - Per periode tutup buku (lihat format di §5.5)
 - Rekap bulanan (gabungan periode yang tutup bukunya jatuh di bulan tersebut)
-- Grafik sederhana: kopi terjual per hari, profit per periode
+- Angka utama tiap periode & bulan: **untung jualan**; angka kedua (lebih kecil): **uang bersih**
+- Grafik sederhana: kopi terjual per hari
 - Rincian belanja per kategori
 
 ### 4.6 Pengaturan
 - Harga jual Beng Beng & Kopi (dengan tanggal berlaku)
 - HPP estimasi kopi pribadi (dengan tanggal berlaku)
 - Isi per dus Beng Beng
+- **Hitung ulang semua laporan**: hitung ulang hasil semua tutup buku dengan rumus terbaru (dipakai setelah rumus berubah atau data diubah langsung di DB). Laporan dengan snapshot rumus lama menampilkan ajakan ke tombol ini.
 - Ganti PIN
 
 ### 4.7 Setup Awal (pertama kali dibuka)
@@ -126,15 +137,26 @@ nilai_stok_akhir = sisa × avg_modal
 ```
 Kalau `bb_terjual` negatif → tampilkan peringatan (kemungkinan salah input).
 
-### 5.3 Angka utama (uang nyata)
+### 5.3 Uang bersih (uang nyata)
 ```
-omzet_nyata  = (S1 − S0) + (C − C0) − M + T + Bk
-nilai_pribadi = (kopi_sendiri × hpp_kopi) + (bb_sendiri × avg_modal)
-
-profit = omzet_nyata − B + (nilai_stok_akhir − nilai_stok_awal) + nilai_pribadi
+omzet_nyata = (S1 − S0) + (C − C0) − M + T + Bk
+uang_bersih = omzet_nyata − B
 ```
 - `Bp` masuk ke `B` (biaya), tetapi tidak memengaruhi saldo → otomatis setara setor modal.
-- `nilai_pribadi` dianggap **Tarik barang**: biaya bahan yang dikonsumsi pribadi dikeluarkan dari biaya usaha.
+- Pasti, tapi naik-turun mengikuti hari belanja. Dijumlah semua periode = posisi balik modal (§4.1).
+- Nilai stok Beng Beng **tidak** masuk angka mana pun (hanya info di rincian).
+
+### 5.3b Untung jualan (perkiraan per cup, angka utama)
+```
+untung_kopi   = Σ tap kopi × (jual_kopi(t) − hpp_kopi(t)) − Σ tap kopi_sendiri × hpp_kopi(t)
+untung_bb     = bb_terjual × (harga_jual_bb − avg_modal) − bb_sendiri × avg_modal
+untung_jualan = untung_kopi + untung_bb
+```
+- **Konsumsi pribadi = biaya**: kopi/Beng Beng yang dikonsumsi sendiri mengurangi untung (bahannya habis, uang tidak kembali).
+  Contoh: jual 3 kopi (10.000, HPP 7.000) → +9.000; minum 1 → −7.000; untung 2.000.
+- `nilai_pribadi = Σ kopi_sendiri × hpp_kopi(t) + bb_sendiri × avg_modal` tetap dihitung sebagai info.
+- `Blain` (biasanya alat) tidak masuk untung jualan, tetapi masuk uang bersih & balik modal.
+- HPP diisi worst case, jadi untung sebenarnya bisa lebih besar. Jangka panjang ≈ uang bersih bila HPP akurat.
 
 ### 5.4 Pembanding (seharusnya)
 ```
@@ -143,33 +165,30 @@ omzet_bb_seharusnya   = bb_terjual × harga jual Beng Beng yang berlaku saat tut
 omzet_seharusnya      = omzet_kopi_seharusnya + omzet_bb_seharusnya
 
 selisih = omzet_nyata − omzet_seharusnya     // negatif = uang hilang
-
-profit_bb   = omzet_bb_seharusnya − (bb_terjual × avg_modal)
-profit_kopi = omzet_kopi_seharusnya − Bkopi + (kopi_sendiri × hpp_kopi)
 ```
 - Selisih hanya diketahui **total**, tidak bisa dipisah per produk.
-- `Blain` tidak dialokasikan ke produk mana pun dan ditampilkan terpisah.
 
 ### 5.5 Contoh tampilan laporan
 ```
-Periode 21–28 Sep 2026
+Untung jualan periode ini        +3.515
+Uang bersih +59.000 · ✅ Uang masuk sesuai hitungan
 ──────────────────────────────────────────
-Beng Beng terjual    40 × 3.000   = 120.000
-Kopi terjual         25 × 10.000  = 250.000
-Omzet seharusnya                  = 370.000
-Omzet nyata                       = 362.000
-Selisih                           =  −8.000 ⚠️
+Untung jualan (perkiraan per cup)
+☕ Kopi                           +1.000
+   5 terjual × (10.000 − 7.000)  +15.000
+   2 diminum sendiri × 7.000     −14.000
+🍫 Beng Beng                      +2.515
+   3 terjual × (3.000 − 2.162)    +2.515
+   0 dimakan sendiri
+Untung jualan                     +3.515
+📦 Belanja lain-lain (bila ada)   −13.798  (masuk balik modal, bukan untung jualan)
 ──────────────────────────────────────────
-Belanja                            150.000
-  Beng Beng                         73.000
-  Bahan Kopi                        70.000
-  Lain-lain                          7.000
-Perubahan nilai stok BB            +12.900
-Konsumsi pribadi                   +21.475
+Uang bersih
+Omzet nyata (dari saldo)          59.000
+Belanja                               −0
+Uang bersih                      +59.000
 ──────────────────────────────────────────
-PROFIT                             246.375
-  Profit Beng Beng (teoretis)       ...
-  Profit Kopi (teoretis)            ...
+Omzet: seharusnya vs nyata, lalu Rincian (stok, kopi, uang)
 ```
 
 ## 6. Data Model (SQLite / Turso)

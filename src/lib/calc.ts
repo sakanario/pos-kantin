@@ -65,15 +65,20 @@ export type HasilPeriode = {
   nilaiPribadiKopi: number;
   nilaiPribadiBb: number;
   nilaiPribadi: number;
-  profit: number;
+  /** Uang nyata: omzet nyata − belanja. Dijumlah semua periode = posisi BEP. */
+  uangBersih: number;
+
+  // Untung jualan (perkiraan per cup, pakai HPP). Belanja "lain" tidak masuk.
+  hppKopiTerjual: number;
+  untungKopi: number;
+  untungBb: number;
+  untungJualan: number;
 
   // Pembanding
   omzetKopiSeharusnya: number;
   omzetBbSeharusnya: number;
   omzetSeharusnya: number;
   selisih: number;
-  profitBb: number;
-  profitKopi: number;
 
   peringatan: string[];
 };
@@ -136,7 +141,8 @@ export function hitungPeriode(awal: PeriodeAwal, akhir: PeriodeAkhir, data: Peri
   const nilaiPribadiBb = bbSendiri * avgModalBb;
   const nilaiPribadi = nilaiPribadiKopi + nilaiPribadiBb;
 
-  const profit = omzetNyata - belanjaTotal + (nilaiStokAkhir - nilaiStokAwal) + nilaiPribadi;
+  // Konsumsi pribadi tidak dikembalikan: bahannya habis, uangnya tidak kembali.
+  const uangBersih = omzetNyata - belanjaTotal;
 
   // Pembanding
   const omzetKopiSeharusnya = sum(
@@ -147,8 +153,10 @@ export function hitungPeriode(awal: PeriodeAwal, akhir: PeriodeAkhir, data: Peri
   const omzetSeharusnya = omzetKopiSeharusnya + omzetBbSeharusnya;
   const selisih = omzetNyata - omzetSeharusnya;
 
-  const profitBb = omzetBbSeharusnya - bbTerjual * avgModalBb;
-  const profitKopi = omzetKopiSeharusnya - belanjaKopi + nilaiPribadiKopi;
+  // Untung jualan: tiap item terjual (harga jual − modal), tiap item dikonsumsi sendiri (− modal)
+  const hppKopiTerjual = sum(tapsOf("kopi").map((t) => t.delta * hargaPada(data.harga, "kopi", "hpp", t.waktu)));
+  const untungKopi = omzetKopiSeharusnya - hppKopiTerjual - nilaiPribadiKopi;
+  const untungBb = omzetBbSeharusnya - bbTerjual * avgModalBb - nilaiPribadiBb;
 
   const r = Math.round;
   return {
@@ -180,13 +188,51 @@ export function hitungPeriode(awal: PeriodeAwal, akhir: PeriodeAkhir, data: Peri
     nilaiPribadiKopi: r(nilaiPribadiKopi),
     nilaiPribadiBb: r(nilaiPribadiBb),
     nilaiPribadi: r(nilaiPribadi),
-    profit: r(profit),
+    uangBersih,
+    hppKopiTerjual,
+    untungKopi: r(untungKopi),
+    untungBb: r(untungBb),
+    untungJualan: r(untungKopi) + r(untungBb),
     omzetKopiSeharusnya,
     omzetBbSeharusnya,
     omzetSeharusnya,
     selisih,
-    profitBb: r(profitBb),
-    profitKopi: r(profitKopi),
     peringatan,
   };
+}
+
+/**
+ * Untung dari tap (tanpa Beng Beng terjual, yang baru diketahui saat tutup buku):
+ * kopi terjual × (jual − HPP) − kopi sendiri × HPP − Beng Beng sendiri × modal rata-rata.
+ * Harga & HPP kopi mengikuti waktu tap, sama seperti tutup buku.
+ */
+export function untungDariTap(taps: PeriodeData["taps"], harga: HargaRow[], avgModalBb: number): number {
+  let untung = 0;
+  for (const t of taps) {
+    const hpp = hargaPada(harga, "kopi", "hpp", t.waktu);
+    if (t.jenis === "kopi") untung += t.delta * (hargaPada(harga, "kopi", "jual", t.waktu) - hpp);
+    else if (t.jenis === "kopi_sendiri") untung -= t.delta * hpp;
+    else untung -= t.delta * avgModalBb;
+  }
+  return Math.round(untung);
+}
+
+export type BepInput = {
+  saldoAwal: number;
+  cashAwal: number;
+  setor: number;
+  belanjaPribadi: number;
+  saldoTerakhir: number;
+  cashTerakhir: number;
+  tarik: number;
+};
+
+/**
+ * Balik modal (uang nyata saja, stok tidak dihitung). Sama dengan Σ uangBersih semua periode.
+ * posisi < 0 = sisa modal belum kembali; posisi ≥ 0 = untung bersih sejak mulai.
+ */
+export function hitungBep(i: BepInput) {
+  const modalMasuk = i.saldoAwal + i.cashAwal + i.setor + i.belanjaPribadi;
+  const uangKembali = i.saldoTerakhir + i.cashTerakhir + i.tarik;
+  return { modalMasuk, uangKembali, posisi: uangKembali - modalMasuk };
 }

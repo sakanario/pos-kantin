@@ -2,19 +2,24 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { SaldoCard } from "@/components/saldo-card";
 import { getKopiPerHari, getRiwayatTutupBuku } from "@/lib/data";
-import { bulanWib, namaBulan, rupiah, tanggal } from "@/lib/format";
+import { LaporanBasi } from "@/components/laporan-basi";
+import { bulanWib, namaBulan, plus, rupiah, tanggal } from "@/lib/format";
 
 export default async function LaporanPage() {
   const [riwayat, kopiHarian] = await Promise.all([getRiwayatTutupBuku(), getKopiPerHari(14)]);
   const periode = riwayat.filter((r) => r.hasil);
+  const adaBasi = periode.some((r) => r.basi);
 
   // Rekap bulanan: gabungan periode yang tutup bukunya jatuh di bulan tersebut
-  const bulanan = new Map<string, { profit: number; omzet: number; belanja: number; selisih: number; kopi: number; bb: number }>();
+  type Rekap = { untung: number; uangBersih: number; omzet: number; belanja: number; selisih: number; kopi: number; bb: number };
+  const bulanan = new Map<string, Rekap>();
   for (const r of periode) {
+    if (r.basi) continue;
     const h = r.hasil!;
     const k = bulanWib(r.waktu);
-    const b = bulanan.get(k) ?? { profit: 0, omzet: 0, belanja: 0, selisih: 0, kopi: 0, bb: 0 };
-    b.profit += h.profit;
+    const b = bulanan.get(k) ?? { untung: 0, uangBersih: 0, omzet: 0, belanja: 0, selisih: 0, kopi: 0, bb: 0 };
+    b.untung += h.untungJualan;
+    b.uangBersih += h.uangBersih;
     b.omzet += h.omzetNyata;
     b.belanja += h.belanjaTotal;
     b.selisih += h.selisih;
@@ -29,6 +34,7 @@ export default async function LaporanPage() {
     <main>
       <PageHeader title="Laporan" />
       <div className="space-y-4 px-4">
+        {adaBasi && <LaporanBasi />}
         <SaldoCard />
         <Link href="/laporan/belanja" className="card flex items-center justify-between">
           <span>
@@ -61,13 +67,18 @@ export default async function LaporanPage() {
 
         {bulanan.size > 0 && (
           <section>
-            <h2 className="mb-2 text-sm font-medium text-muted">Per bulan</h2>
+            <h2 className="mb-2 text-sm font-medium text-muted">Per bulan · untung jualan</h2>
             <div className="space-y-2">
               {[...bulanan.entries()].map(([k, b]) => (
                 <div key={k} className="card">
                   <div className="flex items-baseline justify-between">
                     <h3 className="font-medium">{namaBulan(k)}</h3>
-                    <span className={`num text-lg font-semibold ${b.profit < 0 ? "text-bad" : ""}`}>{rupiah(b.profit)}</span>
+                    <span className="text-right">
+                      <span className={`num block text-lg font-semibold ${b.untung < 0 ? "text-bad" : ""}`}>
+                        {plus(b.untung)}
+                      </span>
+                      <span className="num block text-xs text-muted">uang bersih {plus(b.uangBersih)}</span>
+                    </span>
                   </div>
                   <div className="num mt-1 grid grid-cols-2 gap-x-4 text-sm text-muted">
                     <span>Omzet {rupiah(b.omzet)}</span>
@@ -84,7 +95,7 @@ export default async function LaporanPage() {
         )}
 
         <section>
-          <h2 className="mb-2 text-sm font-medium text-muted">Per periode tutup buku</h2>
+          <h2 className="mb-2 text-sm font-medium text-muted">Per periode tutup buku · untung jualan</h2>
           {periode.length === 0 ? (
             <p className="card text-sm text-muted">
               Belum ada tutup buku. Laporan muncul setelah kamu melakukan{" "}
@@ -107,9 +118,19 @@ export default async function LaporanPage() {
                         {r.hasil!.selisih !== 0 && ` · selisih ${rupiah(r.hasil!.selisih)}`}
                       </div>
                     </div>
-                    <span className={`num font-semibold ${r.hasil!.profit < 0 ? "text-bad" : ""}`}>
-                      {rupiah(r.hasil!.profit)} ›
-                    </span>
+                    {r.basi ? (
+                      <span className="text-sm text-muted">perlu hitung ulang ›</span>
+                    ) : (
+                      <span className="flex items-center gap-1">
+                        <span className="text-right">
+                          <span className={`num block font-semibold ${r.hasil!.untungJualan < 0 ? "text-bad" : ""}`}>
+                            {plus(r.hasil!.untungJualan)}
+                          </span>
+                          <span className="num block text-xs text-muted">uang {plus(r.hasil!.uangBersih)}</span>
+                        </span>
+                        <span className="text-muted">›</span>
+                      </span>
+                    )}
                   </Link>
                 </li>
               ))}

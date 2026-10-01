@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { gantiPinAction, ubahHargaAction, ubahIsiDusAction } from "@/app/actions";
+import { gantiPinAction, hitungUlangSemuaAction, ubahHargaAction, ubahIsiDusAction } from "@/app/actions";
 import { FormMessage, RupiahInput, SubmitButton } from "@/components/form";
 
 export function HargaForm({ hargaKey, label, nilai }: { hargaKey: string; label: string; nilai: number }) {
@@ -46,6 +46,16 @@ export function GantiPinForm() {
       </div>
       <FormMessage state={state} />
       <SubmitButton className="btn-ghost w-full">Ganti PIN</SubmitButton>
+    </form>
+  );
+}
+
+export function HitungUlangForm() {
+  const [state, action] = useActionState(hitungUlangSemuaAction, undefined);
+  return (
+    <form action={action} className="space-y-2">
+      <FormMessage state={state} />
+      <SubmitButton className="btn-ghost w-full">Hitung ulang semua laporan</SubmitButton>
     </form>
   );
 }

@@ -6,6 +6,11 @@ export function rupiah(n: number): string {
   return `${sign}Rp ${Math.abs(Math.round(n)).toLocaleString("id-ID")}`;
 }
 
+/** Rupiah dengan tanda + untuk angka positif. */
+export function plus(n: number): string {
+  return Math.round(n) > 0 ? `+${rupiah(n)}` : rupiah(n);
+}
+
 export function angka(n: number): string {
   return Math.round(n).toLocaleString("id-ID");
 }

@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { getHargaAktif, getSemuaHarga } from "@/lib/data";
 import { rupiah, tanggal } from "@/lib/format";
 import { getIsiPerDus } from "@/lib/settings";
-import { GantiPinForm, HargaForm, IsiDusForm } from "./forms";
+import { GantiPinForm, HargaForm, HitungUlangForm, IsiDusForm } from "./forms";
 
 const labelHarga = {
   "bb-jual": "Jual Beng Beng",
@@ -49,6 +49,16 @@ export default async function SetelanPage() {
         <section className="card space-y-3">
           <h2 className="font-medium">Beng Beng</h2>
           <IsiDusForm isiDus={isiDus} />
+        </section>
+
+        <section className="card space-y-3">
+          <div>
+            <h2 className="font-medium">Laporan</h2>
+            <p className="text-xs text-muted">
+              Hitung ulang semua tutup buku dengan rumus terbaru. Input tutup buku (saldo, sisa Beng Beng) tidak berubah.
+            </p>
+          </div>
+          <HitungUlangForm />
         </section>
 
         <section className="card space-y-3">

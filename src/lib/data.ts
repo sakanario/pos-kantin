@@ -2,7 +2,7 @@ import "server-only";
 import { and, asc, desc, eq, gt, lt, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { belanja, harga, kas, tapEvent, tutupBuku, type TutupBuku } from "@/db/schema";
-import { hargaPada, type HargaRow, type HasilPeriode, type PeriodeData } from "./calc";
+import { hargaPada, hitungBep, untungDariTap, type HargaRow, type HasilPeriode, type PeriodeData } from "./calc";
 import { awalHariWib, bulanWib, isoTanggalWib } from "./format";
 
 export async function getTutupTerakhir(): Promise<TutupBuku | undefined> {
@@ -80,17 +80,25 @@ export async function getPeriodeBerjalan() {
     // Stok maksimal jika belum ada yang terjual; sisa sebenarnya diketahui saat tutup buku.
     stokBbTersedia: terakhir.sisaBb + beliBb - bbSendiri,
     belanjaPeriode: data.belanja.reduce((a, b) => a + b.total, 0),
+    // Untung jualan dari tap saja; Beng Beng terjual baru diketahui saat tutup buku.
+    untungHariIni: untungDariTap(tapsHariIni, data.harga, terakhir.avgModalBb),
+    untungPeriode: untungDariTap(data.taps, data.harga, terakhir.avgModalBb),
   };
 }
 
 export async function getRiwayatTutupBuku() {
   const rows = await db.select().from(tutupBuku).orderBy(desc(tutupBuku.waktu), desc(tutupBuku.id));
-  return rows.map((r, i) => ({
-    ...r,
-    dari: rows[i + 1]?.waktu ?? null,
-    dariData: rows[i + 1] ? awalData(rows[i + 1]) : 0,
-    hasil: r.hasilJson ? (JSON.parse(r.hasilJson) as HasilPeriode) : null,
-  }));
+  return rows.map((r, i) => {
+    const hasil = r.hasilJson ? (JSON.parse(r.hasilJson) as HasilPeriode) : null;
+    return {
+      ...r,
+      dari: rows[i + 1]?.waktu ?? null,
+      dariData: rows[i + 1] ? awalData(rows[i + 1]) : 0,
+      hasil,
+      // Snapshot dari rumus lama (sebelum CR-002): perlu "Hitung ulang semua laporan" di Setelan
+      basi: hasil !== null && hasil.untungJualan === undefined,
+    };
+  });
 }
 
 /** Jumlah kopi terjual per hari (WIB) untuk `hari` hari terakhir. */
@@ -205,4 +213,39 @@ export async function getInputManualTerakhir(limit: number) {
     .where(eq(tapEvent.manual, true))
     .orderBy(desc(tapEvent.waktu), desc(tapEvent.id))
     .limit(limit);
+}
+
+/**
+ * Balik modal sampai tutup buku terakhir (saldo hanya diketahui saat tutup buku), termasuk catatan
+ * bertanggal sebelum setup. Modal yang masuk sesudahnya ditampilkan terpisah.
+ */
+export async function getBep() {
+  const rows = await db.select().from(tutupBuku).orderBy(asc(tutupBuku.waktu), asc(tutupBuku.id));
+  if (rows.length === 0) return null;
+  const setup = rows[0];
+  const terakhir = rows[rows.length - 1];
+  const [b, k] = await Promise.all([
+    db.select().from(belanja).where(eq(belanja.sumber, "pribadi")),
+    db.select().from(kas),
+  ]);
+  const total = <T extends { waktu: number }>(xs: T[], nilai: (x: T) => number, sesudah: boolean) =>
+    xs.filter((x) => (x.waktu > terakhir.waktu) === sesudah).reduce((a, x) => a + nilai(x), 0);
+  const setor = k.filter((x) => x.jenis === "setor");
+  const tarik = k.filter((x) => x.jenis === "tarik");
+
+  return {
+    ...hitungBep({
+      saldoAwal: setup.saldoKantong,
+      cashAwal: setup.cashBelumDisetor,
+      setor: total(setor, (x) => x.nominal, false),
+      belanjaPribadi: total(b, (x) => x.total, false),
+      saldoTerakhir: terakhir.saldoKantong,
+      cashTerakhir: terakhir.cashBelumDisetor,
+      tarik: total(tarik, (x) => x.nominal, false),
+    }),
+    waktu: terakhir.waktu,
+    belumTutupBuku: terakhir.hasilJson === null,
+    belanjaPribadiSejak: total(b, (x) => x.total, true),
+    setorSejak: total(setor, (x) => x.nominal, true),
+  };
 }

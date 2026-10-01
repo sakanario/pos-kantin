@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { HasilView } from "@/components/hasil-view";
+import { LaporanBasi } from "@/components/laporan-basi";
 import { PageHeader } from "@/components/page-header";
 import { BelanjaList } from "@/components/belanja-list";
 import { getDataPeriode, getRiwayatTutupBuku } from "@/lib/data";
@@ -18,7 +19,7 @@ export default async function DetailLaporan(props: PageProps<"/laporan/[id]">) {
     <main>
       <PageHeader title="Laporan periode" sub={`${r.dari ? tanggalJam(r.dari) : "?"} – ${tanggalJam(r.waktu)}`} />
       <div className="space-y-4 px-4">
-        <HasilView h={r.hasil} />
+        {r.basi ? <LaporanBasi /> : <HasilView h={r.hasil} />}
         <section>
           <h2 className="mb-2 text-sm font-medium text-muted">Belanja periode ini</h2>
           <BelanjaList items={belanja} />

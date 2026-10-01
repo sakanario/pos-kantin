@@ -356,6 +356,14 @@ export async function ubahIsiDusAction(_: FormState, fd: FormData): Promise<Form
   return { ok: "Isi per dus diperbarui." };
 }
 
+/** Hitung ulang hasil semua tutup buku dengan rumus terbaru (juga setelah data diubah langsung di DB). */
+export async function hitungUlangSemuaAction(): Promise<FormState> {
+  await requireAuth();
+  const n = await hitungUlangSejak(0);
+  refreshSemua();
+  return { ok: `${n} laporan dihitung ulang.` };
+}
+
 export async function gantiPinAction(_: FormState, fd: FormData): Promise<FormState> {
   await requireAuth();
   const cek = await cekPin(str(fd, "pin_lama"));

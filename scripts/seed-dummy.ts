@@ -239,14 +239,16 @@ for (let i = 0; i < tapRows.length; i += 200) await db.insert(schema.tapEvent).v
 const rp = (n: number) => `Rp ${Math.round(n).toLocaleString("id-ID")}`;
 console.log(`✓ ${FILE} dibuat`);
 console.log(`  ${tutupRows.length - 1} tutup buku, ${belanjaRows.length} belanja, ${kasRows.length} kas, ${tapRows.length} tap`);
-let total = 0;
+let totalUntung = 0;
+let totalUang = 0;
 for (const r of tutupRows.slice(1)) {
   const h = JSON.parse(r.hasilJson!);
-  total += h.profit;
+  totalUntung += h.untungJualan;
+  totalUang += h.uangBersih;
   console.log(
-    `  ${isoWib(r.waktu)}  kopi ${String(h.kopiTerjual).padStart(3)}  bb ${String(h.bbTerjual).padStart(3)}  profit ${rp(h.profit).padStart(12)}  selisih ${rp(h.selisih).padStart(10)}`,
+    `  ${isoWib(r.waktu)}  kopi ${String(h.kopiTerjual).padStart(3)}  bb ${String(h.bbTerjual).padStart(3)}  untung ${rp(h.untungJualan).padStart(12)}  uang bersih ${rp(h.uangBersih).padStart(12)}  selisih ${rp(h.selisih).padStart(10)}`,
   );
 }
-console.log(`  Total profit: ${rp(total)}`);
+console.log(`  Total untung jualan: ${rp(totalUntung)}, total uang bersih (posisi BEP): ${rp(totalUang)}`);
 console.log(`  Posisi sekarang: kantong ${rp(kantong)}, GoPay belum cair ${rp(gopay)}, cash di kotak ${rp(kotak)}, stok BB ${bb}`);
 console.log(`  Login PIN: ${PIN}`);
