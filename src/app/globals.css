@@ -23,8 +23,9 @@
   --warn: #f0a81c;
 }
 
+/* Tema gelap: ikut HP (tanpa data-theme) atau dipaksa lewat Setelan (data-theme="dark"). */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --bg: #121433;
     --bg-dot: #22265a;
     --card: #1b1e45;
@@ -44,7 +45,31 @@
     --bad: #ff8a8a;
     --bad-soft: #4a1f35;
     --warn: #ffc24a;
+    color-scheme: dark;
   }
+}
+
+:root[data-theme="dark"] {
+  --bg: #121433;
+  --bg-dot: #22265a;
+  --card: #1b1e45;
+  --card-raised: #262a5e;
+  --fg: #fff4e6;
+  --muted: #a9addb;
+  --outline: #05061a;
+  --line: #323770;
+  --accent: #8ea2ff;
+  --accent-fg: #121433;
+  --accent-soft: #2c3578;
+  --accent-2: #6f86f0;
+  --accent-3: #4a5bc4;
+  --sun: #ffd84a;
+  --on-sun: #15163a;
+  --good: #5bd68a;
+  --bad: #ff8a8a;
+  --bad-soft: #4a1f35;
+  --warn: #ffc24a;
+  color-scheme: dark;
 }
 
 @theme inline {

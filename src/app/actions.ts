@@ -2,6 +2,7 @@
 
 import { and, asc, eq, gt, gte, lt, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { bahan, bahanAktif, belanja, harga, kas, menu, resep, tapEvent, tutupBuku } from "@/db/schema";
@@ -11,6 +12,7 @@ import { awalData, getDataPeriode, getHppCtx, getSemuaHarga, getTutupTerakhir, p
 import { hitungUlangSejak } from "@/lib/hitung-ulang";
 import { awalHariWib, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
 import { getSetting, isSetupDone, setSetting } from "@/lib/settings";
+import { COOKIE_TEMA, isTema, type Tema } from "@/lib/tema";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -49,6 +51,13 @@ export async function loginAction(_: FormState, fd: FormData): Promise<FormState
 export async function logoutAction() {
   await endSession();
   redirect("/login");
+}
+
+export async function aturTemaAction(tema: Tema) {
+  await requireAuth();
+  if (!isTema(tema)) return;
+  (await cookies()).set(COOKIE_TEMA, tema, { path: "/", maxAge: 60 * 60 * 24 * 365 * 5, sameSite: "lax" });
+  revalidatePath("/", "layout");
 }
 
 // ─── Tap ─────────────────────────────────────────────────────────

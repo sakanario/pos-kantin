@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Montserrat, Plus_Jakarta_Sans } from "next/font/google";
+import { dataTheme } from "@/lib/tema";
+import { getTema } from "@/lib/tema-server";
 import "./globals.css";
 
 const heading = Montserrat({
@@ -19,16 +21,28 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Kantin", statusBarStyle: "default" },
 };
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffdf4f" },
-    { media: "(prefers-color-scheme: dark)", color: "#121433" },
-  ],
-};
+const WARNA_BAR = { light: "#ffdf4f", dark: "#121433" };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export async function generateViewport(): Promise<Viewport> {
+  const t = dataTheme(await getTema());
+  return {
+    themeColor: t
+      ? WARNA_BAR[t]
+      : [
+          { media: "(prefers-color-scheme: light)", color: WARNA_BAR.light },
+          { media: "(prefers-color-scheme: dark)", color: WARNA_BAR.dark },
+        ],
+  };
+}
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const tema = await getTema();
   return (
-    <html lang="id" className={`${heading.variable} ${body.variable} h-full antialiased`}>
+    <html
+      lang="id"
+      data-theme={dataTheme(tema)}
+      className={`${heading.variable} ${body.variable} h-full antialiased`}
+    >
       <body className="min-h-full font-sans">{children}</body>
     </html>
   );

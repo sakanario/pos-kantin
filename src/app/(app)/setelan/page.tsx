@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { logoutAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { GantiPinForm, HitungUlangForm } from "./forms";
+import { getTema } from "@/lib/tema-server";
+import { GantiPinForm, HitungUlangForm, TemaPicker } from "./forms";
 
 export default async function SetelanPage() {
+  const tema = await getTema();
   return (
     <main>
       <PageHeader title="Setelan" back="/lainnya" />
@@ -19,6 +21,17 @@ export default async function SetelanPage() {
           </Link>
           .
         </p>
+
+        <section className="card space-y-3">
+          <div>
+            <h2 className="font-bold">Tampilan</h2>
+            <p className="text-xs text-muted">
+              Terang = latar kuning, Gelap = latar navy. &ldquo;Ikut HP&rdquo; mengikuti mode gelap HP. Berlaku untuk
+              perangkat ini saja.
+            </p>
+          </div>
+          <TemaPicker tema={tema} />
+        </section>
 
         <section className="card space-y-3">
           <div>
