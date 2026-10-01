@@ -1,0 +1,69 @@
+<!-- @dsCard height=300 -->
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Kantin Pop</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--bg); color:var(--fg); font-family:var(--font-body); overflow:hidden; }
+  .cover { position:relative; height:300px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:300px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:300px; }
+  .blue { fill:var(--accent); stroke:var(--outline); stroke-width:var(--stroke); }
+  .soft { fill:var(--accent-soft); stroke:var(--outline); stroke-width:var(--stroke); }
+  .sun  { fill:var(--sun); stroke:var(--outline); stroke-width:var(--stroke); }
+  .ink  { fill:var(--fg); }
+  .tint { fill:var(--accent-3); stroke:var(--outline); stroke-width:var(--stroke); }
+  .shade { fill:var(--outline); }
+  .dot { fill:var(--bg-dot); }
+  .lg { rx:var(--radius-lg); }
+  .words { position:absolute; left:var(--space-8); bottom:var(--space-8); max-width:440px; }
+  .name { margin:0; font-family:var(--font-display); font-size:104px; line-height:.92; font-weight:800; letter-spacing:-.03em; color:var(--fg); }
+  .tag { margin:var(--space-3) 0 0 4px; font-size:14px; line-height:20px; font-weight:500; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 300" width="480" height="300">
+<!--
+  blocks      accent 168×224 slab (the royal blue, largest) · sun 232×56 pill (the hoodie yellow, read against the yellow ground only by its outline) · accent-soft 232×144 bled off the top · fg 104×104 bled off the bottom (navy ink; cream in dark) · accent-3 disc r40 — ≈ 40% of 960×300
+  arrangement one tall blue slab with a stacked column of satellites to its right, each sitting on its own shadow-pop-lg (outline, 8px down), like the stacked windows of the source picture
+  pattern     dot grid, from the README's "latar halaman selalu berpola titik": bg-dot dots of 2px radius at a space-4 pitch, 4 × 13 = 52 dots between the name zone and the slab
+  scales      stroke 3px on every block; shadow offset 8px (shadow-pop-lg); corners radius-lg 24; pill rx 28 (half of 56); gutter space-4; dot pitch space-4
+-->
+<g>
+  <circle class="dot" cx="24" cy="56" r="2"/><circle class="dot" cx="40" cy="56" r="2"/><circle class="dot" cx="56" cy="56" r="2"/><circle class="dot" cx="72" cy="56" r="2"/>
+  <circle class="dot" cx="24" cy="72" r="2"/><circle class="dot" cx="40" cy="72" r="2"/><circle class="dot" cx="56" cy="72" r="2"/><circle class="dot" cx="72" cy="72" r="2"/>
+  <circle class="dot" cx="24" cy="88" r="2"/><circle class="dot" cx="40" cy="88" r="2"/><circle class="dot" cx="56" cy="88" r="2"/><circle class="dot" cx="72" cy="88" r="2"/>
+  <circle class="dot" cx="24" cy="104" r="2"/><circle class="dot" cx="40" cy="104" r="2"/><circle class="dot" cx="56" cy="104" r="2"/><circle class="dot" cx="72" cy="104" r="2"/>
+  <circle class="dot" cx="24" cy="120" r="2"/><circle class="dot" cx="40" cy="120" r="2"/><circle class="dot" cx="56" cy="120" r="2"/><circle class="dot" cx="72" cy="120" r="2"/>
+  <circle class="dot" cx="24" cy="136" r="2"/><circle class="dot" cx="40" cy="136" r="2"/><circle class="dot" cx="56" cy="136" r="2"/><circle class="dot" cx="72" cy="136" r="2"/>
+  <circle class="dot" cx="24" cy="152" r="2"/><circle class="dot" cx="40" cy="152" r="2"/><circle class="dot" cx="56" cy="152" r="2"/><circle class="dot" cx="72" cy="152" r="2"/>
+  <circle class="dot" cx="24" cy="168" r="2"/><circle class="dot" cx="40" cy="168" r="2"/><circle class="dot" cx="56" cy="168" r="2"/><circle class="dot" cx="72" cy="168" r="2"/>
+  <circle class="dot" cx="24" cy="184" r="2"/><circle class="dot" cx="40" cy="184" r="2"/><circle class="dot" cx="56" cy="184" r="2"/><circle class="dot" cx="72" cy="184" r="2"/>
+  <circle class="dot" cx="24" cy="200" r="2"/><circle class="dot" cx="40" cy="200" r="2"/><circle class="dot" cx="56" cy="200" r="2"/><circle class="dot" cx="72" cy="200" r="2"/>
+  <circle class="dot" cx="24" cy="216" r="2"/><circle class="dot" cx="40" cy="216" r="2"/><circle class="dot" cx="56" cy="216" r="2"/><circle class="dot" cx="72" cy="216" r="2"/>
+  <circle class="dot" cx="24" cy="232" r="2"/><circle class="dot" cx="40" cy="232" r="2"/><circle class="dot" cx="56" cy="232" r="2"/><circle class="dot" cx="72" cy="232" r="2"/>
+  <circle class="dot" cx="24" cy="248" r="2"/><circle class="dot" cx="40" cy="248" r="2"/><circle class="dot" cx="56" cy="248" r="2"/><circle class="dot" cx="72" cy="248" r="2"/>
+</g>
+<!-- shadows first (outline, 8px down), then the blocks -->
+<rect class="shade lg" x="96" y="48" width="168" height="224" rx="24"/>
+<rect class="blue lg" x="96" y="40" width="168" height="224" rx="24"/>
+<rect class="shade lg" x="280" y="-32" width="232" height="144" rx="24"/>
+<rect class="soft lg" x="280" y="-40" width="232" height="144" rx="24"/>
+<rect class="shade" x="280" y="132" width="232" height="56" rx="28"/>
+<rect class="sun" x="280" y="124" width="232" height="56" rx="28"/>
+<rect class="ink lg" x="280" y="204" width="104" height="120" rx="24"/>
+<circle class="shade" cx="440" cy="252" r="40"/>
+<circle class="tint" cx="440" cy="244" r="40"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Kantin<br>Pop</h1>
+<p class="tag">Kuning terang, biru royal, tepi tebal. Gaya aplikasi catatan untung kantin.</p>
+</div>
+</div>
+</body>
+</html>

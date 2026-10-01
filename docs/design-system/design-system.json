@@ -1,0 +1,14 @@
+{
+  "v": 3,
+  "layout": "files",
+  "createdOnFiles": { "v": 1, "at": "2026-10-01T17:12:27Z" },
+  "title": "Kantin Pop",
+  "namespace": "KantinPop",
+  "libraries": [],
+  "sections": {},
+  "groups": [],
+  "assetGroups": {},
+  "blobs": {},
+  "docs": { "readme": "project/README.md", "sections": [] },
+  "lastChange": { "by": "Satria L", "at": "2026-10-01T17:20:00Z", "via": "Claude Code", "note": "Sistem pertama: palet kuning–biru dari gambar acuan, 8 komponen." }
+}

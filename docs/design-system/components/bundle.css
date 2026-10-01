@@ -1,0 +1,133 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap");
+
+/* Kantin Pop: tepi tebal `outline`, bayangan keras ke bawah, sudut membulat besar. Semua warna dari token. */
+
+body { margin: 0; font-family: var(--font-body); font-size: 16px; line-height: 24px; color: var(--fg); background: var(--bg); }
+
+.kp-page {
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--bg-dot) 2px, transparent 2.5px);
+  background-size: var(--space-4) var(--space-4);
+  padding: var(--space-4);
+}
+.kp-num { font-variant-numeric: tabular-nums; }
+.kp-display { font-family: var(--font-display); }
+
+/* Kartu */
+.kp-card {
+  background: var(--card); color: var(--fg);
+  border: var(--stroke) solid var(--outline); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop-lg); padding: var(--space-4);
+}
+.kp-card-title { margin: 0 0 var(--space-2); font-family: var(--font-display); font-size: 18px; line-height: 24px; font-weight: 700; }
+.kp-list { list-style: none; margin: 0; padding: 0; }
+.kp-list > li { display: flex; align-items: center; gap: var(--space-3); padding: 10px 0; border-top: 1px solid var(--line); }
+.kp-list > li:first-child { border-top: 0; padding-top: 0; }
+.kp-list > li:last-child { padding-bottom: 0; }
+
+/* Tombol */
+.kp-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: 48px; padding: 0 var(--space-4);
+  font: 700 16px/1 var(--font-body); color: var(--fg);
+  background: var(--card-raised); border: var(--stroke) solid var(--outline); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-pop); cursor: pointer;
+  transition: transform .08s ease, box-shadow .08s ease;
+}
+.kp-btn:active { transform: translateY(4px); box-shadow: none; }
+.kp-btn:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.kp-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.kp-btn-primary { background: var(--accent); color: var(--accent-fg); }
+.kp-btn-sun { background: var(--sun); color: var(--on-sun); }
+.kp-btn-danger { background: var(--card-raised); color: var(--bad); }
+.kp-btn-tap { width: 96px; height: 56px; font-family: var(--font-display); font-size: 22px; font-weight: 800; border-radius: var(--radius-pill); }
+
+/* Field */
+.kp-field { display: flex; flex-direction: column; gap: var(--space-1); }
+.kp-label { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--muted); }
+.kp-input {
+  width: 100%; box-sizing: border-box; min-height: 48px; padding: 0 var(--space-4);
+  font: 400 16px/24px var(--font-body); color: var(--fg);
+  background: var(--card-raised); border: var(--stroke) solid var(--outline); border-radius: var(--radius-md);
+  outline: none;
+}
+.kp-input:focus { box-shadow: var(--shadow-pop); border-color: var(--accent); }
+.kp-input::placeholder { color: var(--muted); }
+.kp-hint { font-size: 14px; line-height: 20px; color: var(--muted); }
+.kp-error { font-size: 14px; line-height: 20px; color: var(--bad); font-weight: 600; }
+
+/* Chip & lencana */
+.kp-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 6px 6px 6px 14px; font: 600 14px/20px var(--font-body); color: var(--fg);
+  background: var(--card-raised); border: var(--stroke-thin) solid var(--outline); border-radius: var(--radius-pill);
+  box-shadow: 0 3px 0 0 var(--outline); cursor: pointer;
+}
+.kp-chip:active { transform: translateY(3px); box-shadow: none; }
+.kp-chip .kp-chip-count { color: var(--muted); font-variant-numeric: tabular-nums; }
+.kp-badge {
+  display: inline-flex; align-items: center; padding: 2px 10px;
+  font: 700 12px/16px var(--font-body); font-variant-numeric: tabular-nums;
+  border: var(--stroke-thin) solid var(--outline); border-radius: var(--radius-pill);
+  background: var(--accent-soft); color: var(--fg);
+}
+.kp-badge-sun { background: var(--sun); color: var(--on-sun); }
+.kp-badge-warn { background: var(--warn); color: var(--on-sun); }
+.kp-badge-bad { background: var(--bad); color: var(--card-raised); }
+
+/* Jendela (dialog konfirmasi, notifikasi) */
+.kp-window {
+  background: var(--card-raised); color: var(--fg);
+  border: var(--stroke) solid var(--outline); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-pop-lg); overflow: hidden;
+}
+.kp-window-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  padding: 10px var(--space-4); background: var(--sun); color: var(--on-sun);
+  border-bottom: var(--stroke) solid var(--outline);
+  font: 700 14px/20px var(--font-display);
+}
+.kp-window-bar.is-danger { background: var(--bad); color: var(--card-raised); }
+.kp-window-dots { display: inline-flex; gap: 6px; }
+.kp-window-dots i { width: 12px; height: 12px; border-radius: 50%; border: var(--stroke-thin) solid var(--outline); background: var(--card-raised); }
+.kp-window-dots i:nth-child(2) { background: var(--sun); }
+.kp-window-dots i:nth-child(3) { background: var(--accent); }
+.kp-window-body { padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-3); }
+.kp-window-actions { display: flex; gap: var(--space-2); justify-content: flex-end; flex-wrap: wrap; }
+
+/* Bar progres bersegmen (seperti LOADING) */
+.kp-meter {
+  display: grid; grid-template-columns: repeat(10, 1fr); gap: var(--space-1);
+  padding: 5px; background: var(--card-raised);
+  border: var(--stroke) solid var(--outline); border-radius: var(--radius-pill);
+}
+.kp-meter i { height: 18px; border-radius: var(--radius-sm); background: var(--line); }
+.kp-meter i.on { background: var(--accent); }
+.kp-meter i.on:nth-child(n+5) { background: var(--accent-2); }
+.kp-meter i.on:nth-child(n+8) { background: var(--accent-3); }
+.kp-meter.is-low i.on { background: var(--warn); }
+.kp-meter i:first-child { border-top-left-radius: var(--radius-pill); border-bottom-left-radius: var(--radius-pill); }
+.kp-meter i:last-child { border-top-right-radius: var(--radius-pill); border-bottom-right-radius: var(--radius-pill); }
+
+/* Angka ringkasan */
+.kp-stat { display: flex; flex-direction: column; gap: 2px; }
+.kp-stat-label { font: 700 12px/16px var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.kp-stat-value { font: 800 28px/32px var(--font-display); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.kp-stat-value.is-hero { font-size: 40px; line-height: 44px; letter-spacing: -.02em; }
+.kp-stat-delta { font: 700 14px/20px var(--font-body); font-variant-numeric: tabular-nums; }
+.kp-stat-delta.up { color: var(--good); }
+.kp-stat-delta.down { color: var(--bad); }
+
+/* Navigasi bawah */
+.kp-nav {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: var(--space-1);
+  padding: 6px; background: var(--card-raised);
+  border: var(--stroke) solid var(--outline); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-pop);
+}
+.kp-nav a {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0;
+  font: 700 11px/14px var(--font-body); color: var(--muted); text-decoration: none; border-radius: var(--radius-pill);
+}
+.kp-nav a svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.kp-nav a[aria-current="page"] { background: var(--accent); color: var(--accent-fg); }
