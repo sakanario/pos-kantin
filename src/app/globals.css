@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Design system "Kantin Pop" — docs/design-system/ (tokens.json, README.md) */
+/* Design system "Kantin Pop" — docs/design-system/pop/ (tokens.json, README.md) */
 :root {
   --bg: #ffdf4f;
   --bg-dot: #f2c62e;

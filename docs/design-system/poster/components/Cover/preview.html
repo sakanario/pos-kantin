@@ -1,0 +1,57 @@
+<!-- @dsCard height=300 -->
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Kantin Poster</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--bg); color:var(--fg); font-family:var(--font-body); overflow:hidden; }
+  .cover { position:relative; height:300px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:300px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:300px; }
+  .shape { fill:var(--bg-dot); }
+  .ink { fill:var(--accent); }
+  .paper { fill:var(--card); stroke:var(--outline); stroke-width:var(--stroke-thin); }
+  .sun { fill:var(--sun); }
+  .green { fill:var(--accent-2); }
+  .red { fill:var(--bad); }
+  .sm { rx:var(--radius-sm); }
+  .lg { rx:var(--radius-lg); }
+  .soft { filter:drop-shadow(0 4px 8px rgba(30,28,24,.25)); }
+  .words { position:absolute; left:var(--space-8); bottom:var(--space-8); max-width:440px; }
+  .name { margin:0; font-family:var(--font-display); font-size:116px; line-height:.9; font-weight:700; letter-spacing:-.01em; color:var(--fg); }
+  .tag { margin:var(--space-3) 0 0 4px; font-size:14px; line-height:20px; font-weight:500; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 480 300" width="480" height="300">
+<!--
+  blocks      accent 4 tags 156–184×40 (the charcoal name tags, the identity) · card 200×168 panel (the white profile card) with a sun strip 90×10 · accent-2 72×72 (jacket green) · bad 40×40 (bow red) · bg-dot 2 large rounded forms behind — ≈ 35% of 960×300
+  arrangement a left-aligned stack of tags with one pressed (paper bar, ink box), a white card overlapping to the right, satellites in green and red, like the poster's collage of floating UI
+  pattern     the tag boxes: a 24px paper square inside each tag at a space-2 inset, from "label-tag arang dengan kotak putih di kanan"; 4 units
+  scales      tag height 40, stack pitch 52 (40 + space-3); radius-sm 4 on tags and boxes, radius-lg 10 on the card; shadows from shadow-pop
+-->
+<rect class="shape" x="-40" y="150" width="200" height="220" rx="100"/>
+<rect class="shape" x="300" y="-60" width="220" height="150" rx="75"/>
+<g class="soft">
+<rect class="ink sm" x="40" y="40" width="176" height="40" rx="4"/><rect class="paper sm" x="184" y="48" width="24" height="24" rx="4"/>
+<rect class="ink sm" x="40" y="92" width="156" height="40" rx="4"/><rect class="paper sm" x="164" y="100" width="24" height="24" rx="4"/>
+<rect class="paper sm" x="56" y="144" width="168" height="40" rx="4"/><rect class="ink sm" x="192" y="152" width="24" height="24" rx="4"/>
+<rect class="ink sm" x="40" y="196" width="184" height="40" rx="4"/><rect class="paper sm" x="192" y="204" width="24" height="24" rx="4"/>
+<rect class="paper lg" x="256" y="72" width="200" height="168" rx="10"/>
+<rect class="sun sm" x="276" y="208" width="90" height="10" rx="4"/>
+<rect class="green sm" x="276" y="92" width="72" height="72" rx="4"/>
+<rect class="red sm" x="400" y="248" width="40" height="40" rx="4"/>
+</g>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Kantin<br>Poster</h1>
+<p class="tag">Kuning mustard, label-tag arang, kartu putih. Gaya kedua aplikasi Kantin.</p>
+</div>
+</div>
+</body>
+</html>

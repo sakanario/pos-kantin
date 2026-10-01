@@ -1,0 +1,25 @@
+{
+  "v": 3,
+  "layout": "files",
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-01T18:04:18Z"
+  },
+  "title": "Kantin Poster",
+  "namespace": "KantinPoster",
+  "libraries": [],
+  "sections": {},
+  "groups": [],
+  "assetGroups": {},
+  "blobs": {},
+  "docs": {
+    "readme": "project/README.md",
+    "sections": []
+  },
+  "lastChange": {
+    "by": "Satria L",
+    "at": "2026-10-01T18:04:18Z",
+    "via": "Claude Code",
+    "note": "Sistem kedua: kuning mustard, label-tag arang, kartu putih; 8 komponen."
+  }
+}
