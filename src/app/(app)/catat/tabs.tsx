@@ -23,7 +23,7 @@ export function CatatTabs({ aktif, children }: { aktif: TabCatat; children: Reac
 
   return (
     <>
-      <div className="mx-4 mb-4 grid grid-cols-3 rounded-xl border border-line bg-card p-1 text-sm">
+      <div className="mx-4 mb-4 grid grid-cols-3 gap-1 rounded-full border-[3px] border-outline bg-card-raised p-1 text-sm shadow-pop">
         {tabs.map(([t, label, href]) => (
           <button
             key={t}
@@ -35,7 +35,7 @@ export function CatatTabs({ aktif, children }: { aktif: TabCatat; children: Reac
                 router.push(href);
               });
             }}
-            className={`rounded-lg py-2 text-center ${tampil === t ? "bg-accent font-medium text-accent-fg" : "text-muted"}`}
+            className={`rounded-full py-2 text-center font-bold ${tampil === t ? "bg-accent text-accent-fg" : "text-muted"}`}
           >
             {label}
           </button>

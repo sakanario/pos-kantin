@@ -16,7 +16,7 @@ export async function KopiTab({ hariIni, info, menu }: { hariIni: string; info: 
       <KopiForm hariIni={hariIni} kemarin={kemarin} info={info} menu={menu} />
 
       <section>
-        <h2 className="mb-2 text-sm font-medium text-muted">14 hari terakhir (tap + manual, semua menu)</h2>
+        <h2 className="mb-2 text-sm font-bold text-muted">14 hari terakhir (tap + manual, semua menu)</h2>
         <div className="card p-0">
           <table className="num w-full text-sm">
             <thead className="text-xs text-muted">
@@ -45,7 +45,7 @@ export async function KopiTab({ hariIni, info, menu }: { hariIni: string; info: 
 
       {manual.length > 0 && (
         <section>
-          <h2 className="mb-2 text-sm font-medium text-muted">Input manual terakhir</h2>
+          <h2 className="mb-2 text-sm font-bold text-muted">Input manual terakhir</h2>
           <ul className="card divide-y divide-line p-0">
             {manual.map((m) => (
               <li key={m.id} className="flex flex-wrap items-center gap-3 px-4 py-3">

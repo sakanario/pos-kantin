@@ -15,9 +15,9 @@ export async function BepCard() {
   if (b.belumTutupBuku) {
     return (
       <section className="card space-y-1">
-        <h2 className="font-medium">Balik modal</h2>
+        <h2 className="font-bold">Balik modal</h2>
         <div className="text-sm text-muted">Modal masuk</div>
-        <div className="num text-2xl font-semibold">{rupiah(b.modalMasuk + modalSejak)}</div>
+        <div className="num font-display text-2xl font-extrabold">{rupiah(b.modalMasuk + modalSejak)}</div>
         <p className="text-xs text-muted">Progres balik modal muncul setelah tutup buku pertama.</p>
       </section>
     );
@@ -28,10 +28,10 @@ export async function BepCard() {
 
   return (
     <section className="card space-y-2">
-      <h2 className="font-medium">{sudah ? "🎉 Sudah balik modal" : "Balik modal"}</h2>
+      <h2 className="font-bold">{sudah ? "🎉 Sudah balik modal" : "Balik modal"}</h2>
       <div>
         <div className="text-sm text-muted">{sudah ? "Untung bersih sejak mulai" : "Sisa modal belum kembali"}</div>
-        <div className={`num text-2xl font-semibold ${sudah ? "text-good" : ""}`}>{rupiah(Math.abs(b.posisi))}</div>
+        <div className={`num font-display text-2xl font-extrabold ${sudah ? "text-good" : ""}`}>{rupiah(Math.abs(b.posisi))}</div>
         <p className="num text-xs text-muted">
           {sudah ? "" : `dari total modal ${rupiah(b.modalMasuk)} · `}per tutup buku {tanggal(b.waktu)}
         </p>

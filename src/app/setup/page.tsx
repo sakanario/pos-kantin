@@ -8,7 +8,7 @@ export default async function SetupPage() {
   if (await isSetupDone()) redirect("/login");
   return (
     <main className="mx-auto max-w-md px-4 py-8">
-      <h1 className="text-2xl font-semibold">Setup awal</h1>
+      <h1 className="font-display text-2xl font-extrabold">Setup awal</h1>
       <p className="mb-6 text-muted">Diisi sekali saja. Ini jadi titik awal perhitungan.</p>
       <SetupForm />
     </main>

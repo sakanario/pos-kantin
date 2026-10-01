@@ -9,7 +9,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   if (!(await isSetupDone())) redirect("/setup");
   await requireAuth();
   return (
-    <div className="mx-auto min-h-dvh max-w-md pb-24">
+    <div className="mx-auto min-h-dvh max-w-md pb-28">
       {children}
       <BottomNav />
     </div>

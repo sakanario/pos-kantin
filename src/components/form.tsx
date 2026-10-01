@@ -14,8 +14,8 @@ export function SubmitButton({ children, className = "btn-primary w-full" }: { c
 
 export function FormMessage({ state }: { state: FormState }) {
   if (!state) return null;
-  if (state.error) return <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{state.error}</p>;
-  if (state.ok) return <p className="rounded-lg bg-good/10 px-3 py-2 text-sm text-good">{state.ok}</p>;
+  if (state.error) return <p className="rounded-2xl border-2 border-bad bg-bad-soft font-semibold px-3 py-2 text-sm text-bad">{state.error}</p>;
+  if (state.ok) return <p className="rounded-2xl border-2 border-good bg-card-raised font-semibold px-3 py-2 text-sm text-good">{state.ok}</p>;
   return null;
 }
 

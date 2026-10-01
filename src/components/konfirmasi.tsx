@@ -12,7 +12,7 @@ export function KonfirmasiButton({
   pesan,
   ya,
   onConfirm,
-  className = "btn-ghost w-full text-bad",
+  className = "btn-danger w-full",
   ariaLabel,
 }: {
   children: React.ReactNode;
@@ -40,13 +40,22 @@ export function KonfirmasiButton({
         >
           {children}
         </button>
-        {error && <p className="w-full rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
+        {error && <p className="w-full rounded-2xl bg-bad-soft px-3 py-2 text-sm text-bad">{error}</p>}
       </>
     );
   }
 
   return (
-    <div className="w-full space-y-2 rounded-xl border border-bad/40 bg-bad/5 p-3 text-left text-sm">
+    <div className="w-full overflow-hidden rounded-3xl border-[3px] border-outline bg-card-raised text-left text-sm shadow-pop-lg">
+      <div className="flex items-center justify-between gap-3 border-b-[3px] border-outline bg-bad px-4 py-2 font-display text-sm font-bold text-card">
+        <span>Yakin?</span>
+        <span className="flex gap-1.5" aria-hidden="true">
+          <i className="size-3 rounded-full border-2 border-outline bg-card-raised" />
+          <i className="size-3 rounded-full border-2 border-outline bg-sun" />
+          <i className="size-3 rounded-full border-2 border-outline bg-accent" />
+        </span>
+      </div>
+      <div className="space-y-3 p-4">
       <div>{pesan}</div>
       <div className="grid grid-cols-2 gap-2">
         <button type="button" className="btn-ghost py-2 text-sm" disabled={pending} onClick={() => setTanya(false)}>
@@ -54,7 +63,7 @@ export function KonfirmasiButton({
         </button>
         <button
           type="button"
-          className="btn bg-bad py-2 text-sm text-card"
+          className="btn-danger py-2 text-sm"
           disabled={pending}
           onClick={() =>
             startTransition(async () => {
@@ -66,6 +75,7 @@ export function KonfirmasiButton({
         >
           {pending ? "Memproses…" : ya}
         </button>
+      </div>
       </div>
     </div>
   );

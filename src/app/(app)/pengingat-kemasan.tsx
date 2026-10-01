@@ -49,7 +49,7 @@ export function PengingatKemasan({ items }: { items: Pengingat[] }) {
         </section>
       ))}
       {info && (
-        <p className="rounded-lg bg-good/10 px-3 py-2 text-sm text-good" onClick={() => setInfo(null)}>
+        <p className="rounded-2xl border-2 border-good bg-card-raised font-semibold px-3 py-2 text-sm text-good" onClick={() => setInfo(null)}>
           {info}
         </p>
       )}

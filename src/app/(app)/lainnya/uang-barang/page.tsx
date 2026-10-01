@@ -41,7 +41,7 @@ export default async function UangBarangPage() {
         </section>
 
         <section className="card">
-          <h2 className="mb-1 font-medium">📦 Barang</h2>
+          <h2 className="mb-1 font-bold">📦 Barang</h2>
           {adaStok.length === 0 ? (
             <p className="text-sm text-muted">Tidak ada stok barang.</p>
           ) : (

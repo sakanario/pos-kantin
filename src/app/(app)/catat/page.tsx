@@ -31,7 +31,7 @@ export default async function CatatPage(props: PageProps<"/catat">) {
               <BelanjaForm hariIni={p.hariIni} info={info} bahan={formBelanja.bahan} barang={formBelanja.barang} />
               <section>
                 <div className="mb-2 flex items-baseline justify-between">
-                  <h2 className="text-sm font-medium text-muted">Belanja periode ini</h2>
+                  <h2 className="text-sm font-bold text-muted">Belanja periode ini</h2>
                   <Link href="/lainnya/pengeluaran" className="text-sm text-accent">
                     Riwayat semua →
                   </Link>
@@ -45,7 +45,7 @@ export default async function CatatPage(props: PageProps<"/catat">) {
             <>
               <KasForm hariIni={p.hariIni} info={info} />
               <section>
-                <h2 className="mb-2 text-sm font-medium text-muted">Semua setor / tarik</h2>
+                <h2 className="mb-2 text-sm font-bold text-muted">Semua setor / tarik</h2>
                 {semuaKas.length === 0 ? (
                   <p className="card text-sm text-muted">Belum ada catatan.</p>
                 ) : (

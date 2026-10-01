@@ -25,7 +25,7 @@ export default async function Beranda() {
   return (
     <main className="space-y-4 px-4 pt-6">
       <header className="flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold">Kantin</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">Kantin</h1>
         <span className="text-sm text-muted">
           {new Date().toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", weekday: "long", day: "numeric", month: "long" })}
         </span>
@@ -43,7 +43,7 @@ export default async function Beranda() {
 
       <section className="card space-y-2">
         <div className="flex items-baseline justify-between">
-          <h2 className="font-medium">Periode berjalan</h2>
+          <h2 className="font-bold">Periode berjalan</h2>
           <span className="text-xs text-muted">sejak {tanggalJam(p.terakhir.waktu)}</span>
         </div>
         <dl className="num grid grid-cols-2 gap-y-1 text-sm">

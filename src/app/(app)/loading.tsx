@@ -4,7 +4,7 @@ export default function LoadingBeranda() {
   return (
     <main className="space-y-4 px-4 pt-6" aria-busy="true">
       <header className="flex items-baseline justify-between">
-        <h1 className="text-xl font-semibold">Kantin</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight">Kantin</h1>
         <Bone className="h-4 w-32" />
       </header>
       <div className="space-y-1">

@@ -22,7 +22,7 @@ export default async function SetelanPage() {
 
         <section className="card space-y-3">
           <div>
-            <h2 className="font-medium">Laporan</h2>
+            <h2 className="font-bold">Laporan</h2>
             <p className="text-xs text-muted">
               Hitung ulang semua tutup buku dengan rumus terbaru. Input tutup buku (saldo, sisa stok) tidak berubah.
             </p>
@@ -31,7 +31,7 @@ export default async function SetelanPage() {
         </section>
 
         <section className="card space-y-3">
-          <h2 className="font-medium">Ganti PIN</h2>
+          <h2 className="font-bold">Ganti PIN</h2>
           <GantiPinForm />
         </section>
 

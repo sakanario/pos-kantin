@@ -9,9 +9,9 @@ export async function SaldoCard() {
 
   return (
     <section className="card space-y-2">
-      <h2 className="font-medium">Saldo Kantong Kantin</h2>
+      <h2 className="font-bold">Saldo Kantong Kantin</h2>
       <div>
-        <div className="num text-2xl font-semibold">{rupiah(s.saldo)}</div>
+        <div className="num font-display text-2xl font-extrabold">{rupiah(s.saldo)}</div>
         <p className="text-xs text-muted">
           {s.dariSetup ? `tercatat saat setup awal ${tanggal(s.waktu)}` : `tercatat saat tutup buku ${tanggalJam(s.waktu)}`}
         </p>

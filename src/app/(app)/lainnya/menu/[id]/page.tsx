@@ -17,7 +17,7 @@ export default async function MenuPage(props: PageProps<"/lainnya/menu/[id]">) {
     <main>
       <PageHeader title={m ? m.nama : "Menu baru"} back="/lainnya/menu" sub={m && !m.aktif ? "Nonaktif" : undefined} />
       <div className="space-y-4 px-4">
-        {baru && <p className="rounded-lg bg-good/10 px-3 py-2 text-sm text-good">Menu dibuat.</p>}
+        {baru && <p className="rounded-2xl border-2 border-good bg-card-raised font-semibold px-3 py-2 text-sm text-good">Menu dibuat.</p>}
         <MenuForm
           key={m?.id ?? "baru"}
           bahan={bahan}

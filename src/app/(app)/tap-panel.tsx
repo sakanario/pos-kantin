@@ -76,7 +76,7 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
     <section className="space-y-3">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <span className="num text-3xl font-semibold">{terjual}</span>
+          <span className="num font-display text-4xl font-extrabold">{terjual}</span>
           <span className="ml-1.5 text-sm text-muted">terjual hari ini</span>
           <div className="num text-sm text-muted">Rp {omzet.toLocaleString("id-ID")}</div>
         </div>
@@ -84,14 +84,14 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
           type="button"
           aria-pressed={koreksi}
           onClick={() => setKoreksi((k) => !k)}
-          className={`rounded-full border px-3 py-1.5 text-xs ${koreksi ? "border-bad bg-bad text-card" : "border-line text-muted"}`}
+          className={`chip px-3 py-1.5 text-xs ${koreksi ? "bg-bad text-card" : "text-muted"}`}
         >
           {koreksi ? "Batal koreksi" : "Koreksi −1"}
         </button>
       </div>
 
       {koreksi && (
-        <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">Mode koreksi: tombol berikutnya mengurangi 1.</p>
+        <p className="rounded-2xl border-2 border-bad bg-bad-soft px-3 py-2 text-sm font-semibold text-bad">Mode koreksi: tombol berikutnya mengurangi 1.</p>
       )}
 
       {racikan.length > 0 && (
@@ -102,7 +102,7 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
             return (
               <li key={m.id} className="flex items-center gap-3 py-2.5 pl-4 pr-2.5">
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">{m.nama}</div>
+                  <div className="truncate font-bold">{m.nama}</div>
                   <div className="num text-sm text-muted">
                     <span className="font-semibold text-fg">{s.hariIni.terjual}</span> terjual
                     {s.hariIni.sendiri !== 0 && ` · 🙋 ${s.hariIni.sendiri}`}
@@ -112,7 +112,7 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
                   type="button"
                   disabled={!bisa}
                   onClick={() => tap(m.id, "terjual")}
-                  className={`h-14 w-24 shrink-0 text-xl shadow-sm ${koreksi ? "btn border border-bad bg-card text-bad" : "btn-primary"}`}
+                  className={`h-14 w-24 shrink-0 rounded-full font-display text-2xl font-extrabold ${koreksi ? "btn-danger" : "btn-primary"}`}
                 >
                   {koreksi ? "−1" : "+1"}
                 </button>
@@ -123,7 +123,7 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
       )}
 
       <div>
-        <h2 className="mb-1.5 text-xs text-muted">Sendiri (diminum / dimakan, tester, terbuang)</h2>
+        <h2 className="mb-2 text-xs font-semibold text-muted">Sendiri (diminum / dimakan, tester, terbuang)</h2>
         <div className="flex flex-wrap gap-2">
           {menu.map((m) => {
             const s = optimistic[m.id];
@@ -134,14 +134,14 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
                 type="button"
                 disabled={!bisa}
                 onClick={() => tap(m.id, "sendiri")}
-                className={`flex items-center gap-2 rounded-full border bg-card py-1.5 pl-3 pr-1.5 text-sm disabled:opacity-40 ${koreksi ? "border-bad" : "border-line"}`}
+                className={`chip py-1.5 pl-3 pr-1.5 disabled:opacity-40 ${koreksi ? "border-bad" : ""}`}
               >
                 <span>
                   {m.jenis === "racikan" ? "🙋" : "🍫"} {m.nama}
                 </span>
                 <span className="num text-muted">{s.hariIni.sendiri}</span>
                 <span
-                  className={`num rounded-full px-2 py-0.5 text-xs font-semibold ${koreksi ? "bg-bad text-card" : "bg-accent-soft text-accent"}`}
+                  className={`num badge ${koreksi ? "bg-bad text-card" : "bg-accent-soft text-accent"}`}
                 >
                   {koreksi ? "−1" : "+1"}
                 </span>
@@ -151,18 +151,18 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
         </div>
       </div>
 
-      {error && <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
+      {error && <p className="rounded-2xl bg-bad-soft px-3 py-2 text-sm text-bad">{error}</p>}
 
       {terakhir && (
-        <div className="fixed inset-x-0 bottom-20 z-20 mx-auto max-w-md px-4">
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-line bg-card px-4 py-3 text-sm shadow-lg">
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-20 mx-auto max-w-md px-4">
+          <div className="flex items-center justify-between gap-3 rounded-2xl border-[3px] border-outline bg-fg px-4 py-3 text-sm font-semibold text-card shadow-pop">
             <span className="min-w-0 truncate">
               {terakhir.batal
                 ? "Dibatalkan"
                 : `${terakhir.delta === 1 ? "+1" : "−1"} ${terakhir.nama}${terakhir.jenis === "sendiri" ? " (sendiri)" : ""}`}
             </span>
             {!terakhir.batal && (
-              <button type="button" onClick={batalkan} className="shrink-0 font-semibold text-accent">
+              <button type="button" onClick={batalkan} className="shrink-0 rounded-full border-2 border-outline bg-sun px-3 py-1 font-bold text-on-sun">
                 Batalkan
               </button>
             )}

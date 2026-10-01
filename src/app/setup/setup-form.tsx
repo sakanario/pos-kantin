@@ -9,7 +9,7 @@ export function SetupForm() {
   return (
     <form action={action} className="space-y-5">
       <section className="card space-y-3">
-        <h2 className="font-medium">PIN</h2>
+        <h2 className="font-bold">PIN</h2>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="label">PIN (4–6 digit)</label>
@@ -23,7 +23,7 @@ export function SetupForm() {
       </section>
 
       <section className="card space-y-3">
-        <h2 className="font-medium">Kantong Kantin (Jago)</h2>
+        <h2 className="font-bold">Kantong Kantin (Jago)</h2>
         <div>
           <label className="label">Saldo saat ini</label>
           <RupiahInput name="saldo" defaultValue={0} required />

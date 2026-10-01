@@ -26,7 +26,7 @@ export default async function DaftarMenuPage() {
         {grup.map(([judul, items]) =>
           items.length === 0 ? null : (
             <section key={judul}>
-              <h2 className="mb-2 text-sm font-medium text-muted">{judul}</h2>
+              <h2 className="mb-2 text-sm font-bold text-muted">{judul}</h2>
               <ul className="card divide-y divide-line p-0">
                 {items.map((m) => (
                   <li key={m.id}>

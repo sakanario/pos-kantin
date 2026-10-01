@@ -62,7 +62,7 @@ export default async function RiwayatBelanjaPage(props: PageProps<"/lainnya/peng
         <section className="card">
           <div className="flex items-baseline justify-between">
             <span className="text-sm text-muted">Total bulan ini</span>
-            <span className="num text-2xl font-semibold">{rupiah(total())}</span>
+            <span className="num font-display text-2xl font-extrabold">{rupiah(total())}</span>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2 text-center">
             {(Object.keys(labelKategori) as Kategori[]).map((k) => (
@@ -87,7 +87,7 @@ export default async function RiwayatBelanjaPage(props: PageProps<"/lainnya/peng
         </section>
 
         <section>
-          <h2 className="mb-2 text-sm font-medium text-muted">
+          <h2 className="mb-2 text-sm font-bold text-muted">
             {items.length} catatan{pribadi > 0 && ` · ${rupiah(pribadi)} dibayar pribadi`}
           </h2>
           <BelanjaList items={items} kosong="Tidak ada belanja di bulan ini." />

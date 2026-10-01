@@ -38,7 +38,7 @@ export default async function DaftarBahanPage() {
 
         {belum.length > 0 && (
           <section className="space-y-2">
-            <h2 className="text-sm font-medium text-muted">Belanja bahan belum ditandai ({belum.length})</h2>
+            <h2 className="text-sm font-bold text-muted">Belanja bahan belum ditandai ({belum.length})</h2>
             <p className="text-xs text-muted">
               Belanja dari sebelum ada fitur bahan. Tandai bahannya supaya harganya dipakai untuk HPP.
               {bahan.length === 0 && " Buat bahannya dulu di bawah."}

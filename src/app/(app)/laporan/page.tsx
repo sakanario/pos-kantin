@@ -46,7 +46,7 @@ export default async function LaporanPage() {
       <div className="space-y-4 px-4">
         {adaBasi && <LaporanBasi />}
         <section className="card">
-          <h2 className="mb-3 font-medium">Racikan terjual, 14 hari terakhir</h2>
+          <h2 className="mb-3 font-bold">Racikan terjual, 14 hari terakhir</h2>
           <div className="flex h-32 items-end gap-1">
             {kopiHarian.map((d) => (
               <div key={d.tgl} className="flex flex-1 flex-col items-center gap-1" title={`${d.tgl}: ${d.jumlah} cup`}>
@@ -69,12 +69,12 @@ export default async function LaporanPage() {
 
         {bulanan.size > 0 && (
           <section>
-            <h2 className="mb-2 text-sm font-medium text-muted">Per bulan · untung jualan</h2>
+            <h2 className="mb-2 text-sm font-bold text-muted">Per bulan · untung jualan</h2>
             <div className="space-y-2">
               {[...bulanan.entries()].map(([k, b]) => (
                 <div key={k} className="card">
                   <div className="flex items-baseline justify-between">
-                    <h3 className="font-medium">{namaBulan(k)}</h3>
+                    <h3 className="font-bold">{namaBulan(k)}</h3>
                     <span className="text-right">
                       <span className={`num block text-lg font-semibold ${b.untung < 0 ? "text-bad" : ""}`}>
                         {plus(b.untung)}
@@ -107,7 +107,7 @@ export default async function LaporanPage() {
         )}
 
         <section>
-          <h2 className="mb-2 text-sm font-medium text-muted">Per periode tutup buku · untung jualan</h2>
+          <h2 className="mb-2 text-sm font-bold text-muted">Per periode tutup buku · untung jualan</h2>
           {periode.length === 0 ? (
             <p className="card text-sm text-muted">
               Belum ada tutup buku. Laporan muncul setelah kamu melakukan{" "}

@@ -48,7 +48,7 @@ export function TutupBukuWizard({
           👀 Ini baru <b>pratinjau</b>, belum tersimpan. Tekan <b>Simpan &amp; kunci</b> di bawah supaya masuk ke Laporan.
         </p>
         <HasilView h={hasil} />
-        {error && <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
+        {error && <p className="rounded-2xl border-2 border-bad bg-bad-soft font-semibold px-3 py-2 text-sm text-bad">{error}</p>}
         <div className="sticky bottom-20 grid grid-cols-2 gap-3 bg-bg py-2">
           <button className="btn-ghost" disabled={pending} onClick={() => setHasil(null)}>
             ← Ubah isian
@@ -65,7 +65,7 @@ export function TutupBukuWizard({
   return (
     <form action={hitung} className="space-y-4">
       <section className="card space-y-2">
-        <h2 className="font-medium">1. Saldo Kantong Kantin</h2>
+        <h2 className="font-bold">1. Saldo Kantong Kantin</h2>
         <p className="text-sm text-muted">
           Pastikan cash di kotak sudah ditransfer ke kantong sebelum melihat saldo.
         </p>
@@ -75,7 +75,7 @@ export function TutupBukuWizard({
 
       {barang.length > 0 && (
         <section className="card space-y-3">
-          <h2 className="font-medium">2. Sisa stok</h2>
+          <h2 className="font-bold">2. Sisa stok</h2>
           <p className="text-sm text-muted">Hitung sisa biji tiap barang.</p>
           {barang.map((b) => (
             <div key={b.id}>
@@ -97,7 +97,7 @@ export function TutupBukuWizard({
         </section>
       )}
 
-      {error && <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
+      {error && <p className="rounded-2xl border-2 border-bad bg-bad-soft font-semibold px-3 py-2 text-sm text-bad">{error}</p>}
       <button type="submit" disabled={pending} className="btn-primary w-full">
         {pending ? "Menghitung…" : "Hitung"}
       </button>

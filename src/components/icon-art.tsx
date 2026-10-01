@@ -8,10 +8,10 @@ export function IconArt({ size }: { size: number }) {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        background: "#92400e",
-        color: "#fef3c7",
+        background: "#3450b8",
+        color: "#ffdf4f",
         fontSize: size * 0.55,
-        fontWeight: 700,
+        fontWeight: 800,
         fontFamily: "sans-serif",
       }}
     >

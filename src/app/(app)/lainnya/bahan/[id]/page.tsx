@@ -38,7 +38,7 @@ export default async function DetailBahanPage(props: PageProps<"/lainnya/bahan/[
         )}
 
         <section>
-          <h2 className="mb-2 text-sm font-medium text-muted">3 pembelian terakhir</h2>
+          <h2 className="mb-2 text-sm font-bold text-muted">3 pembelian terakhir</h2>
           {b.pembelian.length === 0 ? (
             <p className="card text-sm text-muted">Belum ada belanja bahan ini. Harga awal yang dipakai.</p>
           ) : (

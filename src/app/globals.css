@@ -1,71 +1,128 @@
 @import "tailwindcss";
 
+/* Design system "Kantin Pop" — docs/design-system/ (tokens.json, README.md) */
 :root {
-  --bg: #f7f5f2;
-  --card: #ffffff;
-  --fg: #1c1917;
-  --muted: #78716c;
-  --line: #e7e5e4;
-  --accent: #92400e;
+  --bg: #ffdf4f;
+  --bg-dot: #f2c62e;
+  --card: #fff6ec;
+  --card-raised: #ffffff;
+  --fg: #15163a;
+  --muted: #57567a;
+  --outline: #15163a;
+  --line: #ead9c4;
+  --accent: #3450b8;
   --accent-fg: #ffffff;
-  --accent-soft: #fef3c7;
-  --good: #15803d;
-  --bad: #b91c1c;
+  --accent-soft: #dce3ff;
+  --accent-2: #5a78e6;
+  --accent-3: #9cb2ff;
+  --sun: #ffd21f;
+  --on-sun: #15163a;
+  --good: #17723f;
+  --bad: #b3202a;
+  --bad-soft: #ffe1dc;
+  --warn: #f0a81c;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #0c0a09;
-    --card: #1c1917;
-    --fg: #f5f5f4;
-    --muted: #a8a29e;
-    --line: #292524;
-    --accent: #f59e0b;
-    --accent-fg: #1c1917;
-    --accent-soft: #292015;
-    --good: #4ade80;
-    --bad: #f87171;
+    --bg: #121433;
+    --bg-dot: #22265a;
+    --card: #1b1e45;
+    --card-raised: #262a5e;
+    --fg: #fff4e6;
+    --muted: #a9addb;
+    --outline: #05061a;
+    --line: #323770;
+    --accent: #8ea2ff;
+    --accent-fg: #121433;
+    --accent-soft: #2c3578;
+    --accent-2: #6f86f0;
+    --accent-3: #4a5bc4;
+    --sun: #ffd84a;
+    --on-sun: #15163a;
+    --good: #5bd68a;
+    --bad: #ff8a8a;
+    --bad-soft: #4a1f35;
+    --warn: #ffc24a;
   }
 }
 
 @theme inline {
   --color-bg: var(--bg);
+  --color-bg-dot: var(--bg-dot);
   --color-card: var(--card);
+  --color-card-raised: var(--card-raised);
   --color-fg: var(--fg);
   --color-muted: var(--muted);
+  --color-outline: var(--outline);
   --color-line: var(--line);
   --color-accent: var(--accent);
   --color-accent-fg: var(--accent-fg);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-2: var(--accent-2);
+  --color-accent-3: var(--accent-3);
+  --color-sun: var(--sun);
+  --color-on-sun: var(--on-sun);
   --color-good: var(--good);
   --color-bad: var(--bad);
-  --font-sans: var(--font-geist-sans);
+  --color-bad-soft: var(--bad-soft);
+  --color-warn: var(--warn);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-heading);
+  --shadow-pop: 0 4px 0 0 var(--outline);
+  --shadow-pop-lg: 0 8px 0 0 var(--outline);
 }
 
 body {
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--bg-dot) 2px, transparent 2.5px);
+  background-size: 16px 16px;
+  background-attachment: fixed;
   color: var(--fg);
   -webkit-tap-highlight-color: transparent;
 }
 
+h1,
+h2,
+h3 {
+  font-family: var(--font-heading);
+}
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
 /* v4: @utility agar bisa di-@apply satu sama lain */
 @utility card {
-  @apply rounded-2xl border border-line bg-card p-4;
+  @apply rounded-3xl border-[3px] border-outline bg-card p-4 shadow-pop-lg;
 }
 @utility input {
-  @apply w-full rounded-xl border border-line bg-card px-3 py-2.5 text-base outline-none focus:border-accent;
+  @apply min-h-12 w-full rounded-2xl border-[3px] border-outline bg-card-raised px-4 py-2.5 text-base outline-none placeholder:text-muted focus:border-accent focus:shadow-pop;
 }
 @utility label {
-  @apply mb-1 block text-sm text-muted;
+  @apply mb-1 block text-sm font-semibold text-muted;
 }
 @utility btn {
-  @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 font-medium transition active:scale-[0.98] disabled:opacity-50;
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border-[3px] border-outline px-4 py-2.5 font-bold shadow-pop transition-[transform,box-shadow] duration-75 active:translate-y-1 active:shadow-none disabled:translate-y-0 disabled:opacity-45;
 }
 @utility btn-primary {
   @apply btn bg-accent text-accent-fg;
 }
+@utility btn-sun {
+  @apply btn bg-sun text-on-sun;
+}
 @utility btn-ghost {
-  @apply btn border border-line bg-card;
+  @apply btn bg-card-raised text-fg;
+}
+@utility btn-danger {
+  @apply btn bg-card-raised text-bad;
+}
+@utility chip {
+  @apply inline-flex items-center gap-2 rounded-full border-2 border-outline bg-card-raised text-sm font-semibold shadow-[0_3px_0_0_var(--outline)] active:translate-y-[3px] active:shadow-none disabled:translate-y-0;
+}
+@utility badge {
+  @apply inline-flex items-center rounded-full border-2 border-outline px-2.5 py-0.5 text-xs font-bold;
 }
 @utility num {
   font-variant-numeric: tabular-nums;

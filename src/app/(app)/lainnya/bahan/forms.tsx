@@ -41,7 +41,7 @@ export function BahanForm({ edit }: { edit?: { id: number; nama: string; satuan:
   const [state, action] = useActionState(edit ? ubahBahanAction.bind(null, edit.id) : tambahBahanAction, undefined);
   return (
     <form action={action} className="card space-y-3">
-      {!edit && <h2 className="font-medium">Bahan baru</h2>}
+      {!edit && <h2 className="font-bold">Bahan baru</h2>}
       <div>
         <label className="label">Nama (peran di resep, bukan merek)</label>
         <input name="nama" required defaultValue={edit?.nama} placeholder="misal: Susu, Kopi, Cup 12oz" className="input" />
@@ -79,7 +79,7 @@ export function TandaiForm({ belanja, bahan }: { belanja: { id: number; nama: st
   const [state, action] = useActionState(tandaiBelanjaAction.bind(null, belanja.id), undefined);
   const [bahanId, setBahanId] = useState<number | null>(null);
   const b = bahan.find((x) => x.id === bahanId);
-  if (state?.ok) return <p className="rounded-lg bg-good/10 px-3 py-2 text-sm text-good">{state.ok}</p>;
+  if (state?.ok) return <p className="rounded-2xl border-2 border-good bg-card-raised font-semibold px-3 py-2 text-sm text-good">{state.ok}</p>;
   return (
     <form action={action} className="space-y-2">
       <input type="hidden" name="bahan_id" value={bahanId ?? ""} />
@@ -140,7 +140,7 @@ export function PakaiIniForm({
 }) {
   const [buka, setBuka] = useState(false);
   const [state, action] = useActionState(pakaiKemasanAction.bind(null, belanjaId), undefined);
-  if (state?.ok) return <p className="w-full rounded-lg bg-good/10 px-3 py-2 text-sm text-good">{state.ok}</p>;
+  if (state?.ok) return <p className="w-full rounded-2xl border-2 border-good bg-card-raised font-semibold px-3 py-2 text-sm text-good">{state.ok}</p>;
   if (aktif) return null;
   if (!buka)
     return (

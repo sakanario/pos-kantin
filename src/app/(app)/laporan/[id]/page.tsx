@@ -21,7 +21,7 @@ export default async function DetailLaporan(props: PageProps<"/laporan/[id]">) {
       <div className="space-y-4 px-4">
         {r.basi ? <LaporanBasi /> : <HasilView h={r.hasil} />}
         <section>
-          <h2 className="mb-2 text-sm font-medium text-muted">Belanja periode ini</h2>
+          <h2 className="mb-2 text-sm font-bold text-muted">Belanja periode ini</h2>
           <BelanjaList items={belanja} />
         </section>
         <Link href="/laporan" className="btn-ghost w-full">

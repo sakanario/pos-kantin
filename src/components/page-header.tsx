@@ -5,11 +5,11 @@ export function PageHeader({ title, sub, back }: { title: string; sub?: React.Re
   return (
     <header className="px-4 pb-3 pt-6">
       {back && (
-        <Link href={back} className="-ml-1 mb-1 inline-block text-sm text-accent">
+        <Link href={back} className="-ml-1 mb-1 inline-block text-sm font-bold text-accent">
           ‹ Kembali
         </Link>
       )}
-      <h1 className="text-xl font-semibold">{title}</h1>
+      <h1 className="text-2xl font-extrabold tracking-tight">{title}</h1>
       {sub && <p className="text-sm text-muted">{sub}</p>}
     </header>
   );

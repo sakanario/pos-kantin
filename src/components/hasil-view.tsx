@@ -55,7 +55,7 @@ export function HasilView({ h }: { h: HasilPeriode }) {
   return (
     <div className="space-y-3">
       {h.peringatan.map((p) => (
-        <p key={p} className="rounded-xl bg-bad/10 px-3 py-2 text-sm text-bad">
+        <p key={p} className="rounded-2xl border-2 border-bad bg-bad-soft font-semibold px-3 py-2 text-sm text-bad">
           ⚠️ {p}
         </p>
       ))}
@@ -74,7 +74,7 @@ export function HasilView({ h }: { h: HasilPeriode }) {
       </section>
 
       <section className="card">
-        <h3 className="mb-1 font-medium">Untung jualan (perkiraan per item)</h3>
+        <h3 className="mb-1 font-bold">Untung jualan (perkiraan per item)</h3>
         {h.menu.length === 0 && <p className="text-sm text-muted">Belum ada menu.</p>}
         {h.menu.map((m) => (
           <UntungMenu key={m.id} m={m} />
@@ -99,7 +99,7 @@ export function HasilView({ h }: { h: HasilPeriode }) {
       </section>
 
       <section className="card">
-        <h3 className="mb-1 font-medium">Uang bersih</h3>
+        <h3 className="mb-1 font-bold">Uang bersih</h3>
         <Row label="Omzet nyata (dari saldo)" value={rupiah(h.omzetNyata)} />
         <Row label="Belanja" value={rupiah(-h.belanjaTotal)} />
         <Row label="Bahan" value={rupiah(h.belanjaBahan)} sub />
@@ -110,7 +110,7 @@ export function HasilView({ h }: { h: HasilPeriode }) {
       </section>
 
       <section className="card">
-        <h3 className="mb-1 font-medium">Omzet: seharusnya vs nyata</h3>
+        <h3 className="mb-1 font-bold">Omzet: seharusnya vs nyata</h3>
         {h.menu.map((m) => (
           <Row
             key={m.id}
