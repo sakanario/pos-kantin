@@ -8,6 +8,8 @@ export default function LoadingLainnya() {
         <Bone className="h-16 rounded-2xl" />
         <Bone className="h-16 rounded-2xl" />
         <Bone className="h-16 rounded-2xl" />
+        <Bone className="h-16 rounded-2xl" />
+        <Bone className="h-16 rounded-2xl" />
       </div>
     </main>
   );

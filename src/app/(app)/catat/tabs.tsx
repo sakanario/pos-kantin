@@ -6,7 +6,7 @@ import { CardSkeleton } from "@/components/skeleton";
 
 const tabs = [
   ["belanja", "Belanja", "/catat"],
-  ["kopi", "Kopi", "/catat?tab=kopi"],
+  ["kopi", "Penjualan", "/catat?tab=kopi"],
   ["kas", "Setor / Tarik", "/catat?tab=kas"],
 ] as const;
 

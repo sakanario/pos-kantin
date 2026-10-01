@@ -7,9 +7,7 @@ import {
   hapusKasAction,
   hapusPenjualanManualAction,
   tambahPenjualanManualAction,
-  tambahBelanjaAction,
   tambahKasAction,
-  ubahBelanjaAction,
   ubahKasAction,
   type FormState,
 } from "@/app/actions";
@@ -18,7 +16,7 @@ import { FormMessage, RupiahInput, SubmitButton } from "@/components/form";
 /** Tanggal-tanggal tutup buku, untuk menentukan catatan masuk periode mana. */
 export type InfoTutup = { setup: string; tutup: string[] };
 
-function useResetOnOk(state: FormState, aktif: boolean) {
+export function useResetOnOk(state: FormState, aktif: boolean) {
   const ref = useRef<HTMLFormElement>(null);
   useEffect(() => {
     if (aktif && state?.ok) ref.current?.reset();
@@ -31,7 +29,7 @@ function namaTanggal(iso: string) {
 }
 
 /** Input tanggal + pilihan sebelum/sesudah tutup buku jika tanggalnya jatuh di hari tutup buku. */
-function TanggalField({
+export function TanggalField({
   hariIni,
   info,
   awal,
@@ -79,7 +77,7 @@ function TanggalField({
       </div>
       {hariTutup && (
         <div>
-          <label className="label">Tanggal ini ada tutup buku. Belanjanya terjadi…</label>
+          <label className="label">Tanggal ini ada tutup buku. Terjadinya…</label>
           <select
             name="posisi"
             defaultValue={posisiAwal}
@@ -93,7 +91,7 @@ function TanggalField({
       )}
       {tanggal < info.setup && (
         <p className="text-xs text-muted">
-          Sebelum setup awal ({namaTanggal(info.setup)}), jadi dihitung di periode pertama. Untuk Beng Beng: jangan
+          Sebelum setup awal ({namaTanggal(info.setup)}), jadi dihitung di periode pertama. Untuk barang jadi: jangan
           dicatat kalau sudah termasuk stok awal waktu setup.
         </p>
       )}
@@ -103,113 +101,6 @@ function TanggalField({
         </p>
       )}
     </div>
-  );
-}
-
-export type BelanjaAwal = {
-  id: number;
-  kategori: "bb" | "kopi" | "lain";
-  nama: string;
-  qtyPcs: number | null;
-  total: number;
-  sumber: "kantong" | "pribadi";
-  catatan: string | null;
-  tanggal: string;
-  posisi: "sebelum" | "sesudah";
-};
-
-export function BelanjaForm({
-  isiDus,
-  hariIni,
-  info,
-  edit,
-}: {
-  isiDus: number;
-  hariIni: string;
-  info: InfoTutup;
-  edit?: BelanjaAwal;
-}) {
-  const [state, action] = useActionState(
-    edit ? ubahBelanjaAction.bind(null, edit.id) : tambahBelanjaAction,
-    undefined,
-  );
-  const [kategori, setKategori] = useState<"bb" | "kopi" | "lain">(edit?.kategori ?? "bb");
-  const ref = useResetOnOk(state, !edit);
-
-  return (
-    <form ref={ref} action={action} className="card space-y-3">
-      {/* Hidden input, bukan radio: form.reset() setelah simpan tidak mengubah nilainya */}
-      <input type="hidden" name="kategori" value={kategori} />
-      <div className="grid grid-cols-3 gap-2 text-sm">
-        {(
-          [
-            ["bb", "🍫 Beng Beng"],
-            ["kopi", "☕ Bahan Kopi"],
-            ["lain", "📦 Lain-lain"],
-          ] as const
-        ).map(([k, l]) => (
-          <button
-            key={k}
-            type="button"
-            aria-pressed={kategori === k}
-            onClick={() => setKategori(k)}
-            className={`rounded-xl border px-2 py-2 text-center ${kategori === k ? "border-accent bg-accent-soft font-medium" : "border-line"}`}
-          >
-            {l}
-          </button>
-        ))}
-      </div>
-
-      {kategori === "bb" ? (
-        <div>
-          <label className="label">Jumlah</label>
-          <div className="flex gap-2">
-            <input
-              name="jumlah"
-              inputMode="numeric"
-              required
-              defaultValue={edit?.qtyPcs ?? 1}
-              className="input num flex-1"
-            />
-            <select name="satuan" defaultValue={edit ? "pcs" : "dus"} className="input w-28">
-              <option value="dus">dus ({isiDus})</option>
-              <option value="pcs">pcs</option>
-            </select>
-          </div>
-        </div>
-      ) : (
-        <div>
-          <label className="label">Nama barang</label>
-          <input
-            name="nama"
-            required
-            defaultValue={edit && edit.kategori !== "bb" ? edit.nama : undefined}
-            placeholder={kategori === "kopi" ? "misal: Susu 1L, Cup 16oz 50pcs" : "misal: Plastik, Gas"}
-            className="input"
-          />
-        </div>
-      )}
-
-      <div>
-        <label className="label">Total harga</label>
-        <RupiahInput name="total" required defaultValue={edit?.total} />
-      </div>
-
-      <div>
-        <label className="label">Dibayar dari</label>
-        <select name="sumber" defaultValue={edit?.sumber ?? "kantong"} className="input">
-          <option value="kantong">Kantong Kantin</option>
-          <option value="pribadi">Uang pribadi</option>
-        </select>
-      </div>
-
-      <TanggalField hariIni={hariIni} info={info} awal={edit?.tanggal ?? hariIni} posisiAwal={edit?.posisi} />
-
-      <input name="catatan" placeholder="Catatan (opsional)" defaultValue={edit?.catatan ?? undefined} className="input" />
-      <FormMessage state={state} />
-      <SubmitButton>{edit ? "Simpan perubahan" : "Simpan belanja"}</SubmitButton>
-      {edit && <HapusDanKembali id={edit.id} jenis="belanja" />}
-    </form>
   );
 }
 
@@ -253,7 +144,7 @@ export function KasForm({ hariIni, info, edit }: { hariIni: string; info: InfoTu
   );
 }
 
-function HapusDanKembali({ id, jenis }: { id: number; jenis: "belanja" | "kas" }) {
+export function HapusDanKembali({ id, jenis }: { id: number; jenis: "belanja" | "kas" }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   return (
@@ -278,32 +169,66 @@ function HapusDanKembali({ id, jenis }: { id: number; jenis: "belanja" | "kas" }
   );
 }
 
-const jenisTap = [
-  ["kopi", "☕ Kopi terjual"],
-  ["kopi_sendiri", "🙋 Kopi sendiri"],
-  ["bb_sendiri", "🍫 Beng Beng sendiri"],
-] as const;
+export type MenuManual = { id: number; nama: string; jenis: "racikan" | "barang_jadi" };
 
-export function KopiForm({ hariIni, kemarin, info }: { hariIni: string; kemarin: string; info: InfoTutup }) {
+export function KopiForm({
+  hariIni,
+  kemarin,
+  info,
+  menu,
+}: {
+  hariIni: string;
+  kemarin: string;
+  info: InfoTutup;
+  menu: MenuManual[];
+}) {
   const [state, action] = useActionState(tambahPenjualanManualAction, undefined);
-  const [jenis, setJenis] = useState<(typeof jenisTap)[number][0]>("kopi");
+  const [menuId, setMenuId] = useState(menu[0]?.id ?? 0);
+  const [jenis, setJenis] = useState<"terjual" | "sendiri">("terjual");
   const ref = useResetOnOk(state, true);
+  const dipilih = menu.find((m) => m.id === menuId);
+  const jenisEfektif = dipilih?.jenis === "barang_jadi" ? "sendiri" : jenis;
+  if (menu.length === 0) return <p className="card text-sm text-muted">Belum ada menu aktif.</p>;
   return (
     <form ref={ref} action={action} className="card space-y-3">
-      <input type="hidden" name="jenis" value={jenis} />
-      <div className="grid grid-cols-3 gap-2 text-sm">
-        {jenisTap.map(([k, l]) => (
+      {/* Hidden input, bukan radio: form.reset() setelah simpan tidak mengubah nilainya */}
+      <input type="hidden" name="menu_id" value={menuId} />
+      <input type="hidden" name="jenis" value={jenisEfektif} />
+      <div className="flex flex-wrap gap-2 text-sm">
+        {menu.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            aria-pressed={menuId === m.id}
+            onClick={() => setMenuId(m.id)}
+            className={`rounded-xl border px-3 py-2 ${menuId === m.id ? "border-accent bg-accent-soft font-medium" : "border-line"}`}
+          >
+            {m.jenis === "racikan" ? "☕" : "🍫"} {m.nama}
+          </button>
+        ))}
+      </div>
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        {(
+          [
+            ["terjual", "Terjual"],
+            ["sendiri", "🙋 Sendiri"],
+          ] as const
+        ).map(([k, l]) => (
           <button
             key={k}
             type="button"
-            aria-pressed={jenis === k}
+            aria-pressed={jenisEfektif === k}
+            disabled={k === "terjual" && dipilih?.jenis === "barang_jadi"}
             onClick={() => setJenis(k)}
-            className={`rounded-xl border px-2 py-2 text-center ${jenis === k ? "border-accent bg-accent-soft font-medium" : "border-line"}`}
+            className={`rounded-xl border px-2 py-2 text-center disabled:opacity-40 ${jenisEfektif === k ? "border-accent bg-accent-soft font-medium" : "border-line"}`}
           >
             {l}
           </button>
         ))}
       </div>
+      {dipilih?.jenis === "barang_jadi" && (
+        <p className="text-xs text-muted">Barang jadi terjual dihitung saat tutup buku; di sini hanya yang dimakan sendiri.</p>
+      )}
       <div>
         <label className="label">Jumlah (cup / pcs)</label>
         <input name="jumlah" inputMode="numeric" required placeholder="misal 12" className="input num" />

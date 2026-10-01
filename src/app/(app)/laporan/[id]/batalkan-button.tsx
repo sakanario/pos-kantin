@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { batalkanTutupBukuAction } from "@/app/actions";
 import { rupiah } from "@/lib/format";
 
-export function BatalkanTutupBukuButton({ id, saldo, sisaBb }: { id: number; saldo: number; sisaBb: number }) {
+export function BatalkanTutupBukuButton({ id, saldo, sisa }: { id: number; saldo: number; sisa: string[] }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   return (
@@ -19,7 +19,8 @@ export function BatalkanTutupBukuButton({ id, saldo, sisaBb }: { id: number; sal
               `Laporan periode ini dihapus dan catatannya kembali ke periode berjalan. ` +
               `Catatan belanja, kopi, dan setor/tarik tidak ikut terhapus.\n\n` +
               `Isian yang dihapus (catat kalau mau tutup buku ulang):\n` +
-              `• Saldo kantong: ${rupiah(saldo)}\n• Sisa Beng Beng: ${sisaBb} pcs`,
+              `• Saldo kantong: ${rupiah(saldo)}` +
+              sisa.map((s) => `\n• Sisa ${s}`).join(""),
           );
           if (!ok) return;
           setError(null);

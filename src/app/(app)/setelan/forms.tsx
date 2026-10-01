@@ -1,39 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { gantiPinAction, hitungUlangSemuaAction, ubahHargaAction, ubahIsiDusAction } from "@/app/actions";
-import { FormMessage, RupiahInput, SubmitButton } from "@/components/form";
-
-export function HargaForm({ hargaKey, label, nilai }: { hargaKey: string; label: string; nilai: number }) {
-  const [state, action] = useActionState(ubahHargaAction, undefined);
-  return (
-    <form action={action} className="space-y-2">
-      <input type="hidden" name="key" value={hargaKey} />
-      <label className="label">{label}</label>
-      <div className="flex gap-2">
-        <div className="flex-1">
-          <RupiahInput name="nilai" defaultValue={nilai} required />
-        </div>
-        <SubmitButton className="btn-ghost">Simpan</SubmitButton>
-      </div>
-      <FormMessage state={state} />
-    </form>
-  );
-}
-
-export function IsiDusForm({ isiDus }: { isiDus: number }) {
-  const [state, action] = useActionState(ubahIsiDusAction, undefined);
-  return (
-    <form action={action} className="space-y-2">
-      <label className="label">Isi per dus (pcs)</label>
-      <div className="flex gap-2">
-        <input name="isi_dus" inputMode="numeric" defaultValue={isiDus} required className="input num flex-1" />
-        <SubmitButton className="btn-ghost">Simpan</SubmitButton>
-      </div>
-      <FormMessage state={state} />
-    </form>
-  );
-}
+import { gantiPinAction, hitungUlangSemuaAction } from "@/app/actions";
+import { FormMessage, SubmitButton } from "@/components/form";
 
 export function GantiPinForm() {
   const [state, action] = useActionState(gantiPinAction, undefined);

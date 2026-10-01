@@ -1,16 +1,16 @@
 "use server";
 
-import { and, asc, eq, gt, lt } from "drizzle-orm";
+import { and, asc, eq, gt, lt, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { belanja, harga, kas, tapEvent, tutupBuku } from "@/db/schema";
+import { bahan, bahanAktif, belanja, harga, kas, menu, resep, tapEvent, tutupBuku } from "@/db/schema";
 import { cekPin, endSession, hashPin, isValidPin, requireAuth, startSession } from "@/lib/auth";
-import { hitungPeriode, type HasilPeriode } from "@/lib/calc";
-import { awalData, getDataPeriode, getTutupTerakhir } from "@/lib/data";
+import { hargaPada, hitungPeriode, pemakaianBahan, resepPada, type HasilPeriode } from "@/lib/calc";
+import { awalData, getDataPeriode, getHppCtx, getSemuaHarga, getTutupTerakhir, perkiraanCup, stokDari } from "@/lib/data";
 import { hitungUlangSejak } from "@/lib/hitung-ulang";
-import { awalHariWib, isoTanggalWib, parseRupiah } from "@/lib/format";
-import { getIsiPerDus, isSetupDone, setSetting } from "@/lib/settings";
+import { awalHariWib, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
+import { getSetting, isSetupDone, setSetting } from "@/lib/settings";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -30,37 +30,13 @@ export async function setupAction(_: FormState, fd: FormData): Promise<FormState
   if (pin !== str(fd, "pin2")) return { error: "Konfirmasi PIN tidak sama." };
 
   const saldo = parseRupiah(fd.get("saldo"));
-  const isiDus = parseRupiah(fd.get("isi_dus"));
-  const stokBb = parseRupiah(fd.get("stok_bb"));
-  const hargaDus = parseRupiah(fd.get("harga_dus"));
-  const jualBb = parseRupiah(fd.get("jual_bb"));
-  const jualKopi = parseRupiah(fd.get("jual_kopi"));
-  const hppKopi = parseRupiah(fd.get("hpp_kopi"));
+  if (!Number.isFinite(saldo) || saldo < 0) return { error: "Saldo tidak valid." };
 
-  for (const [nama, v] of Object.entries({ saldo, isiDus, stokBb, hargaDus, jualBb, jualKopi, hppKopi })) {
-    if (!Number.isFinite(v) || v < 0) return { error: `Isian "${nama}" tidak valid.` };
-  }
-  if (isiDus <= 0) return { error: "Isi per dus harus lebih dari 0." };
-
-  const now = Date.now();
   await setSetting("pin_hash", await hashPin(pin));
-  await setSetting("isi_per_dus", String(isiDus));
-  await db.insert(harga).values([
-    { produk: "bb", jenis: "jual", nilai: jualBb, berlakuMulai: 0 },
-    { produk: "kopi", jenis: "jual", nilai: jualKopi, berlakuMulai: 0 },
-    { produk: "kopi", jenis: "hpp", nilai: hppKopi, berlakuMulai: 0 },
-  ]);
-  await db.insert(tutupBuku).values({
-    waktu: now,
-    saldoKantong: saldo,
-    sisaBb: stokBb,
-    cashBelumDisetor: 0,
-    avgModalBb: hargaDus / isiDus,
-    hasilJson: null,
-  });
+  await db.insert(tutupBuku).values({ waktu: Date.now(), saldoKantong: saldo, cashBelumDisetor: 0, stokJson: "{}", hasilJson: null });
   await setSetting("setup_done", "1");
   await startSession();
-  redirect("/");
+  redirect("/lainnya/menu");
 }
 
 export async function loginAction(_: FormState, fd: FormData): Promise<FormState> {
@@ -77,21 +53,24 @@ export async function logoutAction() {
 
 // ─── Tap ─────────────────────────────────────────────────────────
 
-export async function tapAction(jenis: "kopi" | "kopi_sendiri" | "bb_sendiri", delta: 1 | -1) {
+export async function tapAction(menuId: number, jenis: "terjual" | "sendiri", delta: 1 | -1) {
   await requireAuth();
   const terakhir = await getTutupTerakhir();
   if (!terakhir) return { error: "Setup belum selesai." };
+  const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId) });
+  if (!m) return { error: "Menu tidak ditemukan." };
+  if (m.jenis === "barang_jadi" && jenis === "terjual") return { error: "Barang jadi terjual dihitung saat tutup buku." };
 
   if (delta === -1) {
     const rows = await db
       .select()
       .from(tapEvent)
-      .where(and(eq(tapEvent.jenis, jenis), gt(tapEvent.waktu, awalData(terakhir))));
+      .where(and(eq(tapEvent.menuId, menuId), eq(tapEvent.jenis, jenis), gt(tapEvent.waktu, awalData(terakhir))));
     const total = rows.reduce((a, r) => a + r.delta, 0);
     if (total <= 0) return { error: "Belum ada yang bisa dikurangi di periode ini." };
   }
 
-  await db.insert(tapEvent).values({ waktu: Date.now(), jenis, delta });
+  await db.insert(tapEvent).values({ waktu: Date.now(), menuId, jenis, delta });
   refreshSemua();
   return {};
 }
@@ -133,38 +112,112 @@ async function setelahUbah(...waktuTerdampak: number[]): Promise<string> {
   return n > 0 ? ` ${n} laporan periode lama dihitung ulang.` : "";
 }
 
+// ─── Pembelian aktif (kemasan yang sedang dipakai) ───────────────
+
+/**
+ * Info saat kemasan aktif diganti pada `waktu`: "Susu sebelumnya habis setelah 30 cup (perkiraan resep: 50 cup)."
+ * Tidak ada info bila sebelumnya memakai harga awal (tanpa pembelian).
+ */
+async function infoGantiKemasan(bahanId: number, waktu: number): Promise<string> {
+  const ctx = await getHppCtx();
+  const lama = ctx.aktif.filter((a) => a.bahanId === bahanId && a.mulai <= waktu).at(-1);
+  const beli = lama?.belanjaId != null ? ctx.belanja.find((b) => b.id === lama.belanjaId) : undefined;
+  const b = ctx.bahan.find((x) => x.id === bahanId);
+  if (!lama || !beli || !b) return "";
+  const dari = Math.max(lama.mulai, beli.waktu);
+  const taps = await db.select().from(tapEvent).where(and(gt(tapEvent.waktu, dari), lte(tapEvent.waktu, waktu)));
+  const pakai = pemakaianBahan(ctx, taps, bahanId);
+  const perkiraan = perkiraanCup(beli, pakai, ctx, bahanId, waktu);
+  return ` ${b.nama} sebelumnya habis setelah ${pakai.cup} cup${perkiraan !== null ? ` (perkiraan resep: ${perkiraan} cup)` : ""}.`;
+}
+
+/** Jadikan belanja `belanjaId` kemasan aktif mulai `mulai`. Mengembalikan info "habis setelah N cup". */
+async function aktifkan(bahanId: number, belanjaId: number, mulai: number): Promise<string> {
+  const info = await infoGantiKemasan(bahanId, mulai);
+  await db.insert(bahanAktif).values({ bahanId, belanjaId, mulai });
+  return info;
+}
+
+/** Pembelian pertama suatu bahan langsung aktif, berlaku sejak awal (menggantikan harga awal). */
+async function punyaPembelianAktif(bahanId: number) {
+  const rows = await db.select().from(bahanAktif).where(eq(bahanAktif.bahanId, bahanId));
+  return rows.some((r) => r.belanjaId != null);
+}
+
 // ─── Belanja ─────────────────────────────────────────────────────
 
 async function bacaBelanja(fd: FormData) {
-  const kategori = str(fd, "kategori") as "bb" | "kopi" | "lain";
-  if (!["bb", "kopi", "lain"].includes(kategori)) return { error: "Kategori tidak valid." };
+  const kategori = str(fd, "kategori") as "bahan" | "barang" | "lain";
+  if (!["bahan", "barang", "lain"].includes(kategori)) return { error: "Kategori tidak valid." };
   const sumber: "kantong" | "pribadi" = str(fd, "sumber") === "pribadi" ? "pribadi" : "kantong";
   const total = parseRupiah(fd.get("total"));
   if (!Number.isFinite(total) || total <= 0) return { error: "Total harga harus lebih dari 0." };
 
-  let qtyPcs: number | null = null;
   let nama = str(fd, "nama");
-  if (kategori === "bb") {
-    const jumlah = parseRupiah(fd.get("jumlah"));
-    if (!Number.isFinite(jumlah) || jumlah <= 0) return { error: "Jumlah Beng Beng harus lebih dari 0." };
-    const satuan = str(fd, "satuan");
-    qtyPcs = satuan === "dus" ? jumlah * (await getIsiPerDus()) : jumlah;
-    if (!nama) nama = satuan === "dus" ? `Beng Beng ${jumlah} dus` : `Beng Beng ${jumlah} pcs`;
+  let bahanId: number | null = null;
+  let menuId: number | null = null;
+  let isiKemasan: number | null = null;
+  let jumlahKemasan: number | null = null;
+  let qtyPcs: number | null = null;
+
+  if (kategori === "bahan") {
+    bahanId = Number(str(fd, "bahan_id"));
+    const b = await db.query.bahan.findFirst({ where: eq(bahan.id, bahanId) });
+    if (!b) return { error: "Pilih bahannya dulu." };
+    isiKemasan = parseDesimal(fd.get("isi_kemasan"));
+    if (!Number.isFinite(isiKemasan) || isiKemasan <= 0) return { error: `Isi per kemasan (${b.satuan}) harus lebih dari 0.` };
+    jumlahKemasan = parseRupiah(fd.get("jumlah_kemasan"));
+    if (!Number.isInteger(jumlahKemasan) || jumlahKemasan <= 0) return { error: "Jumlah kemasan harus angka bulat lebih dari 0." };
+    if (!nama) nama = b.nama;
+  } else if (kategori === "barang") {
+    menuId = Number(str(fd, "menu_id"));
+    const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId) });
+    if (!m || m.jenis !== "barang_jadi") return { error: "Pilih barangnya dulu." };
+    jumlahKemasan = parseRupiah(fd.get("jumlah_kemasan"));
+    isiKemasan = parseRupiah(fd.get("isi_kemasan"));
+    if (!Number.isInteger(jumlahKemasan) || jumlahKemasan <= 0) return { error: "Jumlah harus angka bulat lebih dari 0." };
+    if (!Number.isInteger(isiKemasan) || isiKemasan <= 0) return { error: "Isi per dus harus angka bulat lebih dari 0." };
+    qtyPcs = jumlahKemasan * isiKemasan;
+    if (!nama) nama = isiKemasan === 1 ? `${m.nama} ${qtyPcs} pcs` : `${m.nama} ${jumlahKemasan} dus`;
   }
   if (!nama) return { error: "Nama barang wajib diisi." };
 
   const w = await waktuDariTanggal(str(fd, "tanggal"), str(fd, "posisi"));
   if ("error" in w) return { error: w.error };
 
-  return { values: { waktu: w.waktu, kategori, nama, qtyPcs, total, sumber, catatan: str(fd, "catatan") || null } };
+  return {
+    values: {
+      waktu: w.waktu,
+      kategori,
+      nama,
+      bahanId,
+      menuId,
+      isiKemasan,
+      jumlahKemasan,
+      qtyPcs,
+      total,
+      sumber,
+      catatan: str(fd, "catatan") || null,
+    },
+  };
 }
 
 export async function tambahBelanjaAction(_: FormState, fd: FormData): Promise<FormState> {
   await requireAuth();
   const r = await bacaBelanja(fd);
   if ("error" in r) return { error: r.error };
-  await db.insert(belanja).values(r.values);
-  const info = await setelahUbah(r.values.waktu);
+  const [row] = await db.insert(belanja).values(r.values).returning({ id: belanja.id });
+  let info = "";
+  let paling = r.values.waktu;
+  if (r.values.bahanId != null) {
+    if (!(await punyaPembelianAktif(r.values.bahanId))) {
+      await aktifkan(r.values.bahanId, row.id, 0);
+      paling = 0;
+    } else if (str(fd, "pakai_sekarang")) {
+      info = await aktifkan(r.values.bahanId, row.id, r.values.waktu);
+    }
+  }
+  info += await setelahUbah(paling);
   return { ok: `Tersimpan: ${r.values.nama}.${info}` };
 }
 
@@ -177,7 +230,18 @@ export async function ubahBelanjaAction(id: number, _: FormState, fd: FormData):
   // Tanggal tidak diubah → pertahankan waktu aslinya (posisinya terhadap tutup buku)
   const values = str(fd, "tanggal") === isoTanggalWib(lama.waktu) && !str(fd, "posisi") ? { ...r.values, waktu: lama.waktu } : r.values;
   await db.update(belanja).set(values).where(eq(belanja.id, id));
-  const info = await setelahUbah(lama.waktu, values.waktu);
+  let paling = Math.min(lama.waktu, values.waktu);
+  // Bahan diganti: status "aktif" milik bahan lama tidak berlaku lagi
+  if (lama.bahanId !== values.bahanId) {
+    await db.delete(bahanAktif).where(eq(bahanAktif.belanjaId, id));
+    if (values.bahanId != null && !(await punyaPembelianAktif(values.bahanId))) await aktifkan(values.bahanId, id, 0);
+    paling = 0;
+  } else if (lama.total !== values.total || lama.isiKemasan !== values.isiKemasan || lama.jumlahKemasan !== values.jumlahKemasan) {
+    // Harga per satuan berubah → HPP sejak kemasan ini aktif ikut berubah
+    const aktif = await db.select().from(bahanAktif).where(eq(bahanAktif.belanjaId, id));
+    if (aktif.length) paling = Math.min(paling, ...aktif.map((a) => a.mulai));
+  }
+  const info = await setelahUbah(paling);
   return { ok: `Perubahan tersimpan.${info}` };
 }
 
@@ -185,9 +249,67 @@ export async function hapusBelanjaAction(id: number) {
   await requireAuth();
   const row = await db.query.belanja.findFirst({ where: eq(belanja.id, id) });
   if (!row) return { error: "Catatan tidak ditemukan." };
+  const aktif = await db.select().from(bahanAktif).where(eq(bahanAktif.belanjaId, id));
+  await db.delete(bahanAktif).where(eq(bahanAktif.belanjaId, id));
   await db.delete(belanja).where(eq(belanja.id, id));
-  await setelahUbah(row.waktu);
+  await setelahUbah(row.waktu, ...aktif.map((a) => a.mulai));
   return {};
+}
+
+/** Tandai belanja bahan lama (dari sebelum ada fitur bahan): bahan, isi, dan apakah kemasan ini yang dipakai. */
+export async function tandaiBelanjaAction(id: number, _: FormState, fd: FormData): Promise<FormState> {
+  await requireAuth();
+  const row = await db.query.belanja.findFirst({ where: eq(belanja.id, id) });
+  if (!row || row.kategori !== "bahan") return { error: "Catatan tidak ditemukan." };
+  const bahanId = Number(str(fd, "bahan_id"));
+  const b = await db.query.bahan.findFirst({ where: eq(bahan.id, bahanId) });
+  if (!b) return { error: "Pilih bahannya dulu." };
+  const isiKemasan = parseDesimal(fd.get("isi_kemasan"));
+  const jumlahKemasan = parseRupiah(fd.get("jumlah_kemasan"));
+  if (!Number.isFinite(isiKemasan) || isiKemasan <= 0) return { error: `Isi per kemasan (${b.satuan}) harus lebih dari 0.` };
+  if (!Number.isInteger(jumlahKemasan) || jumlahKemasan <= 0) return { error: "Jumlah kemasan harus angka bulat lebih dari 0." };
+
+  await db.update(belanja).set({ bahanId, isiKemasan, jumlahKemasan }).where(eq(belanja.id, id));
+  await db.delete(bahanAktif).where(eq(bahanAktif.belanjaId, id));
+  if (str(fd, "aktif")) {
+    // Data lama: kemasan yang dipakai berlaku sejak awal, menggantikan pilihan sebelumnya
+    await db.delete(bahanAktif).where(and(eq(bahanAktif.bahanId, bahanId), eq(bahanAktif.mulai, 0)));
+    await db.insert(bahanAktif).values({ bahanId, belanjaId: id, mulai: 0 });
+  }
+  const info = await setelahUbah(0);
+  return { ok: `${row.nama} → ${b.nama}.${info}` };
+}
+
+/** "Pakai ini": kemasan dari belanja `id` mulai dipakai pada tanggal yang dipilih. */
+export async function pakaiKemasanAction(id: number, _: FormState, fd: FormData): Promise<FormState> {
+  await requireAuth();
+  const row = await db.query.belanja.findFirst({ where: eq(belanja.id, id) });
+  if (!row?.bahanId) return { error: "Catatan tidak ditemukan." };
+  const w = await waktuDariTanggal(str(fd, "tanggal"), str(fd, "posisi"));
+  if ("error" in w) return { error: w.error };
+  const info = await aktifkan(row.bahanId, id, w.waktu);
+  const info2 = await setelahUbah(w.waktu);
+  return { ok: `Sekarang memakai ${row.nama}.${info}${info2}` };
+}
+
+/** Dari pengingat di Beranda: ganti ke kemasan baru mulai sekarang. */
+export async function gantiKemasanSekarangAction(belanjaId: number): Promise<{ ok?: string; error?: string }> {
+  await requireAuth();
+  const row = await db.query.belanja.findFirst({ where: eq(belanja.id, belanjaId) });
+  if (!row?.bahanId) return { error: "Catatan tidak ditemukan." };
+  const info = await aktifkan(row.bahanId, belanjaId, Date.now());
+  refreshSemua();
+  return { ok: `Sekarang memakai ${row.nama}.${info}` };
+}
+
+/** "Belum": sembunyikan pengingat bahan ini sampai besok. */
+export async function tundaPengingatAction(bahanId: number) {
+  await requireAuth();
+  const lama = await getSetting("tunda_pengingat");
+  const tunda = lama ? (JSON.parse(lama) as Record<string, string>) : {};
+  tunda[bahanId] = isoTanggalWib(Date.now());
+  await setSetting("tunda_pengingat", JSON.stringify(tunda));
+  refreshSemua();
 }
 
 // ─── Kas ─────────────────────────────────────────────────────────
@@ -231,14 +353,15 @@ export async function hapusKasAction(id: number) {
   return {};
 }
 
-// ─── Penjualan kopi manual (untuk hari sebelumnya) ───────────────
-
-const JENIS_TAP = ["kopi", "kopi_sendiri", "bb_sendiri"] as const;
+// ─── Penjualan manual (untuk hari sebelumnya) ─────────────────────
 
 export async function tambahPenjualanManualAction(_: FormState, fd: FormData): Promise<FormState> {
   await requireAuth();
-  const jenis = str(fd, "jenis") as (typeof JENIS_TAP)[number];
-  if (!JENIS_TAP.includes(jenis)) return { error: "Jenis tidak valid." };
+  const menuId = Number(str(fd, "menu_id"));
+  const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId) });
+  if (!m) return { error: "Pilih menunya dulu." };
+  const jenis: "terjual" | "sendiri" = str(fd, "jenis") === "sendiri" ? "sendiri" : "terjual";
+  if (m.jenis === "barang_jadi" && jenis === "terjual") return { error: "Barang jadi terjual dihitung saat tutup buku." };
   const n = Number(str(fd, "jumlah"));
   if (!Number.isInteger(n) || n <= 0) return { error: "Jumlah harus angka bulat lebih dari 0." };
   const jumlah = str(fd, "kurangi") ? -n : n;
@@ -252,14 +375,16 @@ export async function tambahPenjualanManualAction(_: FormState, fd: FormData): P
     const rows = await db
       .select()
       .from(tapEvent)
-      .where(and(eq(tapEvent.jenis, jenis), gt(tapEvent.waktu, dari - 1), lt(tapEvent.waktu, dari + 86400000)));
+      .where(
+        and(eq(tapEvent.menuId, menuId), eq(tapEvent.jenis, jenis), gt(tapEvent.waktu, dari - 1), lt(tapEvent.waktu, dari + 86400000)),
+      );
     const totalHariItu = rows.reduce((a, r) => a + r.delta, 0);
     if (totalHariItu + jumlah < 0) return { error: `Tidak bisa dikurangi ${-jumlah}: total tanggal itu baru ${totalHariItu}.` };
   }
 
-  await db.insert(tapEvent).values({ waktu: w.waktu, jenis, delta: jumlah, manual: true });
+  await db.insert(tapEvent).values({ waktu: w.waktu, menuId, jenis, delta: jumlah, manual: true });
   const info = await setelahUbah(w.waktu);
-  return { ok: `Tersimpan: ${jumlah > 0 ? "+" : ""}${jumlah} untuk ${iso}.${info}` };
+  return { ok: `Tersimpan: ${m.nama} ${jenis} ${jumlah > 0 ? "+" : ""}${jumlah} untuk ${iso}.${info}` };
 }
 
 export async function hapusPenjualanManualAction(id: number) {
@@ -274,27 +399,22 @@ export async function hapusPenjualanManualAction(id: number) {
 // ─── Tutup Buku ──────────────────────────────────────────────────
 
 // Cash selalu disetor ke kantong sebelum tutup buku, jadi cash_belum_disetor disimpan 0.
-export type TutupBukuInput = { saldo: number; sisaBb: number };
+export type TutupBukuInput = { saldo: number; sisa: Record<number, number> };
 
 async function hitungTutupBuku(input: TutupBukuInput, waktu: number) {
   const terakhir = await getTutupTerakhir();
   if (!terakhir) throw new Error("Setup belum selesai.");
   const data = await getDataPeriode(awalData(terakhir), waktu);
   return hitungPeriode(
-    {
-      saldoKantong: terakhir.saldoKantong,
-      sisaBb: terakhir.sisaBb,
-      cashBelumDisetor: terakhir.cashBelumDisetor,
-      avgModalBb: terakhir.avgModalBb,
-    },
-    { waktu, saldoKantong: input.saldo, sisaBb: input.sisaBb, cashBelumDisetor: 0 },
+    { saldoKantong: terakhir.saldoKantong, cashBelumDisetor: terakhir.cashBelumDisetor, stok: stokDari(terakhir) },
+    { waktu, saldoKantong: input.saldo, cashBelumDisetor: 0, sisa: input.sisa },
     data,
   );
 }
 
 function validasiTutupBuku(input: TutupBukuInput): string | null {
   if (!Number.isFinite(input.saldo) || input.saldo < 0) return "Saldo kantong tidak valid.";
-  if (!Number.isInteger(input.sisaBb) || input.sisaBb < 0) return "Sisa Beng Beng tidak valid.";
+  for (const n of Object.values(input.sisa)) if (!Number.isInteger(n) || n < 0) return "Sisa stok tidak valid.";
   return null;
 }
 
@@ -318,9 +438,8 @@ export async function simpanTutupBukuAction(input: TutupBukuInput): Promise<{ er
     .values({
       waktu,
       saldoKantong: input.saldo,
-      sisaBb: input.sisaBb,
       cashBelumDisetor: 0,
-      avgModalBb: hasil.avgModalBb,
+      stokJson: JSON.stringify(hasil.stok),
       hasilJson: JSON.stringify(hasil),
     })
     .returning({ id: tutupBuku.id });
@@ -328,33 +447,117 @@ export async function simpanTutupBukuAction(input: TutupBukuInput): Promise<{ er
   redirect(`/laporan/${row.id}`);
 }
 
+// ─── Bahan ───────────────────────────────────────────────────────
+
+function bacaBahan(fd: FormData) {
+  const nama = str(fd, "nama");
+  if (!nama) return { error: "Nama bahan wajib diisi." };
+  const satuan: "gr" | "pcs" = str(fd, "satuan") === "pcs" ? "pcs" : "gr";
+  const hargaAwal = parseDesimal(fd.get("harga_awal"));
+  if (!Number.isFinite(hargaAwal) || hargaAwal < 0) return { error: `Harga awal per ${satuan} tidak valid.` };
+  return { values: { nama, satuan, hargaAwal } };
+}
+
+export async function tambahBahanAction(_: FormState, fd: FormData): Promise<FormState> {
+  await requireAuth();
+  const r = bacaBahan(fd);
+  if ("error" in r) return { error: r.error };
+  const [row] = await db.insert(bahan).values(r.values).returning({ id: bahan.id });
+  refreshSemua();
+  redirect(`/lainnya/bahan/${row.id}`);
+}
+
+export async function ubahBahanAction(id: number, _: FormState, fd: FormData): Promise<FormState> {
+  await requireAuth();
+  const r = bacaBahan(fd);
+  if ("error" in r) return { error: r.error };
+  await db.update(bahan).set(r.values).where(eq(bahan.id, id));
+  // Harga awal dipakai sebelum ada pembelian aktif → bisa memengaruhi HPP lama
+  const info = await setelahUbah(0);
+  return { ok: `Bahan disimpan.${info}` };
+}
+
+export async function hapusBahanAction(id: number): Promise<{ error?: string }> {
+  await requireAuth();
+  const ctx = await getHppCtx();
+  if (ctx.belanja.some((b) => b.bahanId === id)) return { error: "Bahan ini sudah punya catatan belanja, tidak bisa dihapus." };
+  if (ctx.resep.some((r) => r.isi.some((x) => x.bahanId === id))) return { error: "Bahan ini dipakai di resep, tidak bisa dihapus." };
+  await db.delete(bahanAktif).where(eq(bahanAktif.bahanId, id));
+  await db.delete(bahan).where(eq(bahan.id, id));
+  refreshSemua();
+  redirect("/lainnya/bahan");
+}
+
+// ─── Menu ────────────────────────────────────────────────────────
+
+/** Simpan menu baru (`id` null) atau perubahan. Harga & resep baru berlaku sejak sekarang (riwayat tidak ditimpa). */
+export async function simpanMenuAction(id: number | null, _: FormState, fd: FormData): Promise<FormState> {
+  await requireAuth();
+  const nama = str(fd, "nama");
+  if (!nama) return { error: "Nama menu wajib diisi." };
+  const lama = id ? await db.query.menu.findFirst({ where: eq(menu.id, id) }) : undefined;
+  if (id && !lama) return { error: "Menu tidak ditemukan." };
+  const jenis: "racikan" | "barang_jadi" = lama?.jenis ?? (str(fd, "jenis") === "barang_jadi" ? "barang_jadi" : "racikan");
+  const hargaJual = parseRupiah(fd.get("harga_jual"));
+  if (!Number.isFinite(hargaJual) || hargaJual < 0) return { error: "Harga jual tidak valid." };
+  const urutan = Number(str(fd, "urutan") || 0);
+
+  // Resep: pasangan bahan_id[] + takaran[]
+  const bahanIds = fd.getAll("bahan_id").map(Number);
+  const takaran = fd.getAll("takaran").map(parseDesimal);
+  const isi: { bahanId: number; takaran: number }[] = [];
+  if (jenis === "racikan") {
+    for (let i = 0; i < bahanIds.length; i++) {
+      if (!bahanIds[i]) continue;
+      if (!Number.isFinite(takaran[i]) || takaran[i] <= 0) return { error: "Takaran tiap bahan harus lebih dari 0." };
+      if (isi.some((x) => x.bahanId === bahanIds[i])) return { error: "Ada bahan yang dimasukkan dua kali." };
+      isi.push({ bahanId: bahanIds[i], takaran: takaran[i] });
+    }
+  }
+
+  const now = Date.now();
+  let menuId = id;
+  if (lama) {
+    await db.update(menu).set({ nama, urutan }).where(eq(menu.id, lama.id));
+  } else {
+    const [row] = await db.insert(menu).values({ nama, jenis, urutan, aktif: true }).returning({ id: menu.id });
+    menuId = row.id;
+  }
+  const mid = menuId!;
+
+  // Harga jual: baris baru bila berubah (menu baru berlaku sejak awal)
+  const semuaHarga = await getSemuaHarga();
+  if (!lama || hargaPada(semuaHarga, mid, now) !== hargaJual) {
+    await db.insert(harga).values({ menuId: mid, nilai: hargaJual, berlakuMulai: lama ? now : 0 });
+  }
+
+  // Resep: versi baru bila berubah. Versi pertama yang berisi berlaku sejak awal, supaya tap lama
+  // ikut memakai HPP dari resep (sebelumnya HPP 0).
+  let paling = Infinity;
+  if (jenis === "racikan") {
+    const ctx = await getHppCtx();
+    const sekarang = resepPada(ctx, mid, now);
+    const sama = JSON.stringify(sekarang) === JSON.stringify(isi);
+    if (!sama) {
+      const pernahBerisi = ctx.resep.some((r) => r.menuId === mid && r.isi.length > 0);
+      const mulai = pernahBerisi ? now : 0;
+      if (!pernahBerisi) await db.delete(resep).where(eq(resep.menuId, mid));
+      await db.insert(resep).values({ menuId: mid, berlakuMulai: mulai, isiJson: JSON.stringify(isi) });
+      paling = mulai;
+    }
+  }
+  const info = Number.isFinite(paling) ? await setelahUbah(paling) : (refreshSemua(), "");
+  if (!lama) redirect(`/lainnya/menu/${mid}?baru=1`);
+  return { ok: `Menu disimpan.${info}` };
+}
+
+export async function aturAktifMenuAction(id: number, aktif: boolean) {
+  await requireAuth();
+  await db.update(menu).set({ aktif }).where(eq(menu.id, id));
+  refreshSemua();
+}
+
 // ─── Pengaturan ──────────────────────────────────────────────────
-
-export async function ubahHargaAction(_: FormState, fd: FormData): Promise<FormState> {
-  await requireAuth();
-  const key = str(fd, "key");
-  const map = {
-    jual_bb: { produk: "bb", jenis: "jual" },
-    jual_kopi: { produk: "kopi", jenis: "jual" },
-    hpp_kopi: { produk: "kopi", jenis: "hpp" },
-  } as const;
-  const target = map[key as keyof typeof map];
-  if (!target) return { error: "Jenis harga tidak valid." };
-  const nilai = parseRupiah(fd.get("nilai"));
-  if (!Number.isFinite(nilai) || nilai < 0) return { error: "Harga tidak valid." };
-  await db.insert(harga).values({ ...target, nilai, berlakuMulai: Date.now() });
-  refreshSemua();
-  return { ok: "Harga diperbarui, berlaku mulai sekarang." };
-}
-
-export async function ubahIsiDusAction(_: FormState, fd: FormData): Promise<FormState> {
-  await requireAuth();
-  const n = parseRupiah(fd.get("isi_dus"));
-  if (!Number.isInteger(n) || n <= 0) return { error: "Isi per dus harus angka lebih dari 0." };
-  await setSetting("isi_per_dus", String(n));
-  refreshSemua();
-  return { ok: "Isi per dus diperbarui." };
-}
 
 /** Hitung ulang hasil semua tutup buku dengan rumus terbaru (juga setelah data diubah langsung di DB). */
 export async function hitungUlangSemuaAction(): Promise<FormState> {

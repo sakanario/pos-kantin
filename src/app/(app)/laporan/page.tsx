@@ -1,29 +1,40 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { getKopiPerHari, getRiwayatTutupBuku } from "@/lib/data";
+import { getRiwayatTutupBuku, getTerjualPerHari } from "@/lib/data";
 import { LaporanBasi } from "@/components/laporan-basi";
 import { bulanWib, namaBulan, plus, rupiah, tanggal } from "@/lib/format";
 
 export default async function LaporanPage() {
-  const [riwayat, kopiHarian] = await Promise.all([getRiwayatTutupBuku(), getKopiPerHari(14)]);
+  const [riwayat, kopiHarian] = await Promise.all([getRiwayatTutupBuku(), getTerjualPerHari(14)]);
   const periode = riwayat.filter((r) => r.hasil);
   const adaBasi = periode.some((r) => r.basi);
 
   // Rekap bulanan: gabungan periode yang tutup bukunya jatuh di bulan tersebut
-  type Rekap = { untung: number; uangBersih: number; omzet: number; belanja: number; selisih: number; kopi: number; bb: number };
+  type Rekap = {
+    untung: number;
+    uangBersih: number;
+    omzet: number;
+    belanja: number;
+    selisih: number;
+    menu: Map<string, { terjual: number; untung: number; satuan: string }>;
+  };
   const bulanan = new Map<string, Rekap>();
   for (const r of periode) {
     if (r.basi) continue;
     const h = r.hasil!;
     const k = bulanWib(r.waktu);
-    const b = bulanan.get(k) ?? { untung: 0, uangBersih: 0, omzet: 0, belanja: 0, selisih: 0, kopi: 0, bb: 0 };
+    const b = bulanan.get(k) ?? { untung: 0, uangBersih: 0, omzet: 0, belanja: 0, selisih: 0, menu: new Map() };
     b.untung += h.untungJualan;
     b.uangBersih += h.uangBersih;
     b.omzet += h.omzetNyata;
     b.belanja += h.belanjaTotal;
     b.selisih += h.selisih;
-    b.kopi += h.kopiTerjual;
-    b.bb += h.bbTerjual;
+    for (const m of h.menu) {
+      const x = b.menu.get(m.nama) ?? { terjual: 0, untung: 0, satuan: m.jenis === "racikan" ? "cup" : "pcs" };
+      x.terjual += m.terjual;
+      x.untung += m.untung;
+      b.menu.set(m.nama, x);
+    }
     bulanan.set(k, b);
   }
 
@@ -35,7 +46,7 @@ export default async function LaporanPage() {
       <div className="space-y-4 px-4">
         {adaBasi && <LaporanBasi />}
         <section className="card">
-          <h2 className="mb-3 font-medium">Kopi terjual, 14 hari terakhir</h2>
+          <h2 className="mb-3 font-medium">Racikan terjual, 14 hari terakhir</h2>
           <div className="flex h-32 items-end gap-1">
             {kopiHarian.map((d) => (
               <div key={d.tgl} className="flex flex-1 flex-col items-center gap-1" title={`${d.tgl}: ${d.jumlah} cup`}>
@@ -74,11 +85,21 @@ export default async function LaporanPage() {
                   <div className="num mt-1 grid grid-cols-2 gap-x-4 text-sm text-muted">
                     <span>Omzet {rupiah(b.omzet)}</span>
                     <span className="text-right">Belanja {rupiah(b.belanja)}</span>
-                    <span>
-                      {b.kopi} kopi · {b.bb} Beng Beng
-                    </span>
+                    <span />
                     <span className={`text-right ${b.selisih < 0 ? "text-bad" : ""}`}>Selisih {rupiah(b.selisih)}</span>
                   </div>
+                  {b.menu.size > 0 && (
+                    <ul className="num mt-2 space-y-0.5 border-t border-line pt-2 text-sm">
+                      {[...b.menu.entries()].map(([nama, x]) => (
+                        <li key={nama} className="flex justify-between gap-3">
+                          <span className="text-muted">
+                            {nama} · {x.terjual} {x.satuan}
+                          </span>
+                          <span className={x.untung < 0 ? "text-bad" : ""}>{plus(x.untung)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               ))}
             </div>
@@ -105,7 +126,12 @@ export default async function LaporanPage() {
                         {r.dari ? tanggal(r.dari) : "?"} – {tanggal(r.waktu)}
                       </div>
                       <div className={`text-xs ${r.hasil!.selisih < 0 ? "text-bad" : "text-muted"}`}>
-                        {r.hasil!.kopiTerjual} kopi · {r.hasil!.bbTerjual} Beng Beng
+                        {r.basi
+                          ? "dihitung dengan rumus lama"
+                          : r.hasil!.menu
+                              .filter((m) => m.terjual !== 0)
+                              .map((m) => `${m.terjual} ${m.nama}`)
+                              .join(" · ") || "belum ada yang terjual"}
                         {r.hasil!.selisih !== 0 && ` · selisih ${rupiah(r.hasil!.selisih)}`}
                       </div>
                     </div>

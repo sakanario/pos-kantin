@@ -2,9 +2,11 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 
 const menu = [
+  { href: "/lainnya/menu", icon: "🍽️", label: "Menu", sub: "Harga jual, resep, HPP" },
+  { href: "/lainnya/bahan", icon: "🧂", label: "Bahan", sub: "Harga bahan, kemasan yang dipakai" },
   { href: "/lainnya/uang-barang", icon: "💰", label: "Uang & Barang", sub: "Saldo, stok barang, potensi" },
   { href: "/lainnya/pengeluaran", icon: "🧾", label: "Riwayat Pengeluaran", sub: "Semua belanja per bulan" },
-  { href: "/setelan", icon: "⚙️", label: "Setelan", sub: "Harga, PIN, hitung ulang" },
+  { href: "/setelan", icon: "⚙️", label: "Setelan", sub: "PIN, hitung ulang laporan" },
 ];
 
 export default function LainnyaPage() {

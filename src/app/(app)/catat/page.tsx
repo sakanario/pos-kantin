@@ -1,19 +1,19 @@
 import Link from "next/link";
 import { BelanjaList } from "@/components/belanja-list";
 import { PageHeader } from "@/components/page-header";
-import { getInfoTutup, getPeriodeBerjalan, getSemuaKas } from "@/lib/data";
+import { getInfoFormBelanja, getInfoTutup, getPeriodeBerjalan, getSemuaKas } from "@/lib/data";
 import { rupiah, tanggal, tanggalJam } from "@/lib/format";
-import { getIsiPerDus } from "@/lib/settings";
-import { BelanjaForm, KasForm } from "./forms";
+import { BelanjaForm } from "./belanja-form";
+import { KasForm } from "./forms";
 import { KopiTab } from "./kopi-tab";
 import { CatatTabs, type TabCatat } from "./tabs";
 
 export default async function CatatPage(props: PageProps<"/catat">) {
   const { tab } = await props.searchParams;
   const aktif: TabCatat = tab === "kas" || tab === "kopi" ? tab : "belanja";
-  const [p, isiDus, { setup, tutup }, semuaKas] = await Promise.all([
+  const [p, formBelanja, { setup, tutup }, semuaKas] = await Promise.all([
     getPeriodeBerjalan(),
-    getIsiPerDus(),
+    getInfoFormBelanja(),
     getInfoTutup(),
     getSemuaKas(),
   ]);
@@ -28,7 +28,7 @@ export default async function CatatPage(props: PageProps<"/catat">) {
         <div className="space-y-4 px-4">
           {aktif === "belanja" ? (
             <>
-              <BelanjaForm isiDus={isiDus} hariIni={p.hariIni} info={info} />
+              <BelanjaForm hariIni={p.hariIni} info={info} bahan={formBelanja.bahan} barang={formBelanja.barang} />
               <section>
                 <div className="mb-2 flex items-baseline justify-between">
                   <h2 className="text-sm font-medium text-muted">Belanja periode ini</h2>
@@ -40,7 +40,7 @@ export default async function CatatPage(props: PageProps<"/catat">) {
               </section>
             </>
           ) : aktif === "kopi" ? (
-            <KopiTab hariIni={p.hariIni} info={info} />
+            <KopiTab hariIni={p.hariIni} info={info} menu={p.menu.filter((m) => m.aktif)} />
           ) : (
             <>
               <KasForm hariIni={p.hariIni} info={info} />

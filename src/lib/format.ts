@@ -15,6 +15,24 @@ export function angka(n: number): string {
   return Math.round(n).toLocaleString("id-ID");
 }
 
+/** Angka kecil dengan maksimal 1 desimal (harga per gr, takaran): 20,9 · 484 · 1.030. */
+export function desimal(n: number): string {
+  return n.toLocaleString("id-ID", { maximumFractionDigits: Math.abs(n) < 100 ? 1 : 0 });
+}
+
+/** Harga per satuan bahan: "Rp20,9/gr". */
+export function perSatuan(n: number, satuan: string): string {
+  return `Rp${desimal(n)}/${satuan}`;
+}
+
+/** Parse angka desimal input pengguna: "2,5" → 2.5, "1.030" → 1030. */
+export function parseDesimal(v: FormDataEntryValue | null): number {
+  const s = String(v ?? "").trim().replace(/\s/g, "");
+  if (!s) return NaN;
+  // Koma = desimal; titik = pemisah ribuan
+  return Number(s.replace(/\./g, "").replace(",", "."));
+}
+
 export function tanggal(ms: number): string {
   return new Date(ms).toLocaleDateString("id-ID", { timeZone: TZ, day: "numeric", month: "short", year: "numeric" });
 }

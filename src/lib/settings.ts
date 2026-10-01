@@ -15,7 +15,3 @@ export async function setSetting(key: string, value: string) {
 export async function isSetupDone(): Promise<boolean> {
   return (await getSetting("setup_done")) === "1";
 }
-
-export async function getIsiPerDus(): Promise<number> {
-  return Number((await getSetting("isi_per_dus")) ?? 17);
-}

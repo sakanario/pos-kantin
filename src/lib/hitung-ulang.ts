@@ -3,12 +3,12 @@ import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { tutupBuku } from "@/db/schema";
 import { hitungPeriode } from "./calc";
-import { awalData, getDataPeriode } from "./data";
+import { awalData, getDataPeriode, stokDari } from "./data";
 
 /**
  * Hitung ulang semua periode yang sudah ditutup, mulai dari periode yang memuat `sejakWaktu`.
- * Dipakai saat catatan lama ditambah/diubah/dihapus. Input tutup buku (saldo, sisa, cash) tidak berubah,
- * hanya hasilnya (dan modal rata-rata Beng Beng yang berantai ke periode berikutnya).
+ * Dipakai saat catatan lama ditambah/diubah/dihapus. Input tutup buku (saldo, sisa stok) tidak berubah,
+ * hanya hasilnya (dan modal rata-rata barang jadi yang berantai ke periode berikutnya).
  * Mengembalikan jumlah periode yang dihitung ulang.
  */
 export async function hitungUlangSejak(sejakWaktu: number): Promise<number> {
@@ -18,21 +18,15 @@ export async function hitungUlangSejak(sejakWaktu: number): Promise<number> {
   for (const row of rows.slice(1)) {
     if (row.waktu >= sejakWaktu) {
       const data = await getDataPeriode(awalData(prev), row.waktu);
+      const sisa = Object.fromEntries(Object.entries(stokDari(row)).map(([id, s]) => [id, s.sisa]));
       const hasil = hitungPeriode(
-        {
-          saldoKantong: prev.saldoKantong,
-          sisaBb: prev.sisaBb,
-          cashBelumDisetor: prev.cashBelumDisetor,
-          avgModalBb: prev.avgModalBb,
-        },
-        { waktu: row.waktu, saldoKantong: row.saldoKantong, sisaBb: row.sisaBb, cashBelumDisetor: row.cashBelumDisetor },
+        { saldoKantong: prev.saldoKantong, cashBelumDisetor: prev.cashBelumDisetor, stok: stokDari(prev) },
+        { waktu: row.waktu, saldoKantong: row.saldoKantong, cashBelumDisetor: row.cashBelumDisetor, sisa },
         data,
       );
-      await db
-        .update(tutupBuku)
-        .set({ avgModalBb: hasil.avgModalBb, hasilJson: JSON.stringify(hasil) })
-        .where(eq(tutupBuku.id, row.id));
-      row.avgModalBb = hasil.avgModalBb;
+      const stokJson = JSON.stringify(hasil.stok);
+      await db.update(tutupBuku).set({ stokJson, hasilJson: JSON.stringify(hasil) }).where(eq(tutupBuku.id, row.id));
+      row.stokJson = stokJson;
       jumlah++;
     }
     prev = row;

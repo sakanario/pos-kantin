@@ -5,7 +5,7 @@ export default function LoadingSetelan() {
     <main aria-busy="true">
       <HeaderSkeleton title="Setelan" sub={false} back />
       <div className="space-y-4 px-4">
-        <CardSkeleton rows={6} />
+        <CardSkeleton rows={1} />
         <CardSkeleton rows={2} />
         <CardSkeleton rows={3} />
       </div>

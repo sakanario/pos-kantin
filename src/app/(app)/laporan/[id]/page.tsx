@@ -27,7 +27,11 @@ export default async function DetailLaporan(props: PageProps<"/laporan/[id]">) {
         <Link href="/laporan" className="btn-ghost w-full">
           ← Semua laporan
         </Link>
-        {terakhir && <BatalkanTutupBukuButton id={r.id} saldo={r.saldoKantong} sisaBb={r.sisaBb} />}
+        {terakhir && <BatalkanTutupBukuButton
+            id={r.id}
+            saldo={r.saldoKantong}
+            sisa={(r.hasil.menu ?? []).filter((m) => m.jenis === "barang_jadi").map((m) => `${m.nama}: ${m.sisa} pcs`)}
+          />}
       </div>
     </main>
   );

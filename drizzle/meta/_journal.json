@@ -15,6 +15,20 @@
       "when": 1790585484354,
       "tag": "0001_outgoing_captain_britain",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790864791819,
+      "tag": "0002_menu_bahan_resep",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1790864811140,
+      "tag": "0003_hapus_kolom_lama",
+      "breakpoints": true
     }
   ]
 }

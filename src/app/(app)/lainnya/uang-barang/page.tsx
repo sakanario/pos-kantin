@@ -50,7 +50,7 @@ export default async function UangBarangPage() {
                 <Row
                   label={
                     <>
-                      {b.icon} {b.nama}{" "}
+                      🍫 {b.nama}{" "}
                       <span className="text-sm text-muted">
                         {b.sisa} pcs × {angka(b.modalPerPcs)}
                       </span>

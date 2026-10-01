@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Belanja } from "@/db/schema";
 import { rupiah, tanggal } from "@/lib/format";
 
-export const labelKategori = { bb: "🍫 Beng Beng", kopi: "☕ Bahan Kopi", lain: "📦 Lain-lain" } as const;
+export const labelKategori = { bahan: "🧂 Bahan", barang: "🍫 Barang jadi", lain: "📦 Lain-lain" } as const;
 
 /** Daftar belanja. Tiap baris membuka halaman edit. */
 export function BelanjaList({ items, kosong = "Belum ada belanja." }: { items: Belanja[]; kosong?: string }) {
@@ -17,6 +17,7 @@ export function BelanjaList({ items, kosong = "Belum ada belanja." }: { items: B
               <div className="text-xs text-muted">
                 {labelKategori[b.kategori]} · {tanggal(b.waktu)}
                 {b.qtyPcs ? ` · ${b.qtyPcs} pcs @${rupiah(b.total / b.qtyPcs)}` : ""}
+                {b.kategori === "bahan" && b.bahanId === null ? " · belum ditandai" : ""}
                 {b.sumber === "pribadi" ? " · dibayar pribadi" : ""}
                 {b.catatan ? ` · ${b.catatan}` : ""}
               </div>

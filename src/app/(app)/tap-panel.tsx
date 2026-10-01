@@ -3,70 +3,97 @@
 import { useOptimistic, useState, useTransition } from "react";
 import { tapAction } from "@/app/actions";
 
-type Jenis = "kopi" | "kopi_sendiri" | "bb_sendiri";
-type Counts = Record<Jenis, number>;
+type Jenis = "terjual" | "sendiri";
+type Hitung = Record<Jenis, number>;
+export type MenuTap = {
+  id: number;
+  nama: string;
+  jenis: "racikan" | "barang_jadi";
+  hargaJual: number;
+  hariIni: Hitung;
+  periode: Hitung;
+};
+type State = Record<number, { hariIni: Hitung; periode: Hitung }>;
 
-export function TapPanel({ counts, periode, hargaKopi }: { counts: Counts; periode: Counts; hargaKopi: number }) {
+/** Kartu tap per menu aktif: racikan +1 terjual / +1 sendiri, barang jadi +1 sendiri saja. */
+export function TapPanel({ menu }: { menu: MenuTap[] }) {
   const [optimistic, apply] = useOptimistic(
-    { hariIni: counts, periode },
-    (s, { jenis, delta }: { jenis: Jenis; delta: 1 | -1 }) => ({
-      hariIni: { ...s.hariIni, [jenis]: s.hariIni[jenis] + delta },
-      periode: { ...s.periode, [jenis]: s.periode[jenis] + delta },
+    Object.fromEntries(menu.map((m) => [m.id, { hariIni: m.hariIni, periode: m.periode }])) as State,
+    (s, { id, jenis, delta }: { id: number; jenis: Jenis; delta: 1 | -1 }) => ({
+      ...s,
+      [id]: {
+        hariIni: { ...s[id].hariIni, [jenis]: s[id].hariIni[jenis] + delta },
+        periode: { ...s[id].periode, [jenis]: s[id].periode[jenis] + delta },
+      },
     }),
   );
   const [, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  function tap(jenis: Jenis, delta: 1 | -1) {
-    if (delta === -1 && optimistic.periode[jenis] <= 0) return;
+  function tap(id: number, jenis: Jenis, delta: 1 | -1) {
+    if (delta === -1 && optimistic[id].periode[jenis] <= 0) return;
     setError(null);
     if (delta === 1) navigator.vibrate?.(15);
     startTransition(async () => {
-      apply({ jenis, delta });
-      const r = await tapAction(jenis, delta);
+      apply({ id, jenis, delta });
+      const r = await tapAction(id, jenis, delta);
       if (r?.error) setError(r.error);
     });
   }
 
-  const kopi = optimistic.hariIni.kopi;
+  const racikan = menu.filter((m) => m.jenis === "racikan");
+  const terjual = racikan.reduce((a, m) => a + optimistic[m.id].hariIni.terjual, 0);
+  const omzet = racikan.reduce((a, m) => a + optimistic[m.id].hariIni.terjual * m.hargaJual, 0);
 
   return (
     <section className="space-y-3">
-      <div className="card flex flex-col items-center gap-3 py-6">
-        <div className="text-center">
-          <div className="num text-6xl font-semibold">{kopi}</div>
-          <div className="text-sm text-muted">
-            kopi terjual hari ini · Rp {(kopi * hargaKopi).toLocaleString("id-ID")}
-          </div>
-        </div>
-        <button
-          onClick={() => tap("kopi", 1)}
-          className="btn-primary h-24 w-full text-2xl shadow-sm"
-        >
-          +1 Kopi
-        </button>
-        <button onClick={() => tap("kopi", -1)} className="btn-ghost w-full text-sm" disabled={optimistic.periode.kopi <= 0}>
-          −1 (koreksi)
-        </button>
-      </div>
-
+      {racikan.length > 0 && (
+        <p className="text-center text-sm text-muted">
+          <span className="num text-base font-semibold text-fg">{terjual}</span> terjual hari ini · Rp{" "}
+          {omzet.toLocaleString("id-ID")}
+        </p>
+      )}
       <div className="grid grid-cols-2 gap-3">
-        <SmallCounter
-          label="Kopi Sendiri"
-          icon="🙋"
-          value={optimistic.hariIni.kopi_sendiri}
-          onPlus={() => tap("kopi_sendiri", 1)}
-          onMinus={() => tap("kopi_sendiri", -1)}
-          canMinus={optimistic.periode.kopi_sendiri > 0}
-        />
-        <SmallCounter
-          label="Beng Beng Sendiri"
-          icon="🍫"
-          value={optimistic.hariIni.bb_sendiri}
-          onPlus={() => tap("bb_sendiri", 1)}
-          onMinus={() => tap("bb_sendiri", -1)}
-          canMinus={optimistic.periode.bb_sendiri > 0}
-        />
+        {menu.map((m) => {
+          const s = optimistic[m.id];
+          return m.jenis === "racikan" ? (
+            <div key={m.id} className="card flex flex-col gap-2 p-3">
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-sm font-medium leading-tight">{m.nama}</span>
+                <span className="num text-2xl font-semibold">{s.hariIni.terjual}</span>
+              </div>
+              <button onClick={() => tap(m.id, "terjual", 1)} className="btn-primary h-16 w-full text-lg shadow-sm">
+                +1
+              </button>
+              <button
+                onClick={() => tap(m.id, "terjual", -1)}
+                disabled={s.periode.terjual <= 0}
+                className="btn-ghost w-full py-1.5 text-xs"
+              >
+                −1 (koreksi)
+              </button>
+              <Sendiri
+                label="🙋 Sendiri"
+                value={s.hariIni.sendiri}
+                onPlus={() => tap(m.id, "sendiri", 1)}
+                onMinus={() => tap(m.id, "sendiri", -1)}
+                canMinus={s.periode.sendiri > 0}
+              />
+            </div>
+          ) : (
+            <div key={m.id} className="card flex flex-col justify-between gap-2 p-3">
+              <span className="text-sm font-medium leading-tight">🍫 {m.nama}</span>
+              <p className="text-xs text-muted">Terjual dihitung saat tutup buku.</p>
+              <Sendiri
+                label="🙋 Sendiri"
+                value={s.hariIni.sendiri}
+                onPlus={() => tap(m.id, "sendiri", 1)}
+                onMinus={() => tap(m.id, "sendiri", -1)}
+                canMinus={s.periode.sendiri > 0}
+              />
+            </div>
+          );
+        })}
       </div>
 
       {error && <p className="rounded-lg bg-bad/10 px-3 py-2 text-sm text-bad">{error}</p>}
@@ -74,27 +101,18 @@ export function TapPanel({ counts, periode, hargaKopi }: { counts: Counts; perio
   );
 }
 
-function SmallCounter(props: {
-  label: string;
-  icon: string;
-  value: number;
-  onPlus: () => void;
-  onMinus: () => void;
-  canMinus: boolean;
-}) {
+function Sendiri(props: { label: string; value: number; onPlus: () => void; onMinus: () => void; canMinus: boolean }) {
   return (
-    <div className="card space-y-2 p-3">
-      <div className="flex items-center justify-between text-sm">
-        <span>
-          {props.icon} {props.label}
-        </span>
+    <div className="space-y-1 border-t border-line pt-2">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-muted">{props.label}</span>
         <span className="num font-semibold">{props.value}</span>
       </div>
       <div className="grid grid-cols-[1fr_2fr] gap-2">
-        <button onClick={props.onMinus} disabled={!props.canMinus} className="btn-ghost px-0 py-2 text-sm">
+        <button onClick={props.onMinus} disabled={!props.canMinus} className="btn-ghost px-0 py-1.5 text-sm">
           −1
         </button>
-        <button onClick={props.onPlus} className="btn-ghost border-accent px-0 py-2 text-sm font-semibold text-accent">
+        <button onClick={props.onPlus} className="btn-ghost border-accent px-0 py-1.5 text-sm font-semibold text-accent">
           +1
         </button>
       </div>
