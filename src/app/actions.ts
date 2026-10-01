@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, eq, gt, lt, lte } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lt, lte } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
@@ -131,8 +131,20 @@ async function infoGantiKemasan(bahanId: number, waktu: number): Promise<string>
   return ` ${b.nama} sebelumnya habis setelah ${pakai.cup} cup${perkiraan !== null ? ` (perkiraan resep: ${perkiraan} cup)` : ""}.`;
 }
 
-/** Jadikan belanja `belanjaId` kemasan aktif mulai `mulai`. Mengembalikan info "habis setelah N cup". */
+/**
+ * Jadikan belanja `belanjaId` kemasan aktif mulai `mulai`. Pilihan kemasan lain di waktu itu atau
+ * sesudahnya diganti, supaya kemasan ini benar-benar yang dipakai sejak `mulai` sampai diganti lagi.
+ * Mengembalikan info "habis setelah N cup".
+ */
 async function aktifkan(bahanId: number, belanjaId: number, mulai: number): Promise<string> {
+  await db.delete(bahanAktif).where(and(eq(bahanAktif.bahanId, bahanId), gte(bahanAktif.mulai, mulai)));
+  // Kemasan ini memang sudah dipakai sebelum `mulai`: tidak perlu dicatat lagi
+  const sebelum = await db
+    .select()
+    .from(bahanAktif)
+    .where(and(eq(bahanAktif.bahanId, bahanId), lt(bahanAktif.mulai, mulai)))
+    .orderBy(asc(bahanAktif.mulai), asc(bahanAktif.id));
+  if (sebelum.at(-1)?.belanjaId === belanjaId) return "";
   const info = await infoGantiKemasan(bahanId, mulai);
   await db.insert(bahanAktif).values({ bahanId, belanjaId, mulai });
   return info;

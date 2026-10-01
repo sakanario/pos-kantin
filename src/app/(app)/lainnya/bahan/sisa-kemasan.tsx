@@ -1,6 +1,6 @@
 /**
  * Sisa kemasan yang sedang dipakai: progres bar (100% = isi satu kemasan saat dibuka) +
- * "±15 cup lagi (10 dari 25)". Kemasan yang belum dibuka hanya disebut, tidak masuk bar.
+ * "±15 cup lagi dari 25". Kemasan yang belum dibuka hanya disebut, tidak masuk bar.
  */
 export function SisaKemasan({
   k,
@@ -26,8 +26,7 @@ export function SisaKemasan({
       <div className={`num ${menipis ? "text-bad" : ""}`}>
         {k.sisa > 0 ? `${menipis ? "⚠️ " : ""}±${k.sisa} cup lagi` : "⚠️ kemungkinan sudah habis"}
         <span className="text-muted">
-          {" "}
-          ({k.sudah} dari {k.perkiraan})
+          {k.sisa > 0 ? ` dari ${k.perkiraan}` : ` (sudah ${k.sudah} dari perkiraan ${k.perkiraan})`}
         </span>
       </div>
       {cadangan.length > 0 && (
