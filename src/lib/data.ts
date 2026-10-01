@@ -343,6 +343,7 @@ export async function getDaftarMenu() {
 export async function getDaftarBahan() {
   const [ctx, semuaMenu] = await Promise.all([getHppCtx(), getMenu()]);
   const now = Date.now();
+  const kemasan = await getKemasanAktif(ctx, now);
   return ctx.bahan
     .map((b) => {
       const aktif = ctx.aktif.filter((a) => a.bahanId === b.id && a.mulai <= now).at(-1);
@@ -354,6 +355,12 @@ export async function getDaftarBahan() {
         beliAktif: beliAktif ? { nama: beliAktif.nama, waktu: beliAktif.waktu } : null,
         adaPembelian: ctx.aktif.some((a) => a.bahanId === b.id && a.belanjaId != null),
         terakhir: terakhir ? { nama: terakhir.nama, isiKemasan: terakhir.isiKemasan } : null,
+        kemasan: (() => {
+          const k = kemasan.get(b.id);
+          return k && k.perkiraan !== null ? { perkiraan: k.perkiraan, sudah: k.pakai.cup, sisa: k.perkiraan - k.pakai.cup } : null;
+        })(),
+        // Kemasan cadangan: tidak dihitung ke perkiraan kemasan aktif
+        cadangan: belumDibuka(ctx, b.id).map((x) => x.nama),
         dipakaiDi: semuaMenu
           .filter((m) => m.jenis === "racikan" && m.aktif)
           .flatMap((m) => {
@@ -416,8 +423,40 @@ export async function getInfoFormBelanja() {
 
 // ─── Pengingat kemasan habis ──────────────────────────────────────
 
+type Ctx = Awaited<ReturnType<typeof getHppCtx>>;
+
+/** Belanja bahan yang belum pernah dipakai ("Pakai ini"), yang lama dulu. */
+function belumDibuka(ctx: Ctx, bahanId: number) {
+  const pernah = new Set(ctx.aktif.map((a) => a.belanjaId));
+  return ctx.belanja.filter((x) => x.bahanId === bahanId && !pernah.has(x.id)).sort((x, y) => x.waktu - y.waktu || x.id - y.id);
+}
+
 /**
- * Bahan yang punya pembelian lebih baru dari yang aktif, dan pemakaian sejak kemasan aktif dimulai
+ * Kemasan yang sedang dipakai tiap bahan dan pemakaiannya sejak dibuka (sejak mulai aktif, atau sejak
+ * dibeli bila aktif sejak awal): jumlah cup semua racikan yang resepnya memakai bahan itu, dan perkiraan
+ * resep (isi ÷ takaran). Dipakai untuk "±N cup lagi" di halaman Bahan dan pengingat kemasan habis.
+ */
+async function getKemasanAktif(ctx: Ctx, now: number) {
+  const daftar = ctx.bahan.flatMap((b) => {
+    const aktif = ctx.aktif.filter((a) => a.bahanId === b.id && a.mulai <= now).at(-1);
+    const beli = aktif?.belanjaId != null ? ctx.belanja.find((x) => x.id === aktif.belanjaId) : undefined;
+    return aktif && beli ? [{ bahanId: b.id, beli, dari: Math.max(aktif.mulai, beli.waktu) }] : [];
+  });
+  const hasil = new Map<number, (typeof daftar)[number] & { pakai: { cup: number; satuan: number }; perkiraan: number | null }>();
+  if (daftar.length === 0) return hasil;
+  const taps = await db
+    .select()
+    .from(tapEvent)
+    .where(and(gt(tapEvent.waktu, Math.min(...daftar.map((d) => d.dari))), lte(tapEvent.waktu, now)));
+  for (const d of daftar) {
+    const pakai = pemakaianBahan(ctx, taps.filter((t) => t.waktu > d.dari), d.bahanId);
+    hasil.set(d.bahanId, { ...d, pakai, perkiraan: perkiraanCup(d.beli, pakai, ctx, d.bahanId, now) });
+  }
+  return hasil;
+}
+
+/**
+ * Bahan yang punya kemasan belum dibuka, dan pemakaian sejak kemasan aktif dimulai
  * sudah mencapai perkiraan resep. Hanya pengingat; tidak pernah mengganti otomatis.
  */
 export async function getPengingatKemasan() {
@@ -425,22 +464,21 @@ export async function getPengingatKemasan() {
   const now = Date.now();
   const hariIni = isoTanggalWib(now);
   const ditunda = (tunda ? JSON.parse(tunda) : {}) as Record<string, string>;
+  const kemasan = await getKemasanAktif(ctx, now);
   const hasil = [];
   for (const b of ctx.bahan) {
-    if (ditunda[b.id] === hariIni) continue;
-    const aktif = ctx.aktif.filter((a) => a.bahanId === b.id && a.mulai <= now).at(-1);
-    const beli = aktif?.belanjaId != null ? ctx.belanja.find((x) => x.id === aktif.belanjaId) : undefined;
-    if (!aktif || !beli) continue;
-    const baru = ctx.belanja
-      .filter((x) => x.bahanId === b.id && x.waktu > beli.waktu && x.id !== beli.id)
-      .sort((x, y) => x.waktu - y.waktu)[0];
+    const k = kemasan.get(b.id);
+    if (ditunda[b.id] === hariIni || !k || k.perkiraan === null || k.pakai.cup < k.perkiraan) continue;
+    const baru = belumDibuka(ctx, b.id)[0];
     if (!baru) continue;
-    const dari = Math.max(aktif.mulai, beli.waktu);
-    const taps = await db.select().from(tapEvent).where(and(gt(tapEvent.waktu, dari), lte(tapEvent.waktu, now)));
-    const pakai = pemakaianBahan(ctx, taps, b.id);
-    const perkiraan = perkiraanCup(beli, pakai, ctx, b.id, now);
-    if (perkiraan === null || pakai.cup < perkiraan) continue;
-    hasil.push({ bahanId: b.id, bahanNama: b.nama, lama: beli.nama, baru: { id: baru.id, nama: baru.nama }, perkiraan, sudah: pakai.cup });
+    hasil.push({
+      bahanId: b.id,
+      bahanNama: b.nama,
+      lama: k.beli.nama,
+      baru: { id: baru.id, nama: baru.nama },
+      perkiraan: k.perkiraan,
+      sudah: k.pakai.cup,
+    });
   }
   return hasil;
 }

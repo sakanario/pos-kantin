@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { getDetailBahan, getInfoTutup } from "@/lib/data";
 import { desimal, perSatuan, rupiah, tanggalPendek } from "@/lib/format";
 import { BahanForm, HapusBahanButton, PakaiIniForm } from "../forms";
+import { SisaKemasan } from "../sisa-kemasan";
 
 export default async function DetailBahanPage(props: PageProps<"/lainnya/bahan/[id]">) {
   const { id } = await props.params;
@@ -24,6 +25,17 @@ export default async function DetailBahanPage(props: PageProps<"/lainnya/bahan/[
             ? "belum ada resep"
             : b.dipakaiDi.map((m) => `${m.nama} (${desimal(m.takaran)} ${b.satuan} = ${rupiah(m.takaran * b.hargaSekarang)})`).join(", ")}
         </section>
+
+        {b.kemasan && b.beliAktif && (
+          <section className="card space-y-1 text-sm">
+            <div className="text-muted">Kemasan yang dipakai: {b.beliAktif.nama}</div>
+            <SisaKemasan k={b.kemasan} cadangan={b.cadangan} />
+            <p className="text-xs text-muted">
+              Perkiraan dari isi kemasan ÷ takaran resep, dikurangi cup terjual + diminum sendiri sejak kemasan ini dibuka.
+              Bisa meleset kalau takaran kurang dari resep atau kemasan digabung.
+            </p>
+          </section>
+        )}
 
         <section>
           <h2 className="mb-2 text-sm font-medium text-muted">3 pembelian terakhir</h2>

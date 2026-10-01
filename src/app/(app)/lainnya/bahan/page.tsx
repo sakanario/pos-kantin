@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { getBelanjaBelumDitandai, getDaftarBahan } from "@/lib/data";
 import { perSatuan, rupiah, tanggal, tanggalPendek } from "@/lib/format";
 import { BahanForm, TandaiForm } from "./forms";
+import { SisaKemasan } from "./sisa-kemasan";
 
 export default async function DaftarBahanPage() {
   const [bahan, belum] = await Promise.all([getDaftarBahan(), getBelanjaBelumDitandai()]);
@@ -21,6 +22,11 @@ export default async function DaftarBahanPage() {
                     <div className="truncate text-xs text-muted">
                       {b.beliAktif ? `${b.beliAktif.nama} · ${tanggalPendek(b.beliAktif.waktu)}` : "harga awal (belum ada belanja)"}
                     </div>
+                    {b.kemasan && (
+                      <div className="mt-1 text-xs">
+                        <SisaKemasan k={b.kemasan} cadangan={b.cadangan} />
+                      </div>
+                    )}
                   </div>
                   <span className="num text-sm">{perSatuan(b.hargaSekarang, b.satuan)}</span>
                   <span className="text-muted">›</span>
