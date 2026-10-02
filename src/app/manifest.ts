@@ -7,12 +7,14 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Pencatatan profit Beng Beng & Kopi Susu Gula Aren",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffdf4f",
-    theme_color: "#ffdf4f",
+    // krem latar logo Kopi Ksatria (layar pembuka saat aplikasi dibuka dari HP)
+    background_color: "#faf6ec",
+    theme_color: "#faf6ec",
     icons: [
-      { src: "/pwa-icon?size=192", sizes: "192x192", type: "image/png" },
-      { src: "/pwa-icon?size=512", sizes: "512x512", type: "image/png" },
-      { src: "/pwa-icon?size=512", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+      // maskable: kepala diperkecil agar aman saat Android memotong ikon jadi lingkaran
+      { src: "/icons/maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }
