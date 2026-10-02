@@ -228,8 +228,8 @@
   --accent-3: #c8a27c;
   --sun: #e3b783;
   --on-sun: #2b100c;
-  --good: #2f6a3b;
-  --bad: #a8322a;
+  --good: #24572e;
+  --bad: #94271f;
   --bad-soft: #f7ded8;
   --warn: #c88a2c;
 
@@ -255,8 +255,8 @@
   --chip-fg: var(--fg);
   --chip-badge-bg: var(--accent);
   --chip-badge-fg: var(--accent-fg);
-  /* kartu kaca: tembus pandang 65%, blur latar, kilau putih tipis di tepi */
-  --card-fill: color-mix(in srgb, var(--card) 65%, transparent);
+  /* kartu kaca: tembus pandang 45%, blur latar, kilau putih tipis di tepi */
+  --card-fill: color-mix(in srgb, var(--card) 45%, transparent);
   --card-blur: blur(22px) saturate(1.2);
   --card-sheen: rgb(255 255 255 / 0.7);
   --card-rim: rgb(255 255 255 / 0.35);
