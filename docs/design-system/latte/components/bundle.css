@@ -7,20 +7,28 @@ body { margin: 0; font-family: var(--font-body); font-size: 16px; line-height: 2
 /* latar: lingkaran buram besar seperti foto kafe tidak fokus */
 .kp-page {
   background-color: var(--bg);
+  /* butiran halus + bulatan buram (terang: krem, cokelat, karamel, mocha; gelap: lihat [data-theme=dark]) */
+  --blob-1: rgb(168 132 106 / .5); --blob-2: rgb(199 154 107 / .72); --blob-3: rgb(246 239 230 / .9); --blob-4: rgb(122 90 70 / .3);
   background-image:
-    radial-gradient(circle at 12% 18%, var(--bg-dot) 0, transparent 34%),
-    radial-gradient(circle at 88% 70%, var(--bg-dot) 0, transparent 30%),
-    radial-gradient(circle at 60% 110%, color-mix(in srgb, var(--accent-3) 35%, transparent) 0, transparent 40%);
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='.6 .6 .6 0 -.3 .6 .6 .6 0 -.3 .6 .6 .6 0 -.3 0 0 0 0 .09'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 60% 45% at 8% 10%, var(--blob-3), transparent 70%),
+    radial-gradient(ellipse 55% 50% at 100% 32%, var(--blob-1), transparent 70%),
+    radial-gradient(ellipse 70% 45% at 12% 78%, var(--blob-2), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 90% 102%, var(--blob-4), transparent 70%);
+  background-size: 180px 180px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
   padding: var(--space-4);
 }
+[data-theme="dark"] .kp-card { box-shadow: inset 0 1px 0 rgb(255 255 255 / .09), inset 0 0 0 1px rgb(255 255 255 / .05), var(--shadow-pop-lg); }
+[data-theme="dark"] .kp-page { --blob-1: rgb(90 59 42 / .8); --blob-2: rgb(122 82 50 / .6); --blob-3: rgb(138 98 72 / .35); --blob-4: rgb(58 42 34 / .9); }
 .kp-num { font-variant-numeric: tabular-nums; }
 .kp-eyebrow { font: 600 12px/16px var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 
 /* Kartu kaca buram */
 .kp-card {
-  background: color-mix(in srgb, var(--card) 86%, transparent);
-  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
-  color: var(--fg); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop-lg); padding: var(--space-5);
+  background: color-mix(in srgb, var(--card) 65%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.2); backdrop-filter: blur(22px) saturate(1.2);
+  color: var(--fg); border-radius: var(--radius-lg); padding: var(--space-5);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .7), inset 0 0 0 1px rgb(255 255 255 / .35), var(--shadow-pop-lg);
 }
 .kp-card-title { margin: 0 0 var(--space-3); font: 600 20px/26px var(--font-display); }
 .kp-list { list-style: none; margin: 0; padding: 0; }

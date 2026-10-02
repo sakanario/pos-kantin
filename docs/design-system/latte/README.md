@@ -10,13 +10,13 @@ Gaya ketiga aplikasi Kantin, diambil dari halaman kafe kopi: latar krem busa sus
 
 ## Warna
 
-- Latar `bg` krem busa susu, dengan dua-tiga lingkaran buram `bg-dot` besar. Tema gelap: espresso pekat.
-- Isi duduk di kartu `card` krem yang sedikit tembus pandang dan memburamkan latar (kaca buram). Bidang di dalam kartu memakai `card-raised`.
+- Latar `bg` krem busa susu, ditimpa empat bulatan besar buram (krem terang, cokelat susu, karamel, mocha) dan butiran halus, seperti foto kafe yang tidak fokus. Tema gelap: espresso pekat dengan bulatan cokelat dan karamel redup.
+- Isi duduk di kartu `card` krem 65% tembus pandang yang memburamkan latar, dengan kilau putih tipis di tepi (kaca buram). Bidang di dalam kartu memakai `card-raised`.
 - `accent` espresso adalah warna aksi: tombol pil, label harga, navigasi bawah. Di tema gelap `accent` berubah jadi krem latte dan `accent-fg` jadi espresso, supaya aksi tetap paling menonjol.
 - `accent-2` karamel untuk aksi kedua dan status "aktif"; `accent-3` crema hanya hiasan.
 - `sun` karamel muda untuk sorotan: label harga positif, tombol "Batalkan" di toast, tombol "Tutup buku".
 - `bad` merah bata untuk rugi dan hapus; `warn` untuk hampir habis; `good` hijau daun untuk untung.
-- Semua pasangan teks ≥ 4.5:1 di kedua tema, dihitung: `fg` di `bg` 11.2:1, `muted` di `bg` 5.6:1 dan di `bg-dot` 4.8:1, `accent-fg` di `accent-2` 5.6:1 (gelap 7.8:1), `good` di `card` 5.7:1. `outline` 3.2:1 hanya untuk tepi kontrol.
+- Semua pasangan teks ≥ 4.5:1 di kedua tema, dihitung: `fg` di `bg` 11.2:1, `muted` di `bg` 7:1 dan di titik bulatan tergelap ≥ 4.5:1, `accent-fg` di `accent-2` 5.6:1 (gelap 7.8:1), `good` di `card` 5.7:1. `outline` 3.2:1 hanya untuk tepi kontrol.
 
 ## Huruf
 

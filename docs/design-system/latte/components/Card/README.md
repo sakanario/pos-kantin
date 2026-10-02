@@ -1,6 +1,6 @@
 # Card
 
-Panel krem seperti kaca buram: sedikit tembus pandang dengan blur, sudut `radius-lg` 24px, tanpa garis tepi, melayang oleh `shadow-pop-lg`.
+Panel krem seperti kaca buram: 65% tembus pandang dengan blur latar, kilau putih tipis di tepi atas, sudut `radius-lg` 24px, tanpa garis tepi, melayang oleh `shadow-pop-lg`.
 
 - Pakai `kp-card` untuk tiap kelompok isi: ringkasan, daftar tap, form. Padding `space-5`.
 - Judul kartu `kp-card-title` (gaya `heading`, Rubik). Daftar pakai `kp-list` dengan pemisah `line`.

@@ -218,7 +218,7 @@
   --card: #f6f0e8;
   --card-raised: #fcf9f5;
   --fg: #33150f;
-  --muted: #5e4940;
+  --muted: #4e3a31;
   --outline: #9d8778;
   --line: #e7ddd1;
   --accent: #2b100c;
@@ -255,13 +255,27 @@
   --chip-fg: var(--fg);
   --chip-badge-bg: var(--accent);
   --chip-badge-fg: var(--accent-fg);
-  --card-fill: color-mix(in srgb, var(--card) 86%, transparent);
-  --card-blur: blur(18px);
-  --bg-pattern:
-    radial-gradient(circle at 12% 18%, var(--bg-dot) 0, transparent 34%),
-    radial-gradient(circle at 88% 62%, var(--bg-dot) 0, transparent 30%),
-    radial-gradient(circle at 55% 105%, color-mix(in srgb, var(--accent-3) 35%, transparent) 0, transparent 40%);
-  --bg-pattern-size: 100% 100%;
+  /* kartu kaca: tembus pandang 65%, blur latar, kilau putih tipis di tepi */
+  --card-fill: color-mix(in srgb, var(--card) 65%, transparent);
+  --card-blur: blur(22px) saturate(1.2);
+  --card-sheen: rgb(255 255 255 / 0.7);
+  --card-rim: rgb(255 255 255 / 0.35);
+  --card-shadow: inset 0 1px 0 var(--card-sheen), inset 0 0 0 1px var(--card-rim), var(--pop-shadow-lg);
+  /* latar seperti foto kafe tidak fokus: bulatan besar buram + butiran halus (body::before).
+     Titik tergelap tetap >= 4.5:1 untuk --muted (dihitung). */
+  --blob-1: rgb(168 132 106 / 0.5);
+  --blob-2: rgb(199 154 107 / 0.72);
+  --blob-3: rgb(246 239 230 / 0.9);
+  --blob-4: rgb(122 90 70 / 0.3);
+  --bg-pattern: none;
+  --bg-pattern-size: auto;
+  --bg-layer:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='.6 .6 .6 0 -.3 .6 .6 .6 0 -.3 .6 .6 .6 0 -.3 0 0 0 0 .09'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 60% 45% at 8% 10%, var(--blob-3), transparent 70%),
+    radial-gradient(ellipse 55% 50% at 100% 32%, var(--blob-1), transparent 70%),
+    radial-gradient(ellipse 70% 45% at 12% 78%, var(--blob-2), transparent 70%),
+    radial-gradient(ellipse 60% 40% at 90% 102%, var(--blob-4), transparent 70%);
+  --bg-layer-size: 180px 180px, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
   --meter-gap: 3px;
   --meter-pad: 3px;
   --meter-track: var(--line);
@@ -295,6 +309,12 @@
     --warn: #e8b45e;
     --shadow-ink: rgb(0 0 0 / 0.55);
     --shadow-ink-lg: rgb(0 0 0 / 0.5);
+    --card-sheen: rgb(255 255 255 / 0.09);
+    --card-rim: rgb(255 255 255 / 0.05);
+    --blob-1: rgb(90 59 42 / 0.8);
+    --blob-2: rgb(122 82 50 / 0.6);
+    --blob-3: rgb(138 98 72 / 0.35);
+    --blob-4: rgb(58 42 34 / 0.9);
     color-scheme: dark;
   }
 }
@@ -321,6 +341,12 @@
   --warn: #e8b45e;
   --shadow-ink: rgb(0 0 0 / 0.55);
   --shadow-ink-lg: rgb(0 0 0 / 0.5);
+  --card-sheen: rgb(255 255 255 / 0.09);
+  --card-rim: rgb(255 255 255 / 0.05);
+  --blob-1: rgb(90 59 42 / 0.8);
+  --blob-2: rgb(122 82 50 / 0.6);
+  --blob-3: rgb(138 98 72 / 0.35);
+  --blob-4: rgb(58 42 34 / 0.9);
   color-scheme: dark;
 }
 
@@ -359,6 +385,18 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Latte: lapisan latar tetap (fixed) supaya bulatan tidak melar di halaman panjang
+   (iOS mengabaikan background-attachment: fixed). Gaya lain: --bg-layer kosong. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--bg-layer, none);
+  background-size: var(--bg-layer-size, auto);
+}
+
 h1,
 h2,
 h3 {
@@ -376,6 +414,7 @@ h3 {
   /* Latte: kartu kaca buram (tembus pandang + blur latar) */
   background-color: var(--card-fill, var(--card));
   backdrop-filter: var(--card-blur, none);
+  box-shadow: var(--card-shadow, var(--pop-shadow-lg));
 }
 @utility input {
   @apply min-h-12 w-full rounded-[var(--r-md)] border-[length:var(--stroke-input)] border-outline bg-card-raised px-4 py-2.5 text-base outline-none placeholder:text-muted focus:border-accent focus:shadow-pop;
