@@ -1,0 +1,61 @@
+<!-- @dsCard height=300 -->
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Kantin Latte</title>
+<style>
+  html, body { margin:0; height:100%; }
+  body { background:var(--bg); color:var(--fg); font-family:var(--font-body); overflow:hidden; }
+  .cover { position:relative; height:300px; overflow:hidden; }
+  .art { position:absolute; top:0; left:480px; width:480px; height:300px; overflow:hidden; }
+  .art svg { display:block; width:480px; height:300px; }
+  .blur { fill:var(--bg-dot); }
+  .ink { fill:var(--accent); }
+  .saucer { fill:var(--card-raised); }
+  .coffee { fill:var(--accent-2); }
+  .crema { fill:var(--accent-3); }
+  .sun { fill:var(--sun); }
+  .bean { fill:var(--accent); }
+  .words { position:absolute; left:var(--space-8); bottom:var(--space-8); max-width:440px; }
+  .name { margin:0; font-family:var(--font-display); font-size:104px; line-height:.95; font-weight:700; letter-spacing:-.02em; color:var(--fg); }
+  .tag { margin:var(--space-3) 0 0 4px; font-size:14px; line-height:20px; font-weight:500; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="480 0 480 300" width="480" height="300">
+<!--
+  blocks      accent espresso slab 176x232 (radius-lg 24) · card-raised saucer disc r104 with accent-2 coffee r76 and accent-3 crema r36 · sun price pill 120x48 (radius-pill) · bg-dot blur disc r150 behind — about 40% of 960x300
+  arrangement one tall espresso slab at left with the cup overlapping it like the coffee photo leaving the menu card, the price pill hanging off the cup's edge
+  pattern     discs and pills from "sudut besar, kontrol pil" plus the bean scatter of the reference: 12 accent pills 20x12 (rx 6 = half the short side)
+  scales      space-6 24 and space-8 32 insets, radius-lg 24 on the slab, radius-pill on the price tag and beans
+-->
+<circle class="blur" cx="790" cy="140" r="150"/>
+<rect class="ink" x="560" y="34" width="176" height="232" rx="24"/>
+<circle class="saucer" cx="760" cy="152" r="104"/>
+<circle class="coffee" cx="760" cy="152" r="76"/>
+<circle class="crema" cx="760" cy="152" r="36"/>
+<rect class="sun" x="800" y="224" width="120" height="48" rx="24"/>
+<rect class="bean" x="500" y="70" width="20" height="12" rx="6" transform="rotate(30 510 76)"/>
+<rect class="bean" x="528" y="112" width="20" height="12" rx="6" transform="rotate(-20 538 118)"/>
+<rect class="bean" x="506" y="228" width="20" height="12" rx="6" transform="rotate(60 516 234)"/>
+<rect class="bean" x="612" y="282" width="20" height="12" rx="6" transform="rotate(10 622 288)"/>
+<rect class="bean" x="902" y="128" width="20" height="12" rx="6" transform="rotate(-40 912 134)"/>
+<rect class="bean" x="934" y="196" width="20" height="12" rx="6" transform="rotate(25 944 202)"/>
+<rect class="bean" x="888" y="270" width="20" height="12" rx="6" transform="rotate(70 898 276)"/>
+<rect class="bean" x="700" y="20" width="20" height="12" rx="6" transform="rotate(-10 710 26)"/>
+<rect class="bean" x="836" y="30" width="20" height="12" rx="6" transform="rotate(45 846 36)"/>
+<rect class="bean" x="516" y="168" width="20" height="12" rx="6" transform="rotate(80 526 174)"/>
+<rect class="bean" x="930" y="60" width="20" height="12" rx="6" transform="rotate(-60 940 66)"/>
+<rect class="bean" x="690" y="286" width="20" height="12" rx="6" transform="rotate(35 700 292)"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Kantin<br>Latte</h1>
+<p class="tag">Krem busa susu, espresso, karamel. Gaya ketiga aplikasi Kantin.</p>
+</div>
+</div>
+</body>
+</html>

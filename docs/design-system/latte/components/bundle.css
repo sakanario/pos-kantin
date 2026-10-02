@@ -1,0 +1,140 @@
+@import url("https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap");
+
+/* Kantin Latte: krem busa susu, espresso, karamel; kartu kaca buram, tombol pil, label harga. */
+
+body { margin: 0; font-family: var(--font-body); font-size: 16px; line-height: 24px; color: var(--fg); background: var(--bg); }
+
+/* latar: lingkaran buram besar seperti foto kafe tidak fokus */
+.kp-page {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(circle at 12% 18%, var(--bg-dot) 0, transparent 34%),
+    radial-gradient(circle at 88% 70%, var(--bg-dot) 0, transparent 30%),
+    radial-gradient(circle at 60% 110%, color-mix(in srgb, var(--accent-3) 35%, transparent) 0, transparent 40%);
+  padding: var(--space-4);
+}
+.kp-num { font-variant-numeric: tabular-nums; }
+.kp-eyebrow { font: 600 12px/16px var(--font-body); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+/* Kartu kaca buram */
+.kp-card {
+  background: color-mix(in srgb, var(--card) 86%, transparent);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  color: var(--fg); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop-lg); padding: var(--space-5);
+}
+.kp-card-title { margin: 0 0 var(--space-3); font: 600 20px/26px var(--font-display); }
+.kp-list { list-style: none; margin: 0; padding: 0; }
+.kp-list > li { display: flex; align-items: center; gap: var(--space-3); padding: 12px 0; border-top: 1px solid var(--line); }
+.kp-list > li:first-child { border-top: 0; padding-top: 0; }
+.kp-list > li:last-child { padding-bottom: 0; }
+
+/* Tombol pil */
+.kp-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
+  min-height: 46px; padding: 0 22px;
+  font: 600 15px/1 var(--font-display); color: var(--fg);
+  background: var(--card-raised); border: var(--stroke-thin) solid var(--outline); border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-pop); cursor: pointer; transition: transform .08s ease, box-shadow .08s ease;
+}
+.kp-btn:active { transform: translateY(2px); box-shadow: none; }
+.kp-btn:focus-visible { outline: 3px solid var(--accent-2); outline-offset: 3px; }
+.kp-btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+.kp-btn-primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
+.kp-btn-caramel { background: var(--accent-2); color: var(--accent-fg); border-color: transparent; }
+.kp-btn-sun { background: var(--sun); color: var(--on-sun); border-color: transparent; }
+.kp-btn-danger { color: var(--bad); }
+.kp-btn-tap { width: 96px; height: 56px; padding: 0; font-size: 24px; font-weight: 700; }
+
+/* Ubin ikon: kotak krem membulat berisi ikon garis */
+.kp-icon {
+  display: inline-flex; align-items: center; justify-content: center; width: 52px; height: 52px;
+  border-radius: var(--radius-md); background: var(--card-raised); color: var(--fg); box-shadow: var(--shadow-pop);
+  border: 0; cursor: pointer;
+}
+.kp-icon svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.kp-icon[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
+
+/* Chip: pil krem dengan label harga espresso di kanan */
+.kp-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2); min-height: 40px; padding: 0 5px 0 var(--space-4);
+  font: 600 14px/20px var(--font-body); color: var(--fg); background: var(--card-raised);
+  border: 0; border-radius: var(--radius-pill); box-shadow: var(--shadow-pop); cursor: pointer;
+}
+.kp-chip-count { color: var(--muted); font-variant-numeric: tabular-nums; }
+.kp-chip-badge {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 30px; padding: 0 10px; box-sizing: border-box;
+  border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-fg);
+  font: 600 13px/1 var(--font-display); font-variant-numeric: tabular-nums;
+}
+.kp-chip:active { transform: translateY(2px); box-shadow: none; }
+.kp-badge {
+  display: inline-flex; align-items: center; padding: 2px 10px; border-radius: var(--radius-pill);
+  font: 600 12px/18px var(--font-body); font-variant-numeric: tabular-nums;
+  background: var(--accent-soft); color: var(--fg);
+}
+.kp-badge-caramel { background: var(--accent-2); color: var(--accent-fg); }
+.kp-badge-warn { background: var(--warn); color: var(--on-sun); }
+.kp-badge-bad { background: var(--bad); color: var(--card); }
+
+/* Field */
+.kp-field { display: flex; flex-direction: column; gap: 6px; }
+.kp-label { font: 600 14px/20px var(--font-body); color: var(--muted); }
+.kp-input {
+  width: 100%; box-sizing: border-box; min-height: 48px; padding: 0 var(--space-4);
+  font: 400 16px/24px var(--font-body); color: var(--fg);
+  background: var(--card-raised); border: var(--stroke-thin) solid var(--outline); border-radius: var(--radius-md); outline: none;
+}
+.kp-input:focus { border-color: var(--accent-2); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent-2) 30%, transparent); }
+.kp-input::placeholder { color: var(--muted); }
+.kp-hint { font-size: 14px; line-height: 20px; color: var(--muted); }
+.kp-error { font-size: 14px; line-height: 20px; font-weight: 600; color: var(--bad); }
+
+/* Dialog: kartu kaca dengan cangkir bundar yang mencuat di atas, seperti foto kopi di kartu menu */
+.kp-window {
+  position: relative; margin-top: 34px; padding: 44px var(--space-5) var(--space-5);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+  color: var(--fg); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop-lg);
+}
+.kp-window-cup {
+  position: absolute; top: -30px; left: var(--space-5); display: flex; align-items: center; justify-content: center;
+  width: 60px; height: 60px; border-radius: 50%; background: var(--accent); color: var(--accent-fg);
+  box-shadow: 0 0 0 6px var(--card), var(--shadow-pop);
+}
+.kp-window-cup svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.kp-window-cup.is-danger { background: var(--bad); color: var(--card); }
+.kp-window-title { margin: 0 0 var(--space-2); font: 600 20px/26px var(--font-display); }
+.kp-window-body { display: flex; flex-direction: column; gap: var(--space-3); }
+.kp-window-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-2); }
+
+/* Bar kemasan: lapisan kopi (espresso, karamel, crema) di alur pil */
+.kp-meter { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3px; padding: 3px; border-radius: var(--radius-pill); background: var(--line); }
+.kp-meter > i { height: 10px; border-radius: var(--radius-pill); background: transparent; }
+.kp-meter > i.on { background: var(--accent); }
+.kp-meter > i.on:nth-child(n + 5) { background: var(--accent-2); }
+.kp-meter > i.on:nth-child(n + 8) { background: var(--accent-3); }
+.kp-meter.is-low > i.on { background: var(--warn); }
+
+/* Angka: kartu kecil dengan label harga pil yang menggantung di tepi bawah */
+.kp-stat {
+  position: relative; display: inline-flex; flex-direction: column; align-items: center; gap: 2px;
+  min-width: 150px; padding: var(--space-4) var(--space-5) 30px; margin-bottom: 16px;
+  background: color-mix(in srgb, var(--card) 86%, transparent); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop-lg);
+}
+.kp-stat-label { font: 600 14px/20px var(--font-body); color: var(--muted); }
+.kp-stat-value { font: 700 30px/34px var(--font-display); font-variant-numeric: tabular-nums; color: var(--fg); }
+.kp-price {
+  position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); white-space: nowrap;
+  padding: 5px 14px; border-radius: var(--radius-pill); background: var(--accent); color: var(--accent-fg);
+  box-shadow: var(--shadow-pop); font: 600 15px/20px var(--font-display); font-variant-numeric: tabular-nums;
+}
+.kp-price.is-sun { background: var(--sun); color: var(--on-sun); }
+.kp-hero { display: flex; flex-direction: column; gap: 4px; }
+.kp-hero-value { font: 700 52px/54px var(--font-display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; color: var(--fg); }
+.kp-hero-caption { font: 500 14px/20px var(--font-body); color: var(--muted); }
+
+/* Navigasi bawah: pil espresso, tab aktif bulatan krem (seperti bilah di mockup HP referensi) */
+.kp-nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 6px; background: var(--accent); border-radius: var(--radius-pill); box-shadow: var(--shadow-pop-lg); }
+.kp-nav a { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; border-radius: var(--radius-pill); font: 500 12px/16px var(--font-display); color: color-mix(in srgb, var(--accent-fg) 78%, transparent); text-decoration: none; }
+.kp-nav a svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.kp-nav a[aria-current="page"] { background: var(--card); color: var(--fg); }
