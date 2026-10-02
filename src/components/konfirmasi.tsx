@@ -49,7 +49,7 @@ export function KonfirmasiButton({
     <div className="w-full overflow-hidden rounded-[var(--r-lg)] border-[length:var(--stroke)] border-outline bg-card text-left text-sm shadow-pop-lg">
       <div className="flex items-center justify-between gap-3 border-b-[length:var(--stroke)] border-outline bg-bad px-4 py-2 font-display text-sm font-bold text-card">
         <span>Yakin?</span>
-        <span className="flex gap-1.5 poster:hidden" aria-hidden="true">
+        <span className="flex gap-1.5 poster:hidden latte:hidden" aria-hidden="true">
           <i className="size-3 rounded-full border-2 border-outline bg-card-raised" />
           <i className="size-3 rounded-full border-2 border-outline bg-sun" />
           <i className="size-3 rounded-full border-2 border-outline bg-accent" />

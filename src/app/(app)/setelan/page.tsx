@@ -30,7 +30,7 @@ export default async function SetelanPage() {
           <div className="space-y-1.5">
             <p className="text-sm font-semibold">Gaya</p>
             <GayaPicker gaya={gaya} />
-            <p className="text-xs text-muted">Pop = kuning-biru, tepi tebal. Poster = kuning mustard, label arang, huruf sempit.</p>
+            <p className="text-xs text-muted">Pop = kuning-biru, tepi tebal. Poster = kuning mustard, label arang, huruf sempit. Latte = krem kopi susu, tombol pil espresso.</p>
           </div>
           <div className="space-y-1.5">
             <p className="text-sm font-semibold">Tema</p>

@@ -39,6 +39,7 @@ const pilihanTema: [Tema, string][] = [
 const pilihanGaya: [Gaya, string][] = [
   ["pop", "Pop"],
   ["poster", "Poster"],
+  ["latte", "Latte"],
 ];
 
 /** Deretan tombol pilihan; yang dipilih langsung tampil (optimistic), lalu disimpan lewat `simpan`. */

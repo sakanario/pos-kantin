@@ -2,6 +2,8 @@
 
 /* `poster:` = hanya saat gaya Kantin Poster dipilih */
 @custom-variant poster (&:where([data-gaya="poster"] *));
+/* `latte:` = hanya saat gaya Kantin Latte dipilih */
+@custom-variant latte (&:where([data-gaya="latte"] *));
 
 /* Design system "Kantin Pop" — docs/design-system/pop/ (tokens.json, README.md) */
 :root {
@@ -209,6 +211,119 @@
   color-scheme: dark;
 }
 
+/* Gaya "Kantin Latte" — docs/design-system/latte/. Dipilih di Setelan (data-gaya="latte"). */
+:root[data-gaya="latte"] {
+  --bg: #ddd2c4;
+  --bg-dot: #d0c1af;
+  --card: #f6f0e8;
+  --card-raised: #fcf9f5;
+  --fg: #33150f;
+  --muted: #5e4940;
+  --outline: #9d8778;
+  --line: #e7ddd1;
+  --accent: #2b100c;
+  --accent-fg: #fbf4ec;
+  --accent-soft: #ebe0d3;
+  --accent-2: #8a5530;
+  --accent-3: #c8a27c;
+  --sun: #e3b783;
+  --on-sun: #2b100c;
+  --good: #2f6a3b;
+  --bad: #a8322a;
+  --bad-soft: #f7ded8;
+  --warn: #c88a2c;
+
+  /* bentuk Kantin Latte: tanpa tepi, kontrol pil, sudut besar, bayangan lembut, kartu kaca buram */
+  --font-ui: var(--font-dm-sans);
+  --font-judul: var(--font-rubik);
+  --stroke: 0px;
+  --stroke-input: 1.5px;
+  --stroke-chip: 0px;
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-ctl: 999px;
+  --r-btn: 999px;
+  --press: 2px;
+  --shadow-ink: rgb(43 16 12 / 0.3);
+  --shadow-ink-lg: rgb(43 16 12 / 0.18);
+  --pop-shadow: 0 6px 14px var(--shadow-ink);
+  --pop-shadow-lg: 0 16px 36px var(--shadow-ink-lg);
+  --shadow-chip: 0 6px 14px var(--shadow-ink);
+  --btn-solid-border: transparent;
+  --chip-bg: var(--card-raised);
+  --chip-fg: var(--fg);
+  --chip-badge-bg: var(--accent);
+  --chip-badge-fg: var(--accent-fg);
+  --card-fill: color-mix(in srgb, var(--card) 86%, transparent);
+  --card-blur: blur(18px);
+  --bg-pattern:
+    radial-gradient(circle at 12% 18%, var(--bg-dot) 0, transparent 34%),
+    radial-gradient(circle at 88% 62%, var(--bg-dot) 0, transparent 30%),
+    radial-gradient(circle at 55% 105%, color-mix(in srgb, var(--accent-3) 35%, transparent) 0, transparent 40%);
+  --bg-pattern-size: 100% 100%;
+  --meter-gap: 3px;
+  --meter-pad: 3px;
+  --meter-track: var(--line);
+  --meter-h: 10px;
+  --meter-seg-radius: 999px;
+  --meter-1: var(--accent);
+  --meter-2: var(--accent-2);
+  --meter-3: var(--accent-3);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-gaya="latte"]:not([data-theme="light"]) {
+    --bg: #1b1310;
+    --bg-dot: #2c201a;
+    --card: #271d18;
+    --card-raised: #332720;
+    --fg: #f6ece1;
+    --muted: #c2b0a1;
+    --outline: #88725f;
+    --line: #3c2f28;
+    --accent: #ecd2b0;
+    --accent-fg: #2b100c;
+    --accent-soft: #3e2d22;
+    --accent-2: #d5a271;
+    --accent-3: #6d4a30;
+    --sun: #e3b783;
+    --on-sun: #2b100c;
+    --good: #8acb98;
+    --bad: #ff8f84;
+    --bad-soft: #4b2420;
+    --warn: #e8b45e;
+    --shadow-ink: rgb(0 0 0 / 0.55);
+    --shadow-ink-lg: rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+:root[data-gaya="latte"][data-theme="dark"] {
+  --bg: #1b1310;
+  --bg-dot: #2c201a;
+  --card: #271d18;
+  --card-raised: #332720;
+  --fg: #f6ece1;
+  --muted: #c2b0a1;
+  --outline: #88725f;
+  --line: #3c2f28;
+  --accent: #ecd2b0;
+  --accent-fg: #2b100c;
+  --accent-soft: #3e2d22;
+  --accent-2: #d5a271;
+  --accent-3: #6d4a30;
+  --sun: #e3b783;
+  --on-sun: #2b100c;
+  --good: #8acb98;
+  --bad: #ff8f84;
+  --bad-soft: #4b2420;
+  --warn: #e8b45e;
+  --shadow-ink: rgb(0 0 0 / 0.55);
+  --shadow-ink-lg: rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-bg-dot: var(--bg-dot);
@@ -257,7 +372,10 @@ h3 {
 
 /* v4: @utility agar bisa di-@apply satu sama lain */
 @utility card {
-  @apply rounded-[var(--r-lg)] border-[length:var(--stroke)] border-outline bg-card p-4 shadow-pop-lg;
+  @apply rounded-[var(--r-lg)] border-[length:var(--stroke)] border-outline p-4 shadow-pop-lg;
+  /* Latte: kartu kaca buram (tembus pandang + blur latar) */
+  background-color: var(--card-fill, var(--card));
+  backdrop-filter: var(--card-blur, none);
 }
 @utility input {
   @apply min-h-12 w-full rounded-[var(--r-md)] border-[length:var(--stroke-input)] border-outline bg-card-raised px-4 py-2.5 text-base outline-none placeholder:text-muted focus:border-accent focus:shadow-pop;
@@ -266,7 +384,7 @@ h3 {
   @apply mb-1 block text-sm font-semibold text-muted;
 }
 @utility btn {
-  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--r-md)] border-[length:var(--stroke-input)] border-outline px-4 py-2.5 font-bold shadow-pop transition-[transform,box-shadow] duration-75 active:translate-y-[var(--press)] active:shadow-none disabled:translate-y-0 disabled:opacity-45;
+  @apply inline-flex min-h-12 items-center justify-center gap-2 rounded-[var(--r-btn,var(--r-md))] border-[length:var(--stroke-input)] border-outline px-4 py-2.5 font-bold shadow-pop transition-[transform,box-shadow] duration-75 active:translate-y-[var(--press)] active:shadow-none disabled:translate-y-0 disabled:opacity-45;
 }
 @utility btn-primary {
   @apply btn bg-accent text-accent-fg;

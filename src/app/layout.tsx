@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Barlow, Barlow_Condensed, Montserrat, Plus_Jakarta_Sans } from "next/font/google";
+import { Barlow, Barlow_Condensed, DM_Sans, Montserrat, Plus_Jakarta_Sans, Rubik } from "next/font/google";
 import { dataTheme, WARNA_BAR } from "@/lib/tema";
 import { getGaya, getTema } from "@/lib/tema-server";
 import "./globals.css";
@@ -16,6 +16,19 @@ const barlowCondensed = Barlow_Condensed({
 });
 const barlow = Barlow({
   variable: "--font-barlow",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  preload: false,
+});
+// Kantin Latte
+const rubik = Rubik({
+  variable: "--font-rubik",
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+  preload: false, // hanya diunduh bila gaya Latte dipakai
+});
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   preload: false,
@@ -43,7 +56,7 @@ export async function generateViewport(): Promise<Viewport> {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const [gaya, tema] = await Promise.all([getGaya(), getTema()]);
-  const fonts = [montserrat, jakarta, barlowCondensed, barlow].map((f) => f.variable).join(" ");
+  const fonts = [montserrat, jakarta, barlowCondensed, barlow, rubik, dmSans].map((f) => f.variable).join(" ");
   return (
     <html
       lang="id"
