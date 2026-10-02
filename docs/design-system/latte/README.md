@@ -11,7 +11,7 @@ Gaya ketiga aplikasi Kantin, diambil dari halaman kafe kopi: latar krem busa sus
 ## Warna
 
 - Latar `bg` krem busa susu, ditimpa empat bulatan besar buram (krem terang, cokelat susu, karamel, mocha) dan butiran halus, seperti foto kafe yang tidak fokus. Tema gelap: espresso pekat dengan bulatan cokelat dan karamel redup.
-- Isi duduk di kartu `card` krem 45% tembus pandang yang memburamkan latar, dengan kilau putih tipis di tepi (kaca buram). Bidang di dalam kartu memakai `card-raised`.
+- Isi duduk di kartu `card` krem 90% tembus pandang (warna kartu tinggal 10%) yang memburamkan latar, dengan kilau putih tipis di tepi (kaca buram). Bidang di dalam kartu memakai `card-raised`.
 - `accent` espresso adalah warna aksi: tombol pil, label harga, navigasi bawah. Di tema gelap `accent` berubah jadi krem latte dan `accent-fg` jadi espresso, supaya aksi tetap paling menonjol.
 - `accent-2` karamel untuk aksi kedua dan status "aktif"; `accent-3` crema hanya hiasan.
 - `sun` karamel muda untuk sorotan: label harga positif, tombol "Batalkan" di toast, tombol "Tutup buku".

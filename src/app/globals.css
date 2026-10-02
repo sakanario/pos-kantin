@@ -255,8 +255,8 @@
   --chip-fg: var(--fg);
   --chip-badge-bg: var(--accent);
   --chip-badge-fg: var(--accent-fg);
-  /* kartu kaca: tembus pandang 45%, blur latar, kilau putih tipis di tepi */
-  --card-fill: color-mix(in srgb, var(--card) 45%, transparent);
+  /* kartu kaca: tembus pandang 90%, blur latar, kilau putih tipis di tepi */
+  --card-fill: color-mix(in srgb, var(--card) 10%, transparent);
   --card-blur: blur(22px) saturate(1.2);
   --card-sheen: rgb(255 255 255 / 0.7);
   --card-rim: rgb(255 255 255 / 0.35);
