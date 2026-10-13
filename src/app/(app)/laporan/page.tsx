@@ -16,7 +16,8 @@ export default async function LaporanPage() {
     omzet: number;
     belanja: number;
     selisih: number;
-    menu: Map<string, { terjual: number; untung: number; satuan: string }>;
+    // untung = dari yang terjual saja; konsumsi sendiri dipisah (untung menu = untung − nilaiSendiri)
+    menu: Map<string, { terjual: number; untung: number; sendiri: number; nilaiSendiri: number; satuan: string }>;
   };
   const bulanan = new Map<string, Rekap>();
   for (const r of periode) {
@@ -30,9 +31,17 @@ export default async function LaporanPage() {
     b.belanja += h.belanjaTotal;
     b.selisih += h.selisih;
     for (const m of h.menu) {
-      const x = b.menu.get(m.nama) ?? { terjual: 0, untung: 0, satuan: m.jenis === "racikan" ? "cup" : "pcs" };
+      const x = b.menu.get(m.nama) ?? {
+        terjual: 0,
+        untung: 0,
+        sendiri: 0,
+        nilaiSendiri: 0,
+        satuan: m.jenis === "racikan" ? "cup" : "pcs",
+      };
       x.terjual += m.terjual;
-      x.untung += m.untung;
+      x.untung += m.untung + m.nilaiSendiri;
+      x.sendiri += m.sendiri;
+      x.nilaiSendiri += m.nilaiSendiri;
       b.menu.set(m.nama, x);
     }
     bulanan.set(k, b);
@@ -88,18 +97,18 @@ export default async function LaporanPage() {
                     <span />
                     <span className={`text-right ${b.selisih < 0 ? "text-bad" : ""}`}>Selisih {rupiah(b.selisih)}</span>
                   </div>
-                  {b.menu.size > 0 && (
-                    <ul className="num mt-2 space-y-0.5 border-t border-line pt-2 text-sm">
-                      {[...b.menu.entries()].map(([nama, x]) => (
-                        <li key={nama} className="flex justify-between gap-3">
-                          <span className="text-muted">
-                            {nama} · {x.terjual} {x.satuan}
-                          </span>
-                          <span className={x.untung < 0 ? "text-bad" : ""}>{plus(x.untung)}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                  <RekapMenu
+                    judul="Terjual"
+                    baris={[...b.menu.entries()]
+                      .filter(([, x]) => x.terjual !== 0 || x.untung !== 0)
+                      .map(([nama, x]) => ({ nama, jumlah: `${x.terjual} ${x.satuan}`, nilai: x.untung }))}
+                  />
+                  <RekapMenu
+                    judul="Dimakan / diminum sendiri"
+                    baris={[...b.menu.entries()]
+                      .filter(([, x]) => x.sendiri !== 0 || x.nilaiSendiri !== 0)
+                      .map(([nama, x]) => ({ nama, jumlah: `${x.sendiri} ${x.satuan}`, nilai: -x.nilaiSendiri }))}
+                  />
                 </div>
               ))}
             </div>
@@ -156,5 +165,35 @@ export default async function LaporanPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+function RekapMenu({
+  judul,
+  baris,
+}: {
+  judul: string;
+  baris: { nama: string; jumlah: string; nilai: number }[];
+}) {
+  if (baris.length === 0) return null;
+  const jumlah = baris.reduce((a, x) => a + x.nilai, 0);
+  return (
+    <div className="mt-2 border-t border-line pt-2">
+      <h4 className="mb-0.5 text-xs font-bold text-muted">{judul}</h4>
+      <ul className="num space-y-0.5 text-sm">
+        {baris.map((x) => (
+          <li key={x.nama} className="flex justify-between gap-3">
+            <span className="text-muted">
+              {x.nama} · {x.jumlah}
+            </span>
+            <span className={x.nilai < 0 ? "text-bad" : ""}>{plus(x.nilai)}</span>
+          </li>
+        ))}
+        <li className="flex justify-between gap-3 font-semibold">
+          <span>Total {judul.toLowerCase()}</span>
+          <span className={jumlah < 0 ? "text-bad" : ""}>{plus(jumlah)}</span>
+        </li>
+      </ul>
+    </div>
   );
 }

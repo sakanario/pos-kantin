@@ -131,7 +131,7 @@ Fokus ke laporan saja (kartu saldo & Riwayat Pengeluaran ada di Lainnya, CR-004)
 
 - Kartu **Saldo Kantong Kantin** (di Beranda sesudah kartu periode berjalan, dan di Uang & Barang): saldo yang diinput di tutup buku terakhir (atau setup awal) beserta waktunya, lalu daftar setor/tarik **sejak itu** (tap → halaman edit). Setor/tarik tidak dijumlahkan ke saldo, karena uang jualan tidak dicatat sehingga saldo saat ini tidak diketahui; efeknya dihitung di tutup buku berikutnya.
 - Per periode tutup buku (lihat format di §5.5): angka per menu.
-- Rekap bulanan (gabungan periode yang tutup bukunya jatuh di bulan tersebut), dengan rincian per menu (terjual, untung).
+- Rekap bulanan (gabungan periode yang tutup bukunya jatuh di bulan tersebut), dengan dua bagian: **Terjual** (per menu: jumlah terjual, untung dari yang terjual = `untung + nilai_sendiri`) dan **Dimakan / diminum sendiri** (per menu: jumlah, `−nilai_sendiri`). Tiap bagian punya baris total; untung bulan = total terjual + total dimakan/diminum sendiri.
 - Angka utama tiap periode & bulan: **untung jualan**; angka kedua (lebih kecil): **uang bersih**
 - Grafik sederhana: racikan terjual per hari
 
