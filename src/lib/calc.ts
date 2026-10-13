@@ -338,3 +338,50 @@ export function pemakaianBahan(ctx: HppCtx, taps: TapData[], bahanId: number) {
   }
   return { cup, satuan };
 }
+
+// ─── Grafik harian barang jadi (CR-006) ──────────────────────────
+
+const WIB_MS = 7 * 60 * 60 * 1000;
+const HARI_MS = 86400000;
+const isoWib = (ms: number) => new Date(ms + WIB_MS).toISOString().slice(0, 10);
+const jamWib = (ms: number) => new Date(ms + WIB_MS).getUTCHours();
+
+/** Semua tanggal WIB ("YYYY-MM-DD") dari `awal` sampai `akhir`, keduanya ikut. */
+export function daftarTanggal(awal: number, akhir: number): string[] {
+  const hasil: string[] = [];
+  const sampai = isoWib(akhir);
+  for (let t = Date.parse(`${isoWib(awal)}T00:00:00Z`); ; t += HARI_MS) {
+    const iso = new Date(t).toISOString().slice(0, 10);
+    if (iso > sampai) break;
+    hasil.push(iso);
+  }
+  return hasil;
+}
+
+/**
+ * Tanggal bawaan yang dicentang buka untuk periode (awal, akhir]. Tanggal awal tidak ikut bila tutup buku
+ * sebelumnya jam 21.00 WIB atau lebih (kantin sudah tutup); tanggal akhir tidak ikut bila tutup buku ini
+ * sebelum jam 08.00 WIB (belum ada jualan).
+ */
+export function hariBukaBawaan(awalPeriode: number, akhirPeriode: number): string[] {
+  const awal = isoWib(awalPeriode);
+  const akhir = isoWib(akhirPeriode);
+  return daftarTanggal(awalPeriode, akhirPeriode).filter(
+    (t) => !(t === awal && jamWib(awalPeriode) >= 21) && !(t === akhir && jamWib(akhirPeriode) < 8),
+  );
+}
+
+/**
+ * Bagi `jumlah` ke `hari` (urut tanggal): dasar = floor(jumlah / n), sisanya +1 ke hari-hari pertama.
+ * Total tetap. Jumlah negatif (salah input) dianggap 0.
+ */
+export function bagiPerHari(jumlah: number, hari: string[]): Map<string, number> {
+  const hasil = new Map<string, number>();
+  const n = hari.length;
+  if (n === 0) return hasil;
+  const total = Math.max(0, Math.round(jumlah));
+  const dasar = Math.floor(total / n);
+  const sisa = total - dasar * n;
+  [...hari].sort().forEach((h, i) => hasil.set(h, (hasil.get(h) ?? 0) + dasar + (i < sisa ? 1 : 0)));
+  return hasil;
+}

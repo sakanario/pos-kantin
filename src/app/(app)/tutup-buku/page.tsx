@@ -1,6 +1,6 @@
 import { PageHeader } from "@/components/page-header";
 import { getPeriodeBerjalan } from "@/lib/data";
-import { rupiah, tanggalJam } from "@/lib/format";
+import { hariTanggal, rupiah, tanggalJam } from "@/lib/format";
 import { TutupBukuWizard } from "./wizard";
 
 export default async function TutupBukuPage() {
@@ -15,6 +15,7 @@ export default async function TutupBukuPage() {
             .filter((m) => m.jenis === "barang_jadi" && (m.aktif || m.stokTersedia !== 0 || m.stokAwal !== 0))
             .map((m) => ({ id: m.id, nama: m.nama, maks: m.stokTersedia }))}
           infoSaldoLalu={rupiah(p.terakhir.saldoKantong)}
+          hari={p.hariBuka.map((h) => ({ ...h, label: hariTanggal(h.iso) }))}
         />
       </div>
     </main>

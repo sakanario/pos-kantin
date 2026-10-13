@@ -113,7 +113,12 @@ Tab **Penjualan** di Catat: input manual hari sebelumnya, pilih menu + terjual/s
 ### 4.4 Tutup Buku (wizard, idealnya seminggu sekali)
 1. Input **saldo Kantong Kantin** saat ini, dengan pengingat: *pastikan cash di kotak sudah ditransfer ke kantong sebelum melihat saldo*
 2. Input **sisa stok** per barang jadi (aktif, atau nonaktif yang masih punya stok)
-3. Tampilkan hasil perhitungan (lihat §5), lalu konfirmasi → periode disimpan (`cash_belum_disetor = 0`)
+3. **Hari apa saja kantin buka?** (CR-006, hanya bila ada barang jadi): daftar semua tanggal WIB dari tutup buku
+   sebelumnya (periode pertama: waktu setup) sampai sekarang; pengguna menghapus centang hari libur. Minimal satu
+   tanggal tercentang. Centang bawaan = semua, kecuali tanggal awal bila tutup buku sebelumnya jam **≥ 21.00** dan
+   tanggal hari ini bila tutup buku ini **sebelum 08.00** (§5.6). Disimpan di `hari_buka_json`, tidak bisa diubah
+   sesudahnya. Hanya dipakai untuk grafik harian barang jadi.
+4. Tampilkan hasil perhitungan (lihat §5), lalu konfirmasi → periode disimpan (`cash_belum_disetor = 0`)
 
 Periode = dari tutup buku sebelumnya sampai tutup buku ini. Catatan masuk periode sesuai **tanggal aslinya**, jadi input telat (H+1, H+sekian) tetap masuk periode yang benar:
 - Tanggal tanpa tutup buku → dianggap jam 12:00 WIB hari itu (hari ini → jam sekarang).
@@ -133,7 +138,15 @@ Fokus ke laporan saja (kartu saldo & Riwayat Pengeluaran ada di Lainnya, CR-004)
 - Per periode tutup buku (lihat format di §5.5): angka per menu.
 - Rekap bulanan (gabungan periode yang tutup bukunya jatuh di bulan tersebut), dengan dua bagian: **Terjual** (per menu: jumlah terjual, untung dari yang terjual = `untung + nilai_sendiri`) dan **Dimakan / diminum sendiri** (per menu: jumlah, `−nilai_sendiri`). Tiap bagian punya baris total; untung bulan = total terjual + total dimakan/diminum sendiri.
 - Angka utama tiap periode & bulan: **untung jualan**; angka kedua (lebih kecil): **uang bersih**
-- Grafik sederhana: racikan terjual per hari
+- **Grafik harian** (CR-006), satu kartu berisi dua grafik batang bertumpuk per menu (urut `menu.urutan`, warna
+  `--grafik-1..6` per gaya/tema, berulang bila lebih dari 6 menu; angka di atas batang = total hari itu; `title` =
+  rincian per menu; keterangan warna hanya menu yang terjual di rentang itu):
+  - **Racikan terjual**: Σ tap terjual per hari.
+  - **Barang jadi terjual · perkiraan**: terjual tiap periode dibagi ke hari bukanya (§5.6), hanya sampai tanggal
+    tutup buku terakhir (sesudahnya kosong).
+  - **Minggu | Bulan** dan **‹ ›** menggeser kedua grafik bersama. Minggu = Senin–Minggu; Bulan = 1 batang per
+    tanggal, label hanya 1, 5, 10, …, 30. Awal = minggu berjalan; batas mundur = minggu/bulan setup awal, batas maju
+    = minggu/bulan berjalan. Disimpan di URL: `/laporan?grafik=minggu&dari=2026-10-06`.
 
 ### 4.6 Menu, Bahan, Setelan (dibuka dari tab Lainnya)
 **Menu** (`/lainnya/menu`): daftar aktif & nonaktif dengan harga jual, HPP/modal, untung per item. Form menu:
@@ -261,6 +274,19 @@ Uang bersih                      +59.000
 Omzet: seharusnya vs nyata (per menu), lalu Rincian (stok per barang, racikan, uang)
 ```
 
+### 5.6 Pembagian barang jadi per hari (grafik, CR-006)
+Barang jadi tidak di-tap, jadi terjual hanya diketahui per periode. Untuk grafik harian (`calc.ts`):
+- `hariBukaBawaan(awal, akhir)`: semua tanggal WIB periode, tanpa tanggal awal bila jam awal ≥ 21.00 dan tanpa
+  tanggal akhir bila jam akhir < 08.00. Dipakai sebagai centang bawaan dan untuk periode lama (`hari_buka_json` NULL).
+- `bagiPerHari(jumlah, hari)`: `dasar = floor(jumlah / n)`, sisanya +1 ke hari-hari pertama; total tetap
+  (5/2 → 3+2, 2/3 → 1+1+0). Terjual negatif → 0.
+- Tanggal yang ada di dua periode (tutup buku jam 08.00–20.59) mendapat jumlah dari keduanya.
+```
+Tutup buku Sen 07.00 lalu Sel 20.00
+Periode 1  Min 08.00 – Sen 07.00  terjual 10  hari buka: Min       → Min 10
+Periode 2  Sen 07.00 – Sel 20.00  terjual 8   hari buka: Sen, Sel  → Sen 4, Sel 4
+```
+
 ## 6. Data Model (SQLite / Turso)
 
 Semua nominal disimpan dalam **integer rupiah**. Semua waktu disimpan dalam epoch ms UTC, ditampilkan dalam **Asia/Jakarta**.
@@ -301,6 +327,7 @@ tutup_buku
   id, waktu, saldo_kantong INTEGER, cash_belum_disetor INTEGER DEFAULT 0,
   stok_json TEXT                     -- { [menuId]: { sisa, avgModal } } barang jadi
   hasil_json TEXT                    -- snapshot seluruh angka laporan
+  hari_buka_json TEXT NULL           -- ["2026-10-11","2026-10-13"] tanggal WIB buka (CR-006); NULL = periode lama
 ```
 Setup awal disimpan sebagai `tutup_buku` pertama (periode ke-0) berisi saldo awal.
 

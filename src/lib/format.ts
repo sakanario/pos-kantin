@@ -42,6 +42,11 @@ export function tanggalPendek(ms: number): string {
   return new Date(ms).toLocaleDateString("id-ID", { timeZone: TZ, day: "numeric", month: "short" });
 }
 
+/** "Sab, 11 Okt" dari "YYYY-MM-DD". */
+export function hariTanggal(iso: string): string {
+  return new Date(`${iso}T12:00:00Z`).toLocaleDateString("id-ID", { timeZone: "UTC", weekday: "short", day: "numeric", month: "short" });
+}
+
 export function tanggalJam(ms: number): string {
   return new Date(ms).toLocaleString("id-ID", {
     timeZone: TZ,

@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { db } from "@/db";
 import { bahan, bahanAktif, belanja, harga, kas, menu, resep, tapEvent, tutupBuku } from "@/db/schema";
 import { cekPin, endSession, hashPin, isValidPin, requireAuth, startSession } from "@/lib/auth";
-import { hargaPada, hitungPeriode, pemakaianBahan, resepPada, type HasilPeriode } from "@/lib/calc";
+import { daftarTanggal, hargaPada, hariBukaBawaan, hitungPeriode, pemakaianBahan, resepPada, type HasilPeriode } from "@/lib/calc";
 import { awalData, getDataPeriode, getHppCtx, getSemuaHarga, getTutupTerakhir, perkiraanCup, stokDari } from "@/lib/data";
 import { hitungUlangSejak } from "@/lib/hitung-ulang";
 import { awalHariWib, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
@@ -427,7 +427,8 @@ export async function hapusPenjualanManualAction(id: number) {
 // ─── Tutup Buku ──────────────────────────────────────────────────
 
 // Cash selalu disetor ke kantong sebelum tutup buku, jadi cash_belum_disetor disimpan 0.
-export type TutupBukuInput = { saldo: number; sisa: Record<number, number> };
+// hariBuka: tanggal WIB yang dicentang buka (langkah "Hari buka"), untuk grafik harian barang jadi.
+export type TutupBukuInput = { saldo: number; sisa: Record<number, number>; hariBuka: string[] };
 
 async function hitungTutupBuku(input: TutupBukuInput, waktu: number) {
   const terakhir = await getTutupTerakhir();
@@ -443,7 +444,18 @@ async function hitungTutupBuku(input: TutupBukuInput, waktu: number) {
 function validasiTutupBuku(input: TutupBukuInput): string | null {
   if (!Number.isFinite(input.saldo) || input.saldo < 0) return "Saldo kantong tidak valid.";
   for (const n of Object.values(input.sisa)) if (!Number.isInteger(n) || n < 0) return "Sisa stok tidak valid.";
+  if (!Array.isArray(input.hariBuka) || input.hariBuka.some((t) => typeof t !== "string")) return "Hari buka tidak valid.";
+  if (Object.keys(input.sisa).length > 0 && input.hariBuka.length === 0) return "Centang minimal satu hari kantin buka.";
   return null;
+}
+
+/** Hari buka yang disimpan: hanya tanggal di periode ini; tanpa barang jadi (langkah tidak tampil) pakai bawaan. */
+async function hariBukaTutup(input: TutupBukuInput, waktu: number): Promise<string[]> {
+  const terakhir = await getTutupTerakhir();
+  if (!terakhir) return [];
+  const valid = new Set(daftarTanggal(terakhir.waktu, waktu));
+  const dipilih = [...new Set(input.hariBuka)].filter((t) => valid.has(t)).sort();
+  return dipilih.length > 0 ? dipilih : hariBukaBawaan(terakhir.waktu, waktu);
 }
 
 export async function previewTutupBukuAction(
@@ -461,6 +473,7 @@ export async function simpanTutupBukuAction(input: TutupBukuInput): Promise<{ er
   if (err) return { error: err };
   const waktu = Date.now();
   const hasil = await hitungTutupBuku(input, waktu);
+  const hariBuka = await hariBukaTutup(input, waktu);
   const [row] = await db
     .insert(tutupBuku)
     .values({
@@ -469,6 +482,7 @@ export async function simpanTutupBukuAction(input: TutupBukuInput): Promise<{ er
       cashBelumDisetor: 0,
       stokJson: JSON.stringify(hasil.stok),
       hasilJson: JSON.stringify(hasil),
+      hariBukaJson: JSON.stringify(hariBuka),
     })
     .returning({ id: tutupBuku.id });
   refreshSemua();

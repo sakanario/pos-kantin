@@ -26,6 +26,13 @@
   --bad: #b3202a;
   --bad-soft: #ffe1dc;
   --warn: #f0a81c;
+  /* Grafik harian Laporan (batang bertumpuk per menu, CR-006) */
+  --grafik-1: #3450b8;
+  --grafik-2: #f0a81c;
+  --grafik-3: #1f9a6a;
+  --grafik-4: #d6455d;
+  --grafik-5: #8a56d4;
+  --grafik-6: #6f7d93;
 
   /* bentuk Kantin Pop: tepi tebal, bayangan keras, sudut bulat besar */
   --font-ui: var(--font-jakarta);
@@ -80,6 +87,12 @@
     --bad: #ff8a8a;
     --bad-soft: #4a1f35;
     --warn: #ffc24a;
+    --grafik-1: #8ea2ff;
+    --grafik-2: #ffc24a;
+    --grafik-3: #5bd68a;
+    --grafik-4: #ff8a8a;
+    --grafik-5: #c79bff;
+    --grafik-6: #a9b6cc;
     color-scheme: dark;
   }
 }
@@ -104,6 +117,12 @@
   --bad: #ff8a8a;
   --bad-soft: #4a1f35;
   --warn: #ffc24a;
+  --grafik-1: #8ea2ff;
+  --grafik-2: #ffc24a;
+  --grafik-3: #5bd68a;
+  --grafik-4: #ff8a8a;
+  --grafik-5: #c79bff;
+  --grafik-6: #a9b6cc;
   color-scheme: dark;
 }
 
@@ -128,6 +147,13 @@
   --bad: #c9303a;
   --bad-soft: #fbe3e3;
   --warn: #e8a33a;
+  /* Grafik harian Laporan (batang bertumpuk per menu, CR-006) */
+  --grafik-1: #333333;
+  --grafik-2: #e0a030;
+  --grafik-3: #4f8a57;
+  --grafik-4: #c9303a;
+  --grafik-5: #3f6fa8;
+  --grafik-6: #a39478;
 
   /* bentuk Kantin Poster: tanpa tepi, bayangan lembut, sudut kecil, huruf sempit */
   --font-ui: var(--font-barlow);
@@ -182,6 +208,12 @@
     --bad: #ff7f86;
     --bad-soft: #4a2226;
     --warn: #f0b44f;
+    --grafik-1: #f2d03f;
+    --grafik-2: #7fb685;
+    --grafik-3: #e6e1d3;
+    --grafik-4: #ff7f86;
+    --grafik-5: #7fb0e8;
+    --grafik-6: #c9a77a;
     --shadow-ink: rgb(0 0 0 / 0.55);
     color-scheme: dark;
   }
@@ -207,6 +239,12 @@
   --bad: #ff7f86;
   --bad-soft: #4a2226;
   --warn: #f0b44f;
+  --grafik-1: #f2d03f;
+  --grafik-2: #7fb685;
+  --grafik-3: #e6e1d3;
+  --grafik-4: #ff7f86;
+  --grafik-5: #7fb0e8;
+  --grafik-6: #c9a77a;
   --shadow-ink: rgb(0 0 0 / 0.55);
   color-scheme: dark;
 }
@@ -232,6 +270,13 @@
   --bad: #94271f;
   --bad-soft: #f7ded8;
   --warn: #c88a2c;
+  /* Grafik harian Laporan (batang bertumpuk per menu, CR-006) */
+  --grafik-1: #2b100c;
+  --grafik-2: #c88a2c;
+  --grafik-3: #5e7d4a;
+  --grafik-4: #a3362b;
+  --grafik-5: #4d6a8a;
+  --grafik-6: #b48c66;
 
   /* bentuk Kantin Latte: tanpa tepi, kontrol pil, sudut besar, bayangan lembut, kartu kaca buram */
   --font-ui: var(--font-dm-sans);
@@ -307,6 +352,12 @@
     --bad: #ff8f84;
     --bad-soft: #4b2420;
     --warn: #e8b45e;
+    --grafik-1: #ecd2b0;
+    --grafik-2: #e8a450;
+    --grafik-3: #8acb98;
+    --grafik-4: #ff8f84;
+    --grafik-5: #9ab8d8;
+    --grafik-6: #a8805a;
     --shadow-ink: rgb(0 0 0 / 0.55);
     --shadow-ink-lg: rgb(0 0 0 / 0.5);
     --card-sheen: rgb(255 255 255 / 0.09);
@@ -339,6 +390,12 @@
   --bad: #ff8f84;
   --bad-soft: #4b2420;
   --warn: #e8b45e;
+  --grafik-1: #ecd2b0;
+  --grafik-2: #e8a450;
+  --grafik-3: #8acb98;
+  --grafik-4: #ff8f84;
+  --grafik-5: #9ab8d8;
+  --grafik-6: #a8805a;
   --shadow-ink: rgb(0 0 0 / 0.55);
   --shadow-ink-lg: rgb(0 0 0 / 0.5);
   --card-sheen: rgb(255 255 255 / 0.09);

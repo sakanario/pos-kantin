@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { getRiwayatTutupBuku, getTerjualPerHari } from "@/lib/data";
+import { getGrafikHarian, getRiwayatTutupBuku, hariIniWib } from "@/lib/data";
 import { LaporanBasi } from "@/components/laporan-basi";
-import { bulanWib, namaBulan, plus, rupiah, tanggal } from "@/lib/format";
+import { bulanWib, isoTanggalWib, namaBulan, plus, rupiah, tanggal } from "@/lib/format";
+import { GrafikBatang, NavGrafik, rentangGrafik } from "./grafik";
 
-export default async function LaporanPage() {
-  const [riwayat, kopiHarian] = await Promise.all([getRiwayatTutupBuku(), getTerjualPerHari(14)]);
+export default async function LaporanPage(props: PageProps<"/laporan">) {
+  const [sp, riwayat] = await Promise.all([props.searchParams, getRiwayatTutupBuku()]);
+  const setup = riwayat.at(-1);
+  const r = rentangGrafik(sp, hariIniWib(), setup ? isoTanggalWib(setup.waktu) : null);
+  const grafik = await getGrafikHarian(r.dari, r.sampai, riwayat);
   const periode = riwayat.filter((r) => r.hasil);
   const adaBasi = periode.some((r) => r.basi);
 
@@ -47,33 +51,25 @@ export default async function LaporanPage() {
     bulanan.set(k, b);
   }
 
-  const maxKopi = Math.max(1, ...kopiHarian.map((d) => d.jumlah));
-
   return (
     <main>
       <PageHeader title="Laporan" />
       <div className="space-y-4 px-4">
         {adaBasi && <LaporanBasi />}
-        <section className="card">
-          <h2 className="mb-3 font-bold">Racikan terjual, 14 hari terakhir</h2>
-          <div className="flex h-32 items-end gap-1">
-            {kopiHarian.map((d) => (
-              <div key={d.tgl} className="flex flex-1 flex-col items-center gap-1" title={`${d.tgl}: ${d.jumlah} cup`}>
-                <span className="num text-[10px] text-muted">{d.jumlah || ""}</span>
-                <div
-                  className="w-full rounded-t bg-accent"
-                  style={{ height: `${(Math.max(0, d.jumlah) / maxKopi) * 88}px`, minHeight: d.jumlah > 0 ? 2 : 0 }}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="mt-1 flex gap-1 border-t border-line pt-1">
-            {kopiHarian.map((d) => (
-              <span key={d.tgl} className="num flex-1 text-center text-[10px] text-muted">
-                {Number(d.tgl.slice(8))}
-              </span>
-            ))}
-          </div>
+        <section className="card space-y-4">
+          <NavGrafik r={r} />
+          <GrafikBatang judul="Racikan terjual" seri={grafik.racikan} satuan="cup" mode={r.mode} />
+          {grafik.adaBarangJadi && (
+            <div className="border-t border-line pt-4">
+              <GrafikBatang
+                judul="Barang jadi terjual · perkiraan"
+                seri={grafik.barang}
+                satuan="pcs"
+                mode={r.mode}
+                catatan="Dibagi rata ke hari buka di tiap tutup buku."
+              />
+            </div>
+          )}
         </section>
 
         {bulanan.size > 0 && (

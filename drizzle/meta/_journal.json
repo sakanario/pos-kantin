@@ -29,6 +29,13 @@
       "when": 1790864811140,
       "tag": "0003_hapus_kolom_lama",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791898229125,
+      "tag": "0004_hari_buka",
+      "breakpoints": true
     }
   ]
 }

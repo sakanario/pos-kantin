@@ -3,7 +3,10 @@ import { and, asc, desc, eq, gt, isNull, lt, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { bahan, bahanAktif, belanja, harga, kas, menu, resep, tapEvent, tutupBuku, type TutupBuku } from "@/db/schema";
 import {
+  bagiPerHari,
+  daftarTanggal,
   hargaBahanPada,
+  hariBukaBawaan,
   hargaPada,
   hargaSatuanBelanja,
   hitungBep,
@@ -122,6 +125,11 @@ export async function getPeriodeBerjalan() {
     menu: menuBerjalan,
     hariIni: isoTanggalWib(now),
     hariSejakTutup: Math.floor((now - terakhir.waktu) / 86400000),
+    // Langkah "Hari buka" di Tutup Buku: semua tanggal sejak tutup buku terakhir (atau setup) sampai sekarang
+    hariBuka: (() => {
+      const bawaan = new Set(hariBukaBawaan(terakhir.waktu, now));
+      return daftarTanggal(terakhir.waktu, now).map((iso) => ({ iso, bawaan: bawaan.has(iso) }));
+    })(),
     belanjaPeriode: data.belanja.reduce((a, b) => a + b.total, 0),
     // Untung jualan dari tap saja; barang jadi terjual baru diketahui saat tutup buku.
     untungHariIni: untungDariTap(tapsHariIni, data, stok),
@@ -129,6 +137,9 @@ export async function getPeriodeBerjalan() {
   };
 }
 
+export type RiwayatTutupBuku = Awaited<ReturnType<typeof getRiwayatTutupBuku>>;
+
+/** Semua tutup buku, terbaru dulu (baris terakhir = setup awal), dengan `hasil_json` sudah di-parse. */
 export async function getRiwayatTutupBuku() {
   const rows = await db.select().from(tutupBuku).orderBy(desc(tutupBuku.waktu), desc(tutupBuku.id));
   return rows.map((r, i) => {
@@ -144,21 +155,81 @@ export async function getRiwayatTutupBuku() {
   });
 }
 
-/** Jumlah racikan terjual per hari (WIB) untuk `hari` hari terakhir. */
-export async function getTerjualPerHari(hari: number) {
-  const now = Date.now();
-  const mulai = awalHariWib(isoTanggalWib(now)) - (hari - 1) * 86400000;
-  const taps = await db
-    .select()
-    .from(tapEvent)
-    .where(and(eq(tapEvent.jenis, "terjual"), gt(tapEvent.waktu, mulai - 1), lte(tapEvent.waktu, now)));
-  const perHari = new Map<string, number>();
-  for (let i = 0; i < hari; i++) perHari.set(isoTanggalWib(mulai + i * 86400000), 0);
-  for (const t of taps) {
-    const k = isoTanggalWib(t.waktu);
-    perHari.set(k, (perHari.get(k) ?? 0) + t.delta);
+export type SeriGrafik = {
+  /** Menu yang punya penjualan di rentang ini, urut `menu.urutan`; `warna` = indeks tetap di antara menu sejenis. */
+  menu: { id: number; nama: string; warna: number }[];
+  /** Per tanggal: { [menuId]: jumlah }; `null` = belum ada data (barang jadi sesudah tutup buku terakhir). */
+  hari: { tgl: string; perMenu: Record<number, number> | null }[];
+};
+
+/**
+ * Grafik harian Laporan untuk tanggal WIB `dari`..`sampai` (keduanya ikut).
+ * Racikan: Σ tap terjual per hari. Barang jadi: terjual tiap periode tutup buku dibagi rata ke hari bukanya
+ * (perkiraan), hanya sampai tanggal tutup buku terakhir. `riwayat` dari getRiwayatTutupBuku (dipakai bersama
+ * halaman Laporan, supaya tabel tutup_buku cukup dibaca sekali).
+ */
+export async function getGrafikHarian(dari: string, sampai: string, riwayat: RiwayatTutupBuku) {
+  const mulai = awalHariWib(dari);
+  const akhir = awalHariWib(sampai) + 86400000;
+  const [semuaMenu, taps] = await Promise.all([
+    getMenu(),
+    db
+      .select()
+      .from(tapEvent)
+      .where(and(eq(tapEvent.jenis, "terjual"), gt(tapEvent.waktu, mulai - 1), lt(tapEvent.waktu, akhir))),
+  ]);
+  const tanggal = daftarTanggal(mulai, akhir - 1);
+
+  const racikan = new Map<string, Map<number, number>>();
+  const tambah = (peta: Map<string, Map<number, number>>, tgl: string, menuId: number, n: number) => {
+    const m = peta.get(tgl) ?? new Map<number, number>();
+    m.set(menuId, (m.get(menuId) ?? 0) + n);
+    peta.set(tgl, m);
+  };
+  for (const t of taps) tambah(racikan, isoTanggalWib(t.waktu), t.menuId, t.delta);
+
+  const barang = new Map<string, Map<number, number>>();
+  let batas: string | null = null;
+  for (const row of riwayat) {
+    const hasil = row.hasil;
+    if (!hasil || !Array.isArray(hasil.menu) || row.dari === null) continue;
+    // Daftar tanggal periode dimulai dari tutup buku sebelumnya (periode pertama: waktu setup)
+    const awal = row.dari;
+    const tgl = isoTanggalWib(row.waktu);
+    batas ??= tgl; // riwayat terbaru dulu: periode pertama yang valid = tutup buku terakhir
+    if (tgl < dari || isoTanggalWib(awal) > sampai) continue;
+    let hari = row.hariBukaJson ? (JSON.parse(row.hariBukaJson) as string[]) : hariBukaBawaan(awal, row.waktu);
+    if (hari.length === 0) hari = [tgl];
+    for (const m of hasil.menu) {
+      if (m.jenis !== "barang_jadi") continue;
+      for (const [tgl, n] of bagiPerHari(m.terjual, hari)) if (n > 0) tambah(barang, tgl, m.id, n);
+    }
   }
-  return [...perHari.entries()].map(([tgl, jumlah]) => ({ tgl, jumlah }));
+
+  const seri = (jenis: MenuDef["jenis"], peta: Map<string, Map<number, number>>, sampaiTgl: string | null): SeriGrafik => {
+    const sejenis = semuaMenu.filter((m) => m.jenis === jenis);
+    const ada = new Set<number>();
+    const hari = tanggal.map((tgl) => {
+      if (sampaiTgl === null || tgl > sampaiTgl) return { tgl, perMenu: null };
+      const perMenu: Record<number, number> = {};
+      for (const [id, n] of peta.get(tgl) ?? []) {
+        if (!sejenis.some((m) => m.id === id) || n <= 0) continue;
+        perMenu[id] = n;
+        ada.add(id);
+      }
+      return { tgl, perMenu };
+    });
+    return {
+      menu: sejenis.flatMap((m, i) => (ada.has(m.id) ? [{ id: m.id, nama: m.nama, warna: i }] : [])),
+      hari,
+    };
+  };
+
+  return {
+    racikan: seri("racikan", racikan, isoTanggalWib(Date.now())),
+    barang: seri("barang_jadi", barang, batas),
+    adaBarangJadi: semuaMenu.some((m) => m.jenis === "barang_jadi"),
+  };
 }
 
 /** Semua belanja dalam satu bulan (WIB), terbaru dulu. `ym` = "YYYY-MM". */
@@ -178,6 +249,10 @@ export async function getBelanjaBulan(ym: string) {
 export async function getBelanjaPertama(): Promise<number | null> {
   const row = await db.query.belanja.findFirst({ orderBy: [asc(belanja.waktu)] });
   return row?.waktu ?? null;
+}
+
+export function hariIniWib(): string {
+  return isoTanggalWib(Date.now());
 }
 
 export function bulanSekarang(): string {

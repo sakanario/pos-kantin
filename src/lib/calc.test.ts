@@ -2,7 +2,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  bagiPerHari,
   hargaBahanPada,
+  hariBukaBawaan,
   hargaPada,
   hitungBep,
   hitungPeriode,
@@ -307,4 +309,39 @@ test("posisi BEP data pengguna 1 Okt 2026", () => {
   const bep = hitungBep({ saldoAwal: 0, cashAwal: 0, setor: 0, belanjaPribadi: 339259, saldoTerakhir: 125000, cashTerakhir: 0, tarik: 0 });
   assert.equal(bep.posisi, -216159 - 46100 - 11000 + 59000);
   assert.equal(bep.posisi, -214259);
+});
+
+// ─── Grafik harian barang jadi (CR-006) ──────────────────────────
+
+/** Epoch ms untuk jam WIB pada tanggal "YYYY-MM-DD". */
+const wib = (iso: string, jam: number, menit = 0) => Date.parse(`${iso}T00:00:00Z`) + (jam - 7) * 3600000 + menit * 60000;
+
+test("bagiPerHari: sisa pembagian ke hari pertama, total tetap", () => {
+  assert.deepEqual([...bagiPerHari(5, ["2026-10-11", "2026-10-12"])], [["2026-10-11", 3], ["2026-10-12", 2]]);
+  assert.deepEqual([...bagiPerHari(9, ["a", "b", "c"]).values()], [3, 3, 3]);
+  assert.deepEqual([...bagiPerHari(2, ["a", "b", "c"]).values()], [1, 1, 0]);
+  assert.deepEqual([...bagiPerHari(-4, ["a", "b"]).values()], [0, 0]);
+  assert.equal(bagiPerHari(7, []).size, 0);
+});
+
+test("hariBukaBawaan: aturan jam 08.00 & 21.00 WIB di kedua ujung periode", () => {
+  // Tutup buku sebelumnya 07.00 / 12.00: tanggal awal ikut; 21.30: tidak ikut
+  assert.deepEqual(hariBukaBawaan(wib("2026-10-11", 7), wib("2026-10-13", 12)), ["2026-10-11", "2026-10-12", "2026-10-13"]);
+  assert.deepEqual(hariBukaBawaan(wib("2026-10-11", 12), wib("2026-10-13", 12)), ["2026-10-11", "2026-10-12", "2026-10-13"]);
+  assert.deepEqual(hariBukaBawaan(wib("2026-10-11", 21, 30), wib("2026-10-13", 12)), ["2026-10-12", "2026-10-13"]);
+  // Tutup buku ini 07.00: tanggal akhir tidak ikut; 12.00 & 21.30: ikut
+  assert.deepEqual(hariBukaBawaan(wib("2026-10-11", 12), wib("2026-10-13", 7)), ["2026-10-11", "2026-10-12"]);
+  assert.deepEqual(hariBukaBawaan(wib("2026-10-11", 12), wib("2026-10-13", 21, 30)), ["2026-10-11", "2026-10-12", "2026-10-13"]);
+  // Jam 20.59 masih buka, 07.59 belum buka
+  assert.deepEqual(hariBukaBawaan(wib("2026-10-11", 20, 59), wib("2026-10-12", 7, 59)), ["2026-10-11"]);
+});
+
+test("Contoh CR-006: tutup buku Senin 07.00 lalu Selasa 20.00", () => {
+  const p1 = hariBukaBawaan(wib("2026-10-11", 8), wib("2026-10-12", 7));
+  const p2 = hariBukaBawaan(wib("2026-10-12", 7), wib("2026-10-13", 20));
+  assert.deepEqual(p1, ["2026-10-11"]);
+  assert.deepEqual(p2, ["2026-10-12", "2026-10-13"]);
+  const grafik = new Map<string, number>();
+  for (const [h, n] of [...bagiPerHari(10, p1), ...bagiPerHari(8, p2)]) grafik.set(h, (grafik.get(h) ?? 0) + n);
+  assert.deepEqual([...grafik], [["2026-10-11", 10], ["2026-10-12", 4], ["2026-10-13", 4]]);
 });

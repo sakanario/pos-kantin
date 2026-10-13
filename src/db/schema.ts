@@ -92,6 +92,8 @@ export const tutupBuku = sqliteTable("tutup_buku", {
   // { [menuId]: { sisa, avgModal } } untuk barang jadi; sisa = input, avgModal = hasil hitung (berantai)
   stokJson: text("stok_json").notNull().default("{}"),
   hasilJson: text("hasil_json"),
+  // Tanggal WIB yang dicentang buka, mis. ["2026-10-11","2026-10-13"]. NULL = periode lama (pakai hariBukaBawaan).
+  hariBukaJson: text("hari_buka_json"),
 });
 
 export type Belanja = typeof belanja.$inferSelect;

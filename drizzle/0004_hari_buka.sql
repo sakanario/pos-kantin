@@ -1,0 +1,1 @@
+ALTER TABLE `tutup_buku` ADD `hari_buka_json` text;
