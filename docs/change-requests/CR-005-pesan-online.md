@@ -171,6 +171,64 @@ Pesanan aktif
 - Katalog **pakai foto** menu.
 - Pembeli membuka katalog lewat link `/pesan` dan **QR code** di meja kantin.
 
+## Keputusan diskusi 2026-10-16 (menimpa bagian di atas bila bertentangan)
+
+Mockup (disetujui 2026-10-16): https://claude.ai/artifact/5PadCP9xx5BgHXVvf2WMQf — 12 layar HP 390px, gaya
+Latte. Baris atas = Tahap 1 (katalog buka, pilih gula, tutup, gelap, menunggu pembayaran); baris bawah = Tahap 3
+(keranjang pickup/delivery, bayar, struk, riwayat, riwayat dengan pesanan belum bayar, dialog bersihkan).
+Baca file `.dc.html`-nya (Artifact read) bila butuh detail ukuran/warna.
+
+**Ringkasan UI katalog `/pesan` (acuan Tahap 1)**
+- Header: logo 52px (ubin krem) · kolom [judul "Kopi Ksatria" (Rubik 700 26px) / label pil kecil "● Buka" hijau
+  atau "● Tutup" abu] · di kanan tombol bulat 48px **Pesananku** (ikon struk + jam kecil, badge angka karamel =
+  jumlah pesanan berjalan/belum bayar). Tagline di baris sendiri di bawahnya. (Tombol Pesananku & badge baru
+  berfungsi di Tahap 3; di Tahap 1 boleh disembunyikan.)
+- Bagian per jenis: label kapital berjarak "KOPI" (racikan) dan "CAMILAN" (barang jadi).
+- Kartu menu = kartu kaca: foto 84px (radius 16; tanpa foto → ubin krem + ikon garis), nama (Rubik 600 17px),
+  harga (Rubik 600 15px, muted), di kanan tombol bulat espresso 48px `+`. Menu kopi dengan less sugar: `+`
+  membuka panel bawah "GULA [Normal|Less sugar]" + jumlah + "Tambah · Rp X"; badge angka karamel di `+` =
+  jumlah di keranjang. Barang jadi: setelah ditambah, `+` jadi stepper pil `− n +`.
+- Habis: foto pudar 45%, nama & harga muted, harga dicoret, pil "Habis" (bad-soft / bad) menggantikan tombol.
+- Tutup: kartu espresso "Kantin sedang tutup / Lihat-lihat menu dulu ya. Pesan bisa lagi saat kantin buka."
+  di atas daftar; semua `+` nonaktif (opacity .3).
+- Keranjang terisi: bar pil espresso mengambang di bawah "3 item / Rp 16.000 · [Lanjut ›]" (Tahap 3).
+- Ada pesanan belum bayar: kartu espresso "Menunggu pembayaran" (isi, total, pil "Sisa 12:30", [Lanjut bayar ›])
+  di atas daftar menu (Tahap 3).
+
+
+- **Tagline** katalog: "Pesan dari HP, ambil atau dianterin ke meja".
+- **Less sugar**: menu dengan sakelar baru `menu.bisa_less_sugar` membuka panel pilihan "Gula: Normal | Less sugar"
+  saat tombol `+` ditekan (default Normal). Kombinasi berbeda = baris keranjang berbeda. Disimpan di
+  `pesanan_item.less_sugar` (boolean). **Tidak** memengaruhi HPP/resep (selisih gula diabaikan).
+- **Cara ambil**: pilihan di keranjang **Pickup** (default) / **Delivery** (antar ke meja). Meja tidak bernomor,
+  jadi Delivery mewajibkan isian bebas **Catatan** (mis. "meja pojok, baju biru"); di Pickup Catatan opsional
+  (mis. "esnya dikit"). Kolom `pesanan.cara` (`pickup`/`delivery`) dan `pesanan.catatan` (teks, nullable).
+- **Nomor antrean diberikan saat lunas** (bukan saat pesan), mulai 1 setiap hari WIB, supaya pesanan yang tidak
+  jadi dibayar tidak memakan nomor. `pesanan.nomor` nullable sampai lunas; pesanan belum bayar ditampilkan
+  dengan ikon dompet, bukan nomor.
+- **Status** (4 langkah setelah bayar): `lunas` → `diterima` → `dibuat` → `diantar` (delivery) / `siap` (pickup;
+  label "Siap diambil", status akhir). Pengguna tap 3 kali per pesanan. Menggantikan
+  `lunas/dibuat/siap/diambil` di Tahap 3. Tolak pesanan (bahan habis) dilakukan saat "Terima".
+- **Pembayaran**: QRIS utama (QR + tombol "Simpan gambar QR" untuk dibayar dari galeri di HP yang sama),
+  GoPay kedua (deeplink ke aplikasi GoPay, lalu kembali ke halaman status). Potongan GoPay di Midtrans
+  kemungkinan lebih besar dari QRIS (cek dashboard); tetap tercatat per pesanan di `potongan`.
+- **Struk = halaman lacak** `/pesan/[kode]`: nomor antrean, status 4 langkah, waktu, cara ambil, item,
+  total + metode bayar, dan **QR ke alamat halaman itu sendiri** ("Screenshot struk ini"). Membuka
+  `/pesan/[kode]` menambahkan pesanan itu ke riwayat HP yang membukanya. Status diperbarui otomatis
+  (polling beberapa detik).
+- **Keluar dari halaman bayar**: pesanan `menunggu_bayar` dibuat saat tombol Bayar ditekan dan kodenya langsung
+  masuk riwayat HP. Lunas ditentukan webhook, bukan halaman yang terbuka. Selama belum bayar, katalog menampilkan
+  kartu **"Menunggu pembayaran"** (isi, total, sisa waktu, tombol **Lanjut bayar** → QR yang sama). Bayar lagi
+  dengan keranjang sama = pakai pesanan yang ada; keranjang berubah = pesanan lama dibatalkan, buat baru.
+  Kedaluwarsa (15 menit) → kartu jadi "Pembayaran kedaluwarsa · Pesan lagi".
+- **Riwayat pembeli** (`/pesan/riwayat`): daftar kode pesanan disimpan **di HP pembeli** (bukan akun), 30 hari
+  terakhir, bagian "Sedang berjalan" dan "Selesai", tombol **Pesan lagi** (isi ulang keranjang; menu habis
+  dilewati dengan pemberitahuan). Pesanan belum bayar tampil di "Sedang berjalan" sebagai kartu "Menunggu
+  pembayaran" (sisa waktu) yang membuka halaman QRIS. **Bersihkan riwayat** = tombol ikon sapu kecil di
+  kanan label "SELESAI" (hanya menyasar pesanan selesai); membuka dialog "Bersihkan riwayat selesai? N pesanan
+  selesai dihapus dari daftar di HP ini saja. Pesanan yang sedang berjalan tetap ada." [Batal] [Bersihkan].
+  DB tidak berubah.
+
 ## Pertanyaan terbuka
 
 - [x] **Tempat menyimpan foto**: di database (Turso), kolom BLOB (dijawab 2026-10-16).
