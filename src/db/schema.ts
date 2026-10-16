@@ -97,6 +97,8 @@ export const tutupBuku = sqliteTable("tutup_buku", {
   waktu: integer("waktu").notNull(),
   saldoKantong: integer("saldo_kantong").notNull(),
   cashBelumDisetor: integer("cash_belum_disetor").notNull().default(0),
+  // Saldo payment gateway (kantong kedua, pesan online CR-005). Sudah bersih dari potongan gateway.
+  saldoGateway: integer("saldo_gateway").notNull().default(0),
   // { [menuId]: { sisa, avgModal } } untuk barang jadi; sisa = input, avgModal = hasil hitung (berantai)
   stokJson: text("stok_json").notNull().default("{}"),
   hasilJson: text("hasil_json"),

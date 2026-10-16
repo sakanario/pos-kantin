@@ -1,0 +1,1 @@
+ALTER TABLE `tutup_buku` ADD `saldo_gateway` integer DEFAULT 0 NOT NULL;

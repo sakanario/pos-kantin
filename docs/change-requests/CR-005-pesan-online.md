@@ -1,6 +1,6 @@
 # CR-005: Katalog menu, pesan online, payment gateway, antrean & notifikasi
 
-Status: **Tahap 1 selesai** (2026-10-16); Tahap 2–4 belum
+Status: **Tahap 1 & 2 selesai** (2026-10-16); Tahap 3–4 belum
 Tanggal: 2026-10-13
 
 ## Latar belakang
@@ -103,6 +103,9 @@ uang_hilang    = selisih + potongan                                  // yang dit
   ```
 - Kartu balik modal & Uang & Barang: `uang_kembali` memakai `saldo_kantong + saldo_gateway` terakhir.
 - Tes rumus baru di `calc.test.ts` (contoh di atas + pencairan gateway → Kantong di tengah periode).
+- **Catatan implementasi Tahap 2**: `PeriodeData.potongan` diisi `getDataPeriode()` (sementara 0; Tahap 3 menjumlah
+  `pesanan.potongan` yang `dibayar` di periode). Syarat input saldo gateway di `tutup-buku/page.tsx` (Tahap 3: tambah
+  "ada pesanan lunas"). Field hasil baru: `gatewayAwal/Akhir`, `potongan`, `uangHilang` (snapshot lama: fallback ke `selisih`).
 
 ## Tahap 3: Pesan, bayar, antrean
 
@@ -250,8 +253,8 @@ Tahap 1
 - [x] `/pesan` bisa dibuka tanpa login; halaman lain tetap minta PIN.
 
 Tahap 2
-- [ ] Migrasi `saldo_gateway`; hasil semua tutup buku lama tidak berubah setelah hitung ulang.
-- [ ] Tes `calc.test.ts`: contoh Rp10.000/Rp70 → untung jualan 2.930, uang bersih 9.930, uang hilang 0.
+- [x] Migrasi `saldo_gateway`; hasil semua tutup buku lama tidak berubah setelah hitung ulang.
+- [x] Tes `calc.test.ts`: contoh Rp10.000/Rp70 → untung jualan 2.930, uang bersih 9.930, uang hilang 0.
 
 Tahap 3
 - [ ] Order uji di sandbox: bayar → lunas → tap terjual muncul di Beranda → status bisa dimajukan sampai Diambil.

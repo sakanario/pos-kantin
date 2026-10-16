@@ -17,7 +17,7 @@ function Row({
   return (
     <div className={`flex justify-between gap-3 py-1 ${sub ? "pl-4 text-sm text-muted" : ""} ${strong ? "font-semibold" : ""}`}>
       <span>{label}</span>
-      <span className={`num text-right ${tone === "good" ? "text-good" : tone === "bad" ? "text-bad" : ""}`}>{value}</span>
+      <span className={`num whitespace-nowrap text-right ${tone === "good" ? "text-good" : tone === "bad" ? "text-bad" : ""}`}>{value}</span>
     </div>
   );
 }
@@ -50,7 +50,22 @@ function UntungMenu({ m }: { m: HasilMenu }) {
 
 /** Tampilan hasil satu periode tutup buku (spec §5.5). */
 export function HasilView({ h }: { h: HasilPeriode }) {
+  // Snapshot sebelum CR-005 Tahap 2 tidak punya kolom gateway/potongan
+  const potongan = h.potongan ?? 0;
+  const gatewayAwal = h.gatewayAwal ?? 0;
+  const gatewayAkhir = h.gatewayAkhir ?? 0;
+  const uangHilang = h.uangHilang ?? h.selisih;
   const selisihTone = h.selisih < 0 ? "bad" : h.selisih > 0 ? "good" : undefined;
+  const hilangTone = uangHilang < 0 ? "bad" : uangHilang > 0 ? "good" : undefined;
+  const nyataLabel =
+    gatewayAwal !== 0 || gatewayAkhir !== 0 ? (
+      <>
+        Omzet nyata
+        <span className="block text-xs text-muted">dari saldo Kantong + gateway</span>
+      </>
+    ) : (
+      "Omzet nyata (dari saldo)"
+    );
   const barang = h.menu.filter((m) => m.jenis === "barang_jadi");
   return (
     <div className="space-y-3">
@@ -64,12 +79,13 @@ export function HasilView({ h }: { h: HasilPeriode }) {
         <div className="text-sm text-muted">Untung jualan periode ini</div>
         <div className={`num text-4xl font-semibold ${h.untungJualan < 0 ? "text-bad" : ""}`}>{plus(h.untungJualan)}</div>
         <div className="num mt-1 text-sm text-muted">Uang bersih {plus(h.uangBersih)}</div>
-        <div className={`mt-1 text-sm ${selisihTone === "bad" ? "text-bad" : "text-muted"}`}>
-          {h.selisih === 0
+        <div className={`mt-1 text-sm ${hilangTone === "bad" ? "text-bad" : "text-muted"}`}>
+          {uangHilang === 0
             ? "✅ Uang masuk sesuai hitungan"
-            : h.selisih < 0
-              ? `⚠️ Uang kurang ${rupiah(-h.selisih)} dari seharusnya`
-              : `Uang lebih ${rupiah(h.selisih)} dari seharusnya`}
+            : uangHilang < 0
+              ? `⚠️ Uang kurang ${rupiah(-uangHilang)} dari seharusnya`
+              : `Uang lebih ${rupiah(uangHilang)} dari seharusnya`}
+          {potongan > 0 && <span className="block text-xs text-muted">(potongan payment gateway {rupiah(potongan)} sudah dihitung)</span>}
         </div>
       </section>
 
@@ -79,6 +95,7 @@ export function HasilView({ h }: { h: HasilPeriode }) {
         {h.menu.map((m) => (
           <UntungMenu key={m.id} m={m} />
         ))}
+        {potongan > 0 && <Row label="💳 Potongan payment gateway" value={rupiah(-potongan)} strong />}
         <div className="my-1 border-t border-line" />
         <Row label="Untung jualan" value={plus(h.untungJualan)} strong tone={h.untungJualan < 0 ? "bad" : undefined} />
         {h.belanjaLain > 0 && (
@@ -100,7 +117,7 @@ export function HasilView({ h }: { h: HasilPeriode }) {
 
       <section className="card">
         <h3 className="mb-1 font-bold">Uang bersih</h3>
-        <Row label="Omzet nyata (dari saldo)" value={rupiah(h.omzetNyata)} />
+        <Row label={nyataLabel} value={rupiah(h.omzetNyata)} />
         <Row label="Belanja" value={rupiah(-h.belanjaTotal)} />
         <Row label="Bahan" value={rupiah(h.belanjaBahan)} sub />
         <Row label="Barang jadi" value={rupiah(h.belanjaBarang)} sub />
@@ -119,9 +136,15 @@ export function HasilView({ h }: { h: HasilPeriode }) {
           />
         ))}
         <Row label="Omzet seharusnya" value={rupiah(h.omzetSeharusnya)} strong />
-        <Row label="Omzet nyata (dari saldo)" value={rupiah(h.omzetNyata)} strong />
+        <Row label={nyataLabel} value={rupiah(h.omzetNyata)} strong />
         <div className="my-1 border-t border-line" />
-        <Row label="Selisih" value={rupiah(h.selisih)} strong tone={selisihTone} />
+        <Row label="Selisih" value={rupiah(h.selisih)} strong tone={potongan > 0 ? undefined : selisihTone} />
+        {potongan > 0 && (
+          <>
+            <Row label="Potongan payment gateway" value={`+${rupiah(potongan)}`} sub />
+            <Row label="Uang hilang" value={rupiah(uangHilang)} strong tone={hilangTone} />
+          </>
+        )}
       </section>
 
       <details className="card">
@@ -152,6 +175,9 @@ export function HasilView({ h }: { h: HasilPeriode }) {
 
           <h4 className="mt-3 text-sm font-medium">Uang</h4>
           <Row label="Saldo kantong awal → akhir" value={`${rupiah(h.saldoAwal)} → ${rupiah(h.saldoAkhir)}`} sub />
+          {(gatewayAwal !== 0 || gatewayAkhir !== 0) && (
+            <Row label="Saldo gateway awal → akhir" value={`${rupiah(gatewayAwal)} → ${rupiah(gatewayAkhir)}`} sub />
+          )}
           {(h.cashAwal > 0 || h.cashAkhir > 0) && (
             <Row label="Cash belum disetor awal → akhir" value={`${rupiah(h.cashAwal)} → ${rupiah(h.cashAkhir)}`} sub />
           )}

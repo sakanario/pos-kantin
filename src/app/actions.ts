@@ -422,21 +422,23 @@ export async function hapusPenjualanManualAction(id: number) {
 
 // Cash selalu disetor ke kantong sebelum tutup buku, jadi cash_belum_disetor disimpan 0.
 // hariBuka: tanggal WIB yang dicentang buka (langkah "Hari buka"), untuk grafik harian barang jadi.
-export type TutupBukuInput = { saldo: number; sisa: Record<number, number>; hariBuka: string[] };
+// saldoGateway: saldo payment gateway (CR-005), 0 bila pesan online belum dipakai.
+export type TutupBukuInput = { saldo: number; saldoGateway: number; sisa: Record<number, number>; hariBuka: string[] };
 
 async function hitungTutupBuku(input: TutupBukuInput, waktu: number) {
   const terakhir = await getTutupTerakhir();
   if (!terakhir) throw new Error("Setup belum selesai.");
   const data = await getDataPeriode(awalData(terakhir), waktu);
   return hitungPeriode(
-    { saldoKantong: terakhir.saldoKantong, cashBelumDisetor: terakhir.cashBelumDisetor, stok: stokDari(terakhir) },
-    { waktu, saldoKantong: input.saldo, cashBelumDisetor: 0, sisa: input.sisa },
+    { saldoKantong: terakhir.saldoKantong, cashBelumDisetor: terakhir.cashBelumDisetor, saldoGateway: terakhir.saldoGateway, stok: stokDari(terakhir) },
+    { waktu, saldoKantong: input.saldo, cashBelumDisetor: 0, saldoGateway: input.saldoGateway, sisa: input.sisa },
     data,
   );
 }
 
 function validasiTutupBuku(input: TutupBukuInput): string | null {
   if (!Number.isFinite(input.saldo) || input.saldo < 0) return "Saldo kantong tidak valid.";
+  if (!Number.isInteger(input.saldoGateway) || input.saldoGateway < 0) return "Saldo gateway tidak valid.";
   for (const n of Object.values(input.sisa)) if (!Number.isInteger(n) || n < 0) return "Sisa stok tidak valid.";
   if (!Array.isArray(input.hariBuka) || input.hariBuka.some((t) => typeof t !== "string")) return "Hari buka tidak valid.";
   if (Object.keys(input.sisa).length > 0 && input.hariBuka.length === 0) return "Centang minimal satu hari kantin buka.";
@@ -474,6 +476,7 @@ export async function simpanTutupBukuAction(input: TutupBukuInput): Promise<{ er
       waktu,
       saldoKantong: input.saldo,
       cashBelumDisetor: 0,
+      saldoGateway: input.saldoGateway,
       stokJson: JSON.stringify(hasil.stok),
       hasilJson: JSON.stringify(hasil),
       hariBukaJson: JSON.stringify(hariBuka),

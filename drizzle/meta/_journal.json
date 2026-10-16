@@ -43,6 +43,13 @@
       "when": 1792157387296,
       "tag": "0005_katalog",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792158176195,
+      "tag": "0006_saldo_gateway",
+      "breakpoints": true
     }
   ]
 }

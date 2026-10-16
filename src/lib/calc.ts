@@ -19,6 +19,8 @@ export type Stok = Record<number, { sisa: number; avgModal: number }>;
 export type PeriodeAwal = {
   saldoKantong: number;
   cashBelumDisetor: number;
+  /** Saldo payment gateway (kantong kedua, CR-005). Tidak diisi = 0. */
+  saldoGateway?: number;
   stok: Stok;
 };
 
@@ -26,6 +28,7 @@ export type PeriodeAkhir = {
   waktu: number;
   saldoKantong: number;
   cashBelumDisetor: number;
+  saldoGateway?: number;
   /** Sisa per barang jadi (input tutup buku). Barang yang tidak diisi dianggap 0. */
   sisa: Record<number, number>;
 };
@@ -45,6 +48,11 @@ export type PeriodeData = {
   harga: HargaRow[];
   menu: MenuDef[];
   hpp: HppCtx;
+  /**
+   * Σ potongan payment gateway dari pesanan yang lunas di periode ini, termasuk yang kemudian dibatalkan
+   * (potongan tidak dikembalikan gateway). Tidak diisi = 0.
+   */
+  potongan?: number;
 };
 
 export type HasilMenu = {
@@ -81,6 +89,8 @@ export type HasilPeriode = {
   saldoAkhir: number;
   cashAwal: number;
   cashAkhir: number;
+  gatewayAwal: number;
+  gatewayAkhir: number;
   setorModal: number;
   tarik: number;
   belanjaKantong: number;
@@ -94,13 +104,17 @@ export type HasilPeriode = {
   omzetNyata: number;
   /** Uang nyata: omzet nyata − belanja. Dijumlah semua periode = posisi BEP. */
   uangBersih: number;
-  /** Untung jualan (perkiraan per cup, pakai HPP). Belanja "lain" tidak masuk. */
+  /** Untung jualan (perkiraan per cup, pakai HPP) dikurangi potongan gateway. Belanja "lain" tidak masuk. */
   untungJualan: number;
+  /** Potongan payment gateway periode ini (biaya, sudah terpotong dari saldo gateway). */
+  potongan: number;
   nilaiPribadi: number;
 
   // Pembanding
   omzetSeharusnya: number;
   selisih: number;
+  /** Uang yang benar-benar hilang: selisih tanpa potongan gateway (= selisih + potongan). */
+  uangHilang: number;
 
   peringatan: string[];
 };
@@ -246,8 +260,18 @@ export function hitungPeriode(awal: PeriodeAwal, akhir: PeriodeAkhir, data: Peri
   for (const [id, s] of Object.entries(awal.stok)) if (!(Number(id) in stok)) stok[Number(id)] = s;
 
   // Angka utama (uang nyata)
+  // Saldo gateway = kantong kedua. Pencairan gateway → Kantong tidak dicatat: yang satu turun, yang lain naik.
+  const gatewayAwal = awal.saldoGateway ?? 0;
+  const gatewayAkhir = akhir.saldoGateway ?? 0;
+  const potongan = data.potongan ?? 0;
   const omzetNyata =
-    akhir.saldoKantong - awal.saldoKantong + (akhir.cashBelumDisetor - awal.cashBelumDisetor) - setorModal + tarik + belanjaKantong;
+    akhir.saldoKantong +
+    gatewayAkhir -
+    (awal.saldoKantong + gatewayAwal) +
+    (akhir.cashBelumDisetor - awal.cashBelumDisetor) -
+    setorModal +
+    tarik +
+    belanjaKantong;
   // Konsumsi pribadi tidak dikembalikan: bahannya habis, uangnya tidak kembali.
   const uangBersih = omzetNyata - belanjaTotal;
 
@@ -261,6 +285,8 @@ export function hitungPeriode(awal: PeriodeAwal, akhir: PeriodeAkhir, data: Peri
     saldoAkhir: akhir.saldoKantong,
     cashAwal: awal.cashBelumDisetor,
     cashAkhir: akhir.cashBelumDisetor,
+    gatewayAwal,
+    gatewayAkhir,
     setorModal,
     tarik,
     belanjaKantong,
@@ -271,10 +297,12 @@ export function hitungPeriode(awal: PeriodeAwal, akhir: PeriodeAkhir, data: Peri
     belanjaLain: belanjaKategori("lain"),
     omzetNyata,
     uangBersih,
-    untungJualan: sum(menu.map((m) => m.untung)),
+    untungJualan: sum(menu.map((m) => m.untung)) - potongan,
+    potongan,
     nilaiPribadi: sum(menu.map((m) => m.nilaiSendiri)),
     omzetSeharusnya,
     selisih: omzetNyata - omzetSeharusnya,
+    uangHilang: omzetNyata - omzetSeharusnya + potongan,
     peringatan,
   };
 }
@@ -310,6 +338,8 @@ export type BepInput = {
   belanjaPribadi: number;
   saldoTerakhir: number;
   cashTerakhir: number;
+  /** Saldo gateway terakhir (CR-005); uang yang sudah kembali tapi belum dicairkan. */
+  gatewayTerakhir?: number;
   tarik: number;
 };
 
@@ -319,7 +349,7 @@ export type BepInput = {
  */
 export function hitungBep(i: BepInput) {
   const modalMasuk = i.saldoAwal + i.cashAwal + i.setor + i.belanjaPribadi;
-  const uangKembali = i.saldoTerakhir + i.cashTerakhir + i.tarik;
+  const uangKembali = i.saldoTerakhir + (i.gatewayTerakhir ?? 0) + i.cashTerakhir + i.tarik;
   return { modalMasuk, uangKembali, posisi: uangKembali - modalMasuk };
 }
 

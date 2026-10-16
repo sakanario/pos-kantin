@@ -20,8 +20,8 @@ export async function hitungUlangSejak(sejakWaktu: number): Promise<number> {
       const data = await getDataPeriode(awalData(prev), row.waktu);
       const sisa = Object.fromEntries(Object.entries(stokDari(row)).map(([id, s]) => [id, s.sisa]));
       const hasil = hitungPeriode(
-        { saldoKantong: prev.saldoKantong, cashBelumDisetor: prev.cashBelumDisetor, stok: stokDari(prev) },
-        { waktu: row.waktu, saldoKantong: row.saldoKantong, cashBelumDisetor: row.cashBelumDisetor, sisa },
+        { saldoKantong: prev.saldoKantong, cashBelumDisetor: prev.cashBelumDisetor, saldoGateway: prev.saldoGateway, stok: stokDari(prev) },
+        { waktu: row.waktu, saldoKantong: row.saldoKantong, cashBelumDisetor: row.cashBelumDisetor, saldoGateway: row.saldoGateway, sisa },
         data,
       );
       const stokJson = JSON.stringify(hasil.stok);

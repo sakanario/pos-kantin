@@ -22,6 +22,8 @@ Aturan kebiasaan:
 - Pembeli yang transfer diberi **nomor rekening Kantong Kantin**. Transfer yang nyasar ke rekening utama dipindahkan manual.
 - Belanja **sebaiknya dibayar dari Kantong Kantin**. Belanja yang dibayar dari rekening pribadi tetap boleh, dan dicatat dengan sumber "pribadi" (otomatis dianggap setor modal).
 - Konversi cash ke saldo kantong **tidak dicatat** di aplikasi. Itu hanya perpindahan bentuk omzet.
+- **Saldo payment gateway** (pesan online, CR-005) = kantong kedua: dibaca saat tutup buku, sudah bersih dari
+  potongan. Pencairan gateway → Kantong Kantin **tidak dicatat** (gateway turun, Kantong naik, totalnya tetap).
 - Cash **selalu** disetor (ditransfer) ke Kantong Kantin sebelum tutup buku, jadi tidak ada input "cash belum disetor" (kolom `cash_belum_disetor` selalu 0).
 
 ## 3. Menu & bahan (CR-003)
@@ -87,7 +89,7 @@ Tab **Lainnya** (`/lainnya`) berisi daftar: 🍽️ Menu (§4.6), 🧂 Bahan (§
 - Kartu **Balik modal** (sesudah kartu saldo), uang nyata saja, sampai tutup buku terakhir:
   ```
   modal_masuk  = saldo_awal_setup + cash_awal_setup + Σ setor + Σ belanja dari uang pribadi
-  uang_kembali = saldo_kantong_terakhir + cash_terakhir + Σ tarik
+  uang_kembali = saldo_kantong_terakhir + saldo_gateway_terakhir + cash_terakhir + Σ tarik
   posisi       = uang_kembali − modal_masuk        // = Σ uang_bersih semua periode
   ```
   `posisi < 0` → "Sisa modal belum kembali" + progress `uang_kembali / modal_masuk`; `posisi ≥ 0` → "Sudah balik modal, untung bersih sejak mulai".
@@ -114,7 +116,9 @@ Tab **Penjualan** di Catat: input manual hari sebelumnya, pilih menu + terjual/s
 - Field: tanggal, jenis, nominal, catatan
 
 ### 4.4 Tutup Buku (wizard, idealnya seminggu sekali)
-1. Input **saldo Kantong Kantin** saat ini, dengan pengingat: *pastikan cash di kotak sudah ditransfer ke kantong sebelum melihat saldo*
+1. Input **saldo Kantong Kantin** saat ini, dengan pengingat: *pastikan cash di kotak sudah ditransfer ke kantong sebelum melihat saldo*.
+   Bila pesan online sudah dipakai (saldo gateway terakhir ≠ 0; Tahap 3: juga bila ada pesanan lunas), langkah ini
+   menjadi **"1. Saldo"** dengan input kedua **Saldo gateway** (disimpan di `saldo_gateway`; selain itu 0).
 2. Input **sisa stok** per barang jadi (aktif, atau nonaktif yang masih punya stok)
 3. **Hari apa saja kantin buka?** (CR-006, hanya bila ada barang jadi): daftar semua tanggal WIB dari tutup buku
    sebelumnya (periode pertama: waktu setup) sampai sekarang; pengguna menghapus centang hari libur. Minimal satu
@@ -192,6 +196,7 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 Uang yang sekarang berbentuk saldo dan barang, **per tutup buku terakhir** (atau setup awal):
 ```
 Saldo Kantong Kantin                 Rp125.000
+Saldo gateway (belum dicairkan)          Rp0        ← hanya tampil bila ≠ 0 (CR-005)
 Barang (modal)                        Rp21.618    ← Σ sisa × modal rata-rata (tutup_buku.stok_json)
 Total                                Rp146.618
 
@@ -211,6 +216,8 @@ Total                                Rp146.618
 | Simbol | Arti |
 |---|---|
 | `S0`, `S1` | Saldo kantong awal (tutup buku sebelumnya) & akhir |
+| `G0`, `G1` | Saldo payment gateway awal & akhir (CR-005; 0 bila tidak dipakai) |
+| `P` | Potongan gateway: Σ potongan pesanan yang lunas di periode, termasuk yang kemudian dibatalkan |
 | `C` | Cash belum disetor (akhir); `C0` dari periode sebelumnya. Sejak CR-001 selalu 0 (data lama bisa berisi nilai) |
 | `M` | Total Setor Modal |
 | `T` | Total Tarik (uang) |
@@ -244,18 +251,20 @@ Kalau terjual negatif → tampilkan peringatan (kemungkinan salah input). `{ sis
 
 ### 5.3 Uang bersih (uang nyata)
 ```
-omzet_nyata = (S1 − S0) + (C − C0) − M + T + Bk
+omzet_nyata = (S1 + G1) − (S0 + G0) + (C − C0) − M + T + Bk
 uang_bersih = omzet_nyata − B
 ```
 - `Bp` masuk ke `B` (biaya), tetapi tidak memengaruhi saldo → otomatis setara setor modal.
+- Potongan gateway sudah terpotong dari `G1`, jadi otomatis mengurangi uang bersih (tidak dicatat sebagai belanja).
 - Pasti, tapi naik-turun mengikuti hari belanja. Dijumlah semua periode = posisi balik modal (§4.1).
 - Tidak bergantung HPP: mengubah resep / harga bahan tidak mengubah uang bersih, omzet, maupun selisih.
 - Nilai stok barang jadi **tidak** masuk angka mana pun (hanya info di rincian & Uang & Barang).
 
 ### 5.3b Untung jualan (perkiraan per item, angka utama)
 ```
-untung_jualan = Σ untung semua menu
+untung_jualan = Σ untung semua menu − P
 ```
+- Potongan gateway **tidak** dibagi per menu; tampil sebagai satu baris "💳 Potongan payment gateway".
 - **Konsumsi pribadi = biaya**: yang dikonsumsi sendiri mengurangi untung (bahannya habis, uang tidak kembali).
   Contoh: jual 3 kopi (10.000, HPP 7.000) → +9.000; minum 1 → −7.000; untung 2.000.
 - `Blain` (biasanya alat) tidak masuk untung jualan, tetapi masuk uang bersih & balik modal.
@@ -264,8 +273,11 @@ untung_jualan = Σ untung semua menu
 ### 5.4 Pembanding (seharusnya)
 ```
 omzet_seharusnya = Σ omzet_seh semua menu
-selisih          = omzet_nyata − omzet_seharusnya     // negatif = uang hilang
+selisih          = omzet_nyata − omzet_seharusnya
+uang_hilang      = selisih + P                         // yang ditampilkan "Uang kurang / lebih"; negatif = uang hilang
 ```
+- Contoh 1 kopi Rp10.000 lewat app, potongan Rp70, HPP 7.000: omzet nyata 9.930, selisih −70, uang hilang 0,
+  untung jualan 2.930, uang bersih 9.930. Snapshot laporan lama (tanpa `uangHilang`) memakai `selisih`.
 - Selisih hanya diketahui **total**, tidak bisa dipisah per menu.
 
 ### 5.5 Contoh tampilan laporan
@@ -343,6 +355,7 @@ kas
 
 tutup_buku
   id, waktu, saldo_kantong INTEGER, cash_belum_disetor INTEGER DEFAULT 0,
+  saldo_gateway INTEGER DEFAULT 0    -- saldo payment gateway (CR-005), sudah bersih dari potongan
   stok_json TEXT                     -- { [menuId]: { sisa, avgModal } } barang jadi
   hasil_json TEXT                    -- snapshot seluruh angka laporan
   hari_buka_json TEXT NULL           -- ["2026-10-11","2026-10-13"] tanggal WIB buka (CR-006); NULL = periode lama

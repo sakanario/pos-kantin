@@ -19,6 +19,8 @@ Pengguna bukan akuntan: jelaskan dengan contoh angka, bukan istilah.
   sendiri − sisa), modal rata-rata tertimbang.
 - Dua angka per periode: **untung jualan** (per item, pakai HPP/modal) dan **uang bersih** (omzet nyata − belanja).
 - Setor modal / tarik tidak mengubah profit; fungsinya mengoreksi perubahan saldo.
+- Saldo payment gateway (pesan online, CR-005) = kantong kedua di tutup buku; potongan gateway = biaya yang
+  mengurangi untung jualan, dan "uang hilang" = selisih + potongan. Pencairan gateway → Kantong tidak dicatat.
 - Konsumsi pribadi (tap "Sendiri") = biaya: mengurangi untung jualan.
 
 ## Stack

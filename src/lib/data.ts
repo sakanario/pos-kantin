@@ -113,7 +113,8 @@ export async function getDataPeriode(dari: number, sampai: number) {
     getMenu(),
     getHppCtx(),
   ]);
-  return { belanja: b, kas: k, taps: t, harga: h, menu: m, hpp } satisfies PeriodeData;
+  // potongan: Σ potongan pesanan online yang lunas di periode (CR-005 Tahap 3; belum ada tabel pesanan → 0)
+  return { belanja: b, kas: k, taps: t, harga: h, menu: m, hpp, potongan: 0 } satisfies PeriodeData;
 }
 
 const jumlah = (taps: { delta: number }[]) => taps.reduce((a, t) => a + t.delta, 0);
@@ -327,6 +328,7 @@ export async function getSaldoTerakhir() {
     .orderBy(desc(kas.waktu), desc(kas.id));
   return {
     saldo: terakhir.saldoKantong,
+    saldoGateway: terakhir.saldoGateway,
     waktu: terakhir.waktu,
     dariSetup: terakhir.hasilJson === null,
     kasSejak,
@@ -393,6 +395,7 @@ export async function getBep() {
       belanjaPribadi: total(b, (x) => x.total, false),
       saldoTerakhir: terakhir.saldoKantong,
       cashTerakhir: terakhir.cashBelumDisetor,
+      gatewayTerakhir: terakhir.saldoGateway,
       tarik: total(tarik, (x) => x.nominal, false),
     }),
     waktu: terakhir.waktu,
@@ -418,6 +421,7 @@ export async function getUangBarang() {
   const now = Date.now();
   return {
     saldo: terakhir.saldoKantong,
+    saldoGateway: terakhir.saldoGateway,
     waktu: terakhir.waktu,
     dariSetup: terakhir.hasilJson === null,
     barang: semuaMenu
