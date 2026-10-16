@@ -1,4 +1,4 @@
-import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { blob, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // Semua nominal dalam integer rupiah. Semua waktu dalam epoch milidetik (UTC).
 // Tidak ada foreign key di level DB; kolom *_id hanya rujukan.
@@ -16,6 +16,14 @@ export const menu = sqliteTable("menu", {
   jenis: text("jenis", { enum: ["racikan", "barang_jadi"] }).notNull(),
   aktif: integer("aktif", { mode: "boolean" }).notNull().default(true),
   urutan: integer("urutan").notNull().default(0),
+  // Katalog publik /pesan (CR-005)
+  diKatalog: integer("di_katalog", { mode: "boolean" }).notNull().default(false),
+  habis: integer("habis", { mode: "boolean" }).notNull().default(false),
+  bisaLessSugar: integer("bisa_less_sugar", { mode: "boolean" }).notNull().default(false),
+  // Foto WebP/JPEG mentah (bukan base64), disajikan lewat /pesan/foto/[id]?v=foto_versi.
+  // Jangan ikut di-select di query biasa (lihat getMenu di lib/data.ts).
+  foto: blob("foto", { mode: "buffer" }),
+  fotoVersi: integer("foto_versi"), // waktu foto terakhir diganti; null = tanpa foto
 });
 
 export const bahan = sqliteTable("bahan", {

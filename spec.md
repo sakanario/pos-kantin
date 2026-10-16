@@ -61,7 +61,7 @@ hpp_menu(t)    = Σ takaran(resep yang berlaku pada t) × harga_bahan(t)
 
 Navigasi bawah: ☕ Beranda · 📝 Catat · 🔒 Tutup Buku · 📊 Laporan · ☰ Lainnya.
 Tab **Lainnya** (`/lainnya`) berisi daftar: 🍽️ Menu (§4.6), 🧂 Bahan (§4.6), 💰 Uang & Barang (§4.8),
-🧾 Riwayat Pengeluaran (`/lainnya/pengeluaran`), ⚙️ Setelan (`/setelan`). Tab ini aktif di `/lainnya*` dan
+🧾 Riwayat Pengeluaran (`/lainnya/pengeluaran`), 🔳 QR katalog (§4.9), ⚙️ Setelan (`/setelan`). Tab ini aktif di `/lainnya*` dan
 `/setelan`; halaman di bawahnya punya tombol "‹ Kembali".
 
 ### 4.1 Beranda (tap counter)
@@ -73,6 +73,9 @@ Tab **Lainnya** (`/lainnya`) berisi daftar: 🍽️ Menu (§4.6), 🧂 Bahan (§
   - Setiap tap memunculkan notifikasi ±5 detik "+1 Creamy Latte · **Batalkan**" (Batalkan = tap kebalikannya).
   - Koreksi telat: tombol **Koreksi −1** di pojok → semua tombol berubah jadi −1 (merah) untuk **satu** tekan,
     lalu kembali normal. Tombol yang hitungan periodenya 0 tidak bisa dikurangi.
+- Kartu **Katalog pembeli** (hanya bila ada menu di katalog, §4.9): sakelar besar **Kantin buka / tutup**
+  (`settings.kantin_buka`) dan daftar menu katalog dengan tombol **Ada / Habis** per menu (semua jenis; tidak reset
+  otomatis).
 - Kartu "Periode berjalan": untung hari ini & periode ini, terjual per racikan, belanja, stok tersedia per barang jadi.
 - **Untung** (hari ini / periode ini) = Σ racikan terjual × (jual − HPP saat tap) − Σ racikan sendiri × HPP − barang
   jadi sendiri × modal rata-rata terakhir. Untung barang jadi terjual baru dihitung saat tutup buku.
@@ -153,6 +156,9 @@ Fokus ke laporan saja (kartu saldo & Riwayat Pengeluaran ada di Lainnya, CR-004)
 nama, jenis (saat dibuat), harga jual, urutan, dan untuk racikan **resep** (bahan + takaran, biaya per baris).
 HPP & untung (%) dihitung langsung saat mengetik dari harga bahan yang aktif sekarang. Ubah harga jual → baris baru di
 `harga` (berlaku sejak sekarang); ubah resep → versi resep baru. Tombol Nonaktifkan / Aktifkan lagi.
+Kartu **Katalog pembeli** (menu yang sudah ada; langsung tersimpan): sakelar **Tampil di katalog**, **Bisa less sugar**
+(racikan), dan **Foto** dari kamera/galeri. Foto dikecilkan di browser (sisi terpanjang 800 px, WebP; JPEG bila browser
+tidak bisa WebP; maks 400 KB) lalu disimpan mentah di `menu.foto`.
 
 **Bahan** (`/lainnya/bahan`): daftar bahan (harga per satuan sekarang + kemasan yang aktif), form bahan baru
 (nama, satuan, harga awal), dan daftar **"Belanja bahan belum ditandai"** (belanja lama dari sebelum CR-003): pilih
@@ -166,6 +172,16 @@ kemasan lama adalah harga awal.
 
 **Setelan**: Hitung ulang semua laporan (rumus terbaru; juga setelah data diubah langsung di DB; laporan dengan
 snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
+
+### 4.9 Katalog pembeli `/pesan` (CR-005, publik tanpa login)
+- Tahap 1: **lihat saja**, belum bisa pesan. Pesan online, bayar, dan antrean menyusul (CR-005 Tahap 2–4).
+- Header: logo, "Kopi Ksatria", label ● Buka / ● Tutup, tagline. Bagian **KOPI** (racikan) dan **CAMILAN** (barang jadi).
+- Hanya menu `aktif && di_katalog`, harga jual yang berlaku sekarang. Tanpa foto → ubin krem + ikon garis.
+- Habis: foto pudar, harga dicoret, pil "Habis". Tutup: kartu "Kantin sedang tutup" di atas daftar.
+- Foto: `/pesan/foto/[menuId]?v=<foto_versi>`, `Cache-Control: immutable` bila `v` cocok (ganti foto → URL baru).
+- Terang/gelap mengikuti HP pembeli (tanpa cookie tema).
+- **QR katalog** (`/lainnya/qr-katalog`): lembar siap cetak berisi QR ke `<host yang sedang dipakai>/pesan`;
+  peringatan bila dibuka dari localhost / IP WiFi (buka dari domain online sebelum mencetak).
 
 ### 4.7 Setup Awal (pertama kali dibuka)
 - Buat PIN
@@ -294,10 +310,12 @@ Tidak ada foreign key di level DB; kolom `*_id` hanya rujukan.
 
 ```
 settings
-  key TEXT PK, value TEXT            -- pin_hash, setup_done, pin_gagal, tunda_pengingat
+  key TEXT PK, value TEXT            -- pin_hash, setup_done, pin_gagal, tunda_pengingat, kantin_buka ('1'/'0')
 
 menu
-  id, nama, jenis ('racikan' | 'barang_jadi'), aktif BOOL, urutan INTEGER
+  id, nama, jenis ('racikan' | 'barang_jadi'), aktif BOOL, urutan INTEGER,
+  di_katalog BOOL, habis BOOL, bisa_less_sugar BOOL,   -- katalog /pesan (CR-005)
+  foto BLOB NULL (WebP/JPEG mentah), foto_versi INTEGER NULL (waktu foto diganti)
 
 bahan
   id, nama, satuan ('gr' | 'pcs'), harga_awal REAL (per satuan)
@@ -351,6 +369,7 @@ belanja lama, mengisi resep, lalu "Hitung ulang semua laporan".
 
 - Satu pengguna, login dengan **PIN** (4–6 digit)
 - PIN disimpan sebagai hash (bcrypt/argon2)
+- Halaman publik tanpa login: `/pesan` dan turunannya (`proxy.ts`; bukan `/pesanan`). Semua halaman lain minta PIN.
 - Sesi berupa cookie `httpOnly`, `secure`, dan ditandatangani (masa berlaku panjang, misal 30 hari)
 - Pembatasan percobaan: jeda setelah 5 kali salah
 

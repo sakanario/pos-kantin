@@ -10,6 +10,7 @@ import { cekPin, endSession, hashPin, isValidPin, requireAuth, startSession } fr
 import { daftarTanggal, hargaPada, hariBukaBawaan, hitungPeriode, pemakaianBahan, resepPada, type HasilPeriode } from "@/lib/calc";
 import { awalData, getDataPeriode, getHppCtx, getSemuaHarga, getTutupTerakhir, perkiraanCup, stokDari } from "@/lib/data";
 import { hitungUlangSejak } from "@/lib/hitung-ulang";
+import { FOTO_MAKS_BYTE, jenisFoto } from "@/lib/foto";
 import { awalHariWib, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
 import { getSetting, isSetupDone, setSetting } from "@/lib/settings";
 import { COOKIE_TEMA, isTema, type Tema } from "@/lib/tema";
@@ -66,7 +67,7 @@ export async function tapAction(menuId: number, jenis: "terjual" | "sendiri", de
   await requireAuth();
   const terakhir = await getTutupTerakhir();
   if (!terakhir) return { error: "Setup belum selesai." };
-  const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId) });
+  const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId), columns: { foto: false } });
   if (!m) return { error: "Menu tidak ditemukan." };
   if (m.jenis === "barang_jadi" && jenis === "terjual") return { error: "Barang jadi terjual dihitung saat tutup buku." };
 
@@ -192,7 +193,7 @@ async function bacaBelanja(fd: FormData) {
     if (!nama) nama = b.nama;
   } else if (kategori === "barang") {
     menuId = Number(str(fd, "menu_id"));
-    const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId) });
+    const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId), columns: { foto: false } });
     if (!m || m.jenis !== "barang_jadi") return { error: "Pilih barangnya dulu." };
     jumlahKemasan = parseRupiah(fd.get("jumlah_kemasan"));
     isiKemasan = parseRupiah(fd.get("isi_kemasan"));
@@ -379,7 +380,7 @@ export async function hapusKasAction(id: number) {
 export async function tambahPenjualanManualAction(_: FormState, fd: FormData): Promise<FormState> {
   await requireAuth();
   const menuId = Number(str(fd, "menu_id"));
-  const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId) });
+  const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId), columns: { foto: false } });
   if (!m) return { error: "Pilih menunya dulu." };
   const jenis: "terjual" | "sendiri" = str(fd, "jenis") === "sendiri" ? "sendiri" : "terjual";
   if (m.jenis === "barang_jadi" && jenis === "terjual") return { error: "Barang jadi terjual dihitung saat tutup buku." };
@@ -530,7 +531,7 @@ export async function simpanMenuAction(id: number | null, _: FormState, fd: Form
   await requireAuth();
   const nama = str(fd, "nama");
   if (!nama) return { error: "Nama menu wajib diisi." };
-  const lama = id ? await db.query.menu.findFirst({ where: eq(menu.id, id) }) : undefined;
+  const lama = id ? await db.query.menu.findFirst({ where: eq(menu.id, id), columns: { foto: false } }) : undefined;
   if (id && !lama) return { error: "Menu tidak ditemukan." };
   const jenis: "racikan" | "barang_jadi" = lama?.jenis ?? (str(fd, "jenis") === "barang_jadi" ? "barang_jadi" : "racikan");
   const hargaJual = parseRupiah(fd.get("harga_jual"));
@@ -589,6 +590,46 @@ export async function simpanMenuAction(id: number | null, _: FormState, fd: Form
 export async function aturAktifMenuAction(id: number, aktif: boolean) {
   await requireAuth();
   await db.update(menu).set({ aktif }).where(eq(menu.id, id));
+  refreshSemua();
+}
+
+// ─── Katalog (/pesan) ────────────────────────────────────────────
+
+/** Sakelar katalog per menu: tampil di katalog, habis, bisa less sugar. */
+export async function aturKatalogMenuAction(id: number, patch: { diKatalog?: boolean; habis?: boolean; bisaLessSugar?: boolean }) {
+  await requireAuth();
+  const set: typeof patch = {};
+  for (const k of ["diKatalog", "habis", "bisaLessSugar"] as const) if (typeof patch[k] === "boolean") set[k] = patch[k];
+  if (Object.keys(set).length === 0) return;
+  await db.update(menu).set(set).where(eq(menu.id, id));
+  refreshSemua();
+}
+
+/** Foto menu, sudah dikecilkan di browser (lihat lainnya/menu/katalog-menu.tsx). */
+export async function simpanFotoMenuAction(id: number, fd: FormData): Promise<FormState> {
+  await requireAuth();
+  const f = fd.get("foto");
+  if (!(f instanceof Blob) || f.size === 0) return { error: "Pilih fotonya dulu." };
+  if (f.size > FOTO_MAKS_BYTE) return { error: "Foto terlalu besar (maks 400 KB setelah dikecilkan)." };
+  const bytes = new Uint8Array(await f.arrayBuffer());
+  if (!jenisFoto(bytes)) return { error: "Format foto tidak dikenali." };
+  await db
+    .update(menu)
+    .set({ foto: Buffer.from(bytes), fotoVersi: Date.now() })
+    .where(eq(menu.id, id));
+  refreshSemua();
+  return { ok: "Foto disimpan." };
+}
+
+export async function hapusFotoMenuAction(id: number) {
+  await requireAuth();
+  await db.update(menu).set({ foto: null, fotoVersi: null }).where(eq(menu.id, id));
+  refreshSemua();
+}
+
+export async function aturKantinBukaAction(buka: boolean) {
+  await requireAuth();
+  await setSetting("kantin_buka", buka ? "1" : "0");
   refreshSemua();
 }
 

@@ -1,6 +1,6 @@
 # CR-005: Katalog menu, pesan online, payment gateway, antrean & notifikasi
 
-Status: **siap dikerjakan** (pertanyaan terbuka sudah dijawab 2026-10-16)
+Status: **Tahap 1 selesai** (2026-10-16); Tahap 2–4 belum
 Tanggal: 2026-10-13
 
 ## Latar belakang
@@ -72,6 +72,8 @@ Kopi Ksatria                          ● Buka
 - Saat kantin tutup: menu tetap tampil, tombol pesan nonaktif, tulisan "Kantin sedang tutup".
 - Gaya tampilan Kantin Latte (satu-satunya gaya); terang/gelap mengikuti HP pembeli.
 - `proxy.ts`: kecualikan `/pesan` (dan nanti rute webhook & `sw.js`) dari cek cookie sesi.
+- **Catatan implementasi Tahap 1**: tombol `+`, panel gula, dan bar keranjang belum ada (Tahap 3). Nama kantin &
+  tagline di `src/lib/katalog.ts`. Logo = `public/icons/logo.png`.
 
 ## Tahap 2: Saldo gateway & potongan
 
@@ -243,9 +245,9 @@ Baca file `.dc.html`-nya (Artifact read) bila butuh detail ukuran/warna.
 ## Kriteria selesai
 
 Tahap 1
-- [ ] Sakelar tampil di katalog, habis, kantin buka/tutup, dan foto tersimpan dan tampil benar di `/pesan`.
-- [ ] QR katalog bisa dicetak dan membuka `/pesan` saat dipindai.
-- [ ] `/pesan` bisa dibuka tanpa login; halaman lain tetap minta PIN.
+- [x] Sakelar tampil di katalog, habis, kantin buka/tutup, dan foto tersimpan dan tampil benar di `/pesan`.
+- [ ] QR katalog bisa dicetak dan membuka `/pesan` saat dipindai. (halaman jadi; tinggal dicoba cetak & pindai dari domain online)
+- [x] `/pesan` bisa dibuka tanpa login; halaman lain tetap minta PIN.
 
 Tahap 2
 - [ ] Migrasi `saldo_gateway`; hasil semua tutup buku lama tidak berubah setelah hitung ulang.

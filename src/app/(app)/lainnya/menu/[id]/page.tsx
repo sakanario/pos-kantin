@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { getDaftarBahan, getDaftarMenu, getSemuaHarga } from "@/lib/data";
 import { rupiah, tanggal } from "@/lib/format";
+import { KatalogMenu } from "../katalog-menu";
 import { MenuForm } from "../menu-form";
 
 /** `/lainnya/menu/baru` untuk menu baru, `/lainnya/menu/[id]` untuk mengubah. */
@@ -24,6 +25,7 @@ export default async function MenuPage(props: PageProps<"/lainnya/menu/[id]">) {
           edit={m}
           urutanBaru={Math.max(0, ...semua.map((x) => x.urutan)) + 1}
         />
+        {m && <KatalogMenu key={`k${m.id}`} m={m} />}
         {riwayatHarga.length > 0 && (
           <details className="card">
             <summary className="cursor-pointer text-sm text-muted">Riwayat harga jual</summary>

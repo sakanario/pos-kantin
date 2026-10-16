@@ -50,7 +50,8 @@ src/app/actions.ts     semua server action (tulis). Setiap action memanggil requ
 src/app/(app)/         halaman setelah login: beranda, catat (belanja/kopi/kas + edit), tutup-buku,
                        laporan (+ /[id] detail), lainnya (+ /menu, /bahan, /uang-barang, /pengeluaran), setelan
 src/app/login, setup   tanpa login
-src/db/schema.ts       10 tabel: settings, menu, bahan, resep, bahan_aktif, harga, tap_event, belanja, kas, tutup_buku
+src/app/pesan/         katalog publik pembeli (CR-005, tanpa login) + route foto /pesan/foto/[id]
+src/db/schema.ts       10 tabel (menu.foto = BLOB: jangan ikut di-select, pakai getMenu / columns: { foto: false }): settings, menu, bahan, resep, bahan_aktif, harga, tap_event, belanja, kas, tutup_buku
 scripts/seed-dummy.ts  generator dummy.db (pakai calc.ts yang sama)
 ```
 

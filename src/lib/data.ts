@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, gt, isNull, lt, lte } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, gt, isNull, lt, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { bahan, bahanAktif, belanja, harga, kas, menu, resep, tapEvent, tutupBuku, type TutupBuku } from "@/db/schema";
 import {
@@ -38,9 +38,44 @@ export async function getSemuaHarga(): Promise<HargaRow[]> {
 }
 
 /** Semua menu (aktif & nonaktif), urut tampilan. */
-export async function getMenu(): Promise<MenuDef[]> {
-  return db.select().from(menu).orderBy(asc(menu.urutan), asc(menu.id));
+export async function getMenu() {
+  return db.select(kolomMenu).from(menu).orderBy(asc(menu.urutan), asc(menu.id));
 }
+
+// Semua kolom menu kecuali `foto` (BLOB): foto hanya dibaca oleh route /pesan/foto/[id].
+const k = getTableColumns(menu);
+const kolomMenu = {
+  id: k.id,
+  nama: k.nama,
+  jenis: k.jenis,
+  aktif: k.aktif,
+  urutan: k.urutan,
+  diKatalog: k.diKatalog,
+  habis: k.habis,
+  bisaLessSugar: k.bisaLessSugar,
+  fotoVersi: k.fotoVersi,
+};
+
+/** Menu katalog untuk halaman publik /pesan & Beranda: aktif && di_katalog, harga jual sekarang. */
+export async function getKatalog() {
+  const [semua, h, buka] = await Promise.all([getMenu(), getSemuaHarga(), getSetting("kantin_buka")]);
+  const now = Date.now();
+  return {
+    buka: buka === "1",
+    menu: semua
+      .filter((m) => m.aktif && m.diKatalog)
+      .map((m) => ({
+        id: m.id,
+        nama: m.nama,
+        jenis: m.jenis,
+        habis: m.habis,
+        bisaLessSugar: m.bisaLessSugar,
+        fotoVersi: m.fotoVersi,
+        harga: hargaPada(h, m.id, now),
+      })),
+  };
+}
+export type MenuKatalog = Awaited<ReturnType<typeof getKatalog>>["menu"][number];
 
 /** Bahan, resep, pembelian aktif, dan belanja bahan: semua yang dibutuhkan untuk HPP. */
 export async function getHppCtx() {

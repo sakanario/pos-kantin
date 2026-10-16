@@ -44,7 +44,7 @@ const items: { href: string; label: string; icon: keyof typeof ikon; juga?: stri
 export function BottomNav() {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
+    <nav className="fixed inset-x-0 print:hidden bottom-0 z-10 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
       <ul className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-full border-[length:var(--stroke)] border-outline bg-accent p-1.5 shadow-pop-lg">
         {items.map((it) => {
           const cocok = (h: string) => path === h || path.startsWith(`${h}/`);

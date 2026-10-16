@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { BepCard } from "@/components/bep-card";
 import { SaldoCard } from "@/components/saldo-card";
-import { getPengingatKemasan, getPeriodeBerjalan } from "@/lib/data";
+import { getKatalog, getPengingatKemasan, getPeriodeBerjalan } from "@/lib/data";
 import { plus, rupiah, tanggalJam } from "@/lib/format";
+import { KatalogPanel } from "./katalog-panel";
 import { PengingatKemasan } from "./pengingat-kemasan";
 import { TapPanel } from "./tap-panel";
 
 export default async function Beranda() {
-  const [p, pengingat] = await Promise.all([getPeriodeBerjalan(), getPengingatKemasan()]);
+  const [p, pengingat, katalog] = await Promise.all([getPeriodeBerjalan(), getPengingatKemasan(), getKatalog()]);
   if (!p) return null;
   const { hariSejakTutup } = p;
   const aktif = p.menu.filter((m) => m.aktif);
@@ -40,6 +41,8 @@ export default async function Beranda() {
       ) : (
         <TapPanel menu={aktif} />
       )}
+
+      {katalog.menu.length > 0 && <KatalogPanel buka={katalog.buka} menu={katalog.menu} />}
 
       <section className="card space-y-2">
         <div className="flex items-baseline justify-between">

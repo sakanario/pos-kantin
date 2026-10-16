@@ -36,6 +36,13 @@
       "when": 1791898229125,
       "tag": "0004_hari_buka",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792157387296,
+      "tag": "0005_katalog",
+      "breakpoints": true
     }
   ]
 }
