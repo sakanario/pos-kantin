@@ -1,6 +1,6 @@
 # CR-005: Katalog menu, pesan online, payment gateway, antrean & notifikasi
 
-Status: **Tahap 1 & 2 selesai** (2026-10-16); Tahap 3–4 belum
+Status: **Tahap 1, 2, 3a selesai** (2026-10-16); 3b (Midtrans, riwayat lengkap, batal/refund) & 4 belum
 Tanggal: 2026-10-13
 
 ## Latar belakang
@@ -108,6 +108,18 @@ uang_hilang    = selisih + potongan                                  // yang dit
   "ada pesanan lunas"). Field hasil baru: `gatewayAwal/Akhir`, `potongan`, `uangHilang` (snapshot lama: fallback ke `selisih`).
 
 ## Tahap 3: Pesan, bayar, antrean
+
+**Pembagian (2026-10-16)**: Midtrans belum ada akun sandbox, jadi Tahap 3 dipecah:
+- **3a (selesai)**: pesanan + bayar lewat **gateway palsu** + struk/lacak + `/pesanan` pengguna. Env `GATEWAY=palsu`
+  menampilkan tombol "Simulasikan bayar" (menjalankan `tandaiLunas()` yang sama dengan webhook; potongan 0,7%).
+  Gateway palsu ditolak bila `VERCEL` ada. `GATEWAY` kosong = pesan online mati (katalog lihat saja).
+- **3b**: Midtrans (QRIS + deeplink GoPay, webhook `/api/gateway` dengan verifikasi tanda tangan), riwayat pembeli
+  lengkap ("Pesan lagi", bersihkan riwayat), tolak/batal + refund.
+- Catatan implementasi 3a: logika di `src/lib/pesanan.ts`; aksi publik di `src/app/pesan/actions.ts` (tanpa login,
+  harga selalu dari DB); cookie `perangkat` & `pesananku` (`src/lib/pembeli.ts`); keranjang & nama di localStorage
+  (`src/app/pesan/keranjang.ts`). Kedaluwarsa ditandai saat dibaca (`tandaiKedaluwarsa`). Keranjang berubah →
+  pesanan belum bayar sebelumnya dibatalkan, jadi praktis hanya 1 per HP. Pesanan kedaluwarsa/batal yang ternyata
+  dibayar tetap dicatat lunas (`dibayar IS NULL` = syarat idempoten). Tidak ada tombol GoPay di gateway palsu.
 
 **Gateway: Midtrans** (pendaftaran sedang review bisnis, per 2026-10-16). Tahap 3 dikerjakan di sandbox
 Midtrans dulu; production menunggu review disetujui. Yang dicek sebelum lanjut: potongan QRIS, webhook
@@ -258,8 +270,9 @@ Tahap 2
 
 Tahap 3
 - [ ] Order uji di sandbox: bayar → lunas → tap terjual muncul di Beranda → status bisa dimajukan sampai Diambil.
+  (3a: sudah lewat gateway palsu; sandbox Midtrans di 3b)
 - [ ] Webhook ganda tidak mencatat dua kali; tanda tangan palsu ditolak.
-- [ ] Order kedaluwarsa setelah 15 menit; perangkat ke-4 order belum bayar ditolak.
+- [x] Order kedaluwarsa setelah 15 menit; perangkat ke-4 order belum bayar ditolak.
 - [ ] Batal (refund dari Kantong / pribadi) menghapus tap dan (pribadi) membuat setor modal.
 
 Tahap 4

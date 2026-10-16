@@ -1,21 +1,13 @@
-import { headers } from "next/headers";
 import QRCode from "qrcode";
 import { PageHeader } from "@/components/page-header";
+import { alamatAsal } from "@/lib/alamat";
 import { NAMA_KANTIN } from "@/lib/katalog";
 import { CetakButton } from "./cetak-button";
 
-/** Alamat katalog dari host yang sedang dipakai membuka halaman ini (domain Vercel / IP laptop). */
-async function alamatKatalog() {
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") || /^\d/.test(host) ? "http" : "https");
-  const lokal = /^(localhost|127\.|\[::1\])/.test(host) ? "laptop" : /^(10|192\.168|172\.(1[6-9]|2\d|3[01]))\./.test(host) ? "wifi" : null;
-  return { url: `${proto}://${host}/pesan`, lokal };
-}
-
 /** Lembar siap cetak berisi QR ke /pesan untuk ditempel di meja kantin. */
 export default async function QrKatalogPage() {
-  const { url, lokal } = await alamatKatalog();
+  const { asal, lokal } = await alamatAsal();
+  const url = `${asal}/pesan`;
   const svg = await QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M", color: { dark: "#2b100c", light: "#ffffff" } });
 
   return (

@@ -66,6 +66,8 @@ export const tapEvent = sqliteTable("tap_event", {
   delta: integer("delta").notNull(),
   // true = diisi manual dari tab Kopi (untuk hari sebelumnya), false = tap langsung
   manual: integer("manual", { mode: "boolean" }).notNull().default(false),
+  // Tap otomatis dari pesanan online yang lunas (CR-005); null = tap biasa
+  pesananId: integer("pesanan_id"),
 });
 
 export const belanja = sqliteTable("belanja", {
@@ -106,6 +108,45 @@ export const tutupBuku = sqliteTable("tutup_buku", {
   hariBukaJson: text("hari_buka_json"),
 });
 
+// Pesanan online dari katalog /pesan (CR-005 Tahap 3).
+// Alur status: menunggu_bayar → lunas → diterima → dibuat → siap (pickup) / diantar (delivery).
+// menunggu_bayar bisa jadi kedaluwarsa (15 menit) atau batal. Lunas = `dibayar` terisi (ditentukan gateway).
+export const STATUS_PESANAN = ["menunggu_bayar", "lunas", "diterima", "dibuat", "siap", "diantar", "kedaluwarsa", "batal"] as const;
+export type StatusPesanan = (typeof STATUS_PESANAN)[number];
+
+export const pesanan = sqliteTable("pesanan", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kode: text("kode").notNull().unique(), // acak, untuk link /pesan/[kode]
+  nomor: integer("nomor"), // antrean, mulai 1 tiap hari WIB; diberikan saat lunas
+  nama: text("nama").notNull(),
+  cara: text("cara", { enum: ["pickup", "delivery"] }).notNull(),
+  catatan: text("catatan"),
+  status: text("status", { enum: STATUS_PESANAN }).notNull(),
+  total: integer("total").notNull(),
+  potongan: integer("potongan").notNull().default(0), // potongan gateway (biaya), diisi saat lunas
+  metode: text("metode"), // mis. "qris", "gopay" (dari gateway)
+  gateway: text("gateway").notNull(), // "palsu" | "midtrans"
+  gatewayRef: text("gateway_ref"),
+  perangkat: text("perangkat").notNull(), // id acak dari cookie pembeli
+  dibuat: integer("dibuat").notNull(),
+  kedaluwarsaPada: integer("kedaluwarsa_pada").notNull(),
+  dibayar: integer("dibayar"),
+  diperbarui: integer("diperbarui").notNull(), // waktu status terakhir berubah
+  refundDari: text("refund_dari", { enum: ["kantong", "pribadi"] }), // batal setelah lunas (Tahap 3b)
+});
+
+export const pesananItem = sqliteTable("pesanan_item", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  pesananId: integer("pesanan_id").notNull(),
+  menuId: integer("menu_id").notNull(),
+  nama: text("nama").notNull(), // nama menu saat pesan
+  qty: integer("qty").notNull(),
+  harga: integer("harga").notNull(), // harga satuan saat pesan
+  lessSugar: integer("less_sugar", { mode: "boolean" }).notNull().default(false),
+});
+
+export type Pesanan = typeof pesanan.$inferSelect;
+export type PesananItem = typeof pesananItem.$inferSelect;
 export type Belanja = typeof belanja.$inferSelect;
 export type Kas = typeof kas.$inferSelect;
 export type TapEvent = typeof tapEvent.$inferSelect;

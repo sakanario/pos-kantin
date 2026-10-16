@@ -5,13 +5,14 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { bahan, bahanAktif, belanja, harga, kas, menu, resep, tapEvent, tutupBuku } from "@/db/schema";
+import { bahan, bahanAktif, belanja, harga, kas, menu, resep, tapEvent, tutupBuku, type StatusPesanan } from "@/db/schema";
 import { cekPin, endSession, hashPin, isValidPin, requireAuth, startSession } from "@/lib/auth";
 import { daftarTanggal, hargaPada, hariBukaBawaan, hitungPeriode, pemakaianBahan, resepPada, type HasilPeriode } from "@/lib/calc";
 import { awalData, getDataPeriode, getHppCtx, getSemuaHarga, getTutupTerakhir, perkiraanCup, stokDari } from "@/lib/data";
 import { hitungUlangSejak } from "@/lib/hitung-ulang";
 import { FOTO_MAKS_BYTE, jenisFoto } from "@/lib/foto";
 import { awalHariWib, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
+import { majukanPesanan } from "@/lib/pesanan";
 import { getSetting, isSetupDone, setSetting } from "@/lib/settings";
 import { COOKIE_TEMA, isTema, type Tema } from "@/lib/tema";
 
@@ -627,6 +628,13 @@ export async function simpanFotoMenuAction(id: number, fd: FormData): Promise<Fo
 export async function hapusFotoMenuAction(id: number) {
   await requireAuth();
   await db.update(menu).set({ foto: null, fotoVersi: null }).where(eq(menu.id, id));
+  refreshSemua();
+}
+
+/** /pesanan: maju satu langkah (Terima → Dibuat → Siap diambil / Diantar). */
+export async function majukanPesananAction(id: number, dari: StatusPesanan) {
+  await requireAuth();
+  await majukanPesanan(id, dari);
   refreshSemua();
 }
 

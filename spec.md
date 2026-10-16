@@ -75,6 +75,7 @@ Tab **Lainnya** (`/lainnya`) berisi daftar: 🍽️ Menu (§4.6), 🧂 Bahan (§
   - Setiap tap memunculkan notifikasi ±5 detik "+1 Creamy Latte · **Batalkan**" (Batalkan = tap kebalikannya).
   - Koreksi telat: tombol **Koreksi −1** di pojok → semua tombol berubah jadi −1 (merah) untuk **satu** tekan,
     lalu kembali normal. Tombol yang hitungan periodenya 0 tidak bisa dikurangi.
+- Kartu **Pesanan online perlu dibuat** (N) di atas, bila ada pesanan lunas yang belum selesai → `/pesanan`.
 - Kartu **Katalog pembeli** (hanya bila ada menu di katalog, §4.9): sakelar besar **Kantin buka / tutup**
   (`settings.kantin_buka`) dan daftar menu katalog dengan tombol **Ada / Habis** per menu (semua jenis; tidak reset
   otomatis).
@@ -178,7 +179,25 @@ kemasan lama adalah harga awal.
 snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 
 ### 4.9 Katalog pembeli `/pesan` (CR-005, publik tanpa login)
-- Tahap 1: **lihat saja**, belum bisa pesan. Pesan online, bayar, dan antrean menyusul (CR-005 Tahap 2–4).
+- Pesan online aktif bila env `GATEWAY` diisi (3a: `palsu`, hanya di laptop). Tanpa gateway: lihat saja.
+- Tombol `+` (racikan dengan less sugar → panel "GULA Normal | Less sugar" + jumlah; lainnya → stepper `− n +`),
+  bar keranjang mengambang "N item · Rp X · Lanjut". Keranjang & nama terakhir disimpan di HP (localStorage).
+- `/pesan/keranjang`: daftar + stepper, nama, **Pickup / Delivery** (Delivery wajib catatan posisi), catatan, Bayar.
+  Harga & ketersediaan dicek ulang di server. Keranjang sama dengan pesanan belum bayar → pesanan itu dipakai lagi;
+  berubah → yang lama dibatalkan. Maks 3 pesanan belum bayar per HP (cookie `perangkat`).
+- `/pesan/[kode]/bayar`: total, QR (berlaku 15 menit, hitung mundur), Simpan gambar QR, Batalkan pesanan; pindah sendiri
+  ke struk setelah lunas (polling 3 detik). Kedaluwarsa → "Pesan lagi" (keranjang masih ada).
+- `/pesan/[kode]` = struk & lacak: nomor antrean, status 4 langkah (Lunas → Diterima → Dibuat → Siap diambil / Diantar),
+  item, total + metode, QR ke halaman itu sendiri. Polling 5 detik sampai selesai. Membukanya menambah ke Pesananku.
+- Katalog: kartu **Menunggu pembayaran** (sisa waktu, Lanjut bayar) / **Pembayaran kedaluwarsa**; tombol **Pesananku**
+  (badge = pesanan berjalan) → `/pesan/riwayat` (cookie `pesananku`, 30 hari, Sedang berjalan / Selesai).
+- **Lunas** (webhook / simulasi): nomor antrean = terbesar hari itu (WIB) + 1; racikan → tap `terjual` (delta = qty,
+  waktu = dibayar, `pesanan_id`); barang jadi tidak di-tap; potongan disimpan; idempoten (`dibayar` masih kosong).
+
+### 4.10 Pesanan (`/pesanan`, pakai PIN)
+- **Aktif**: kartu per pesanan lunas yang belum selesai (nomor, nama, Pickup/Delivery, item + less sugar, catatan),
+  satu tombol maju: **Terima → Mulai dibuat → Siap diambil / Sudah diantar**. Diperbarui otomatis tiap 10 detik.
+- **Selesai** per hari (‹ ›). Tolak / batal + refund menyusul (CR-005 3b).
 - Header: logo, "Kopi Ksatria", label ● Buka / ● Tutup, tagline. Bagian **KOPI** (racikan) dan **CAMILAN** (barang jadi).
 - Hanya menu `aktif && di_katalog`, harga jual yang berlaku sekarang. Tanpa foto → ubin krem + ikon garis.
 - Habis: foto pudar, harga dicoret, pil "Habis". Tutup: kartu "Kantin sedang tutup" di atas daftar.
@@ -329,6 +348,15 @@ menu
   di_katalog BOOL, habis BOOL, bisa_less_sugar BOOL,   -- katalog /pesan (CR-005)
   foto BLOB NULL (WebP/JPEG mentah), foto_versi INTEGER NULL (waktu foto diganti)
 
+pesanan                              -- pesan online (CR-005)
+  id, kode TEXT UNIQUE (acak, link), nomor NULL (antrean harian, saat lunas), nama, cara ('pickup' | 'delivery'),
+  catatan NULL, status ('menunggu_bayar' | 'lunas' | 'diterima' | 'dibuat' | 'siap' | 'diantar' | 'kedaluwarsa' | 'batal'),
+  total, potongan (gateway, saat lunas), metode NULL, gateway ('palsu' | 'midtrans'), gateway_ref NULL, perangkat,
+  dibuat, kedaluwarsa_pada, dibayar NULL, diperbarui, refund_dari NULL ('kantong' | 'pribadi')
+
+pesanan_item
+  id, pesanan_id, menu_id, nama (saat pesan), qty, harga (saat pesan), less_sugar BOOL
+
 bahan
   id, nama, satuan ('gr' | 'pcs'), harga_awal REAL (per satuan)
 
@@ -342,7 +370,8 @@ harga                                -- harga jual, riwayat
   id, menu_id, nilai INTEGER, berlaku_mulai
 
 tap_event
-  id, waktu, menu_id, jenis ('terjual' | 'sendiri'), delta INTEGER (+1 / −1 / N manual), manual BOOL
+  id, waktu, menu_id, jenis ('terjual' | 'sendiri'), delta INTEGER (+1 / −1 / N manual), manual BOOL,
+  pesanan_id NULL (tap otomatis dari pesanan online)
 
 belanja
   id, waktu, kategori ('bahan' | 'barang' | 'lain'), nama TEXT,

@@ -1,7 +1,7 @@
 import "server-only";
-import { and, asc, desc, eq, getTableColumns, gt, isNull, lt, lte } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, gt, isNotNull, isNull, lt, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { bahan, bahanAktif, belanja, harga, kas, menu, resep, tapEvent, tutupBuku, type TutupBuku } from "@/db/schema";
+import { bahan, bahanAktif, belanja, harga, kas, menu, pesanan, resep, tapEvent, tutupBuku, type TutupBuku } from "@/db/schema";
 import {
   bagiPerHari,
   daftarTanggal,
@@ -56,6 +56,14 @@ const kolomMenu = {
   fotoVersi: k.fotoVersi,
 };
 
+/** Tanggal WIB untuk daftar pesanan selesai (`?tgl=`), dengan tanggal sebelum/sesudahnya (tidak melewati hari ini). */
+export function getTanggalPesanan(tgl: string | undefined) {
+  const hariIni = isoTanggalWib(Date.now());
+  const tanggal = tgl && /^\d{4}-\d{2}-\d{2}$/.test(tgl) && tgl <= hariIni ? tgl : hariIni;
+  const geser = (n: number) => new Date(Date.parse(`${tanggal}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+  return { hariIni, tanggal, kemarin: geser(-1), besok: tanggal < hariIni ? geser(1) : null };
+}
+
 /** Menu katalog untuk halaman publik /pesan & Beranda: aktif && di_katalog, harga jual sekarang. */
 export async function getKatalog() {
   const [semua, h, buka] = await Promise.all([getMenu(), getSemuaHarga(), getSetting("kantin_buka")]);
@@ -105,16 +113,20 @@ export function awalData(tutupSebelumnya: { waktu: number; hasilJson: string | n
 export async function getDataPeriode(dari: number, sampai: number) {
   const rentang = <T extends typeof belanja | typeof kas | typeof tapEvent>(t: T) =>
     and(gt(t.waktu, dari), lte(t.waktu, sampai));
-  const [b, k, t, h, m, hpp] = await Promise.all([
+  const [b, k, t, h, m, hpp, [pot]] = await Promise.all([
     db.select().from(belanja).where(rentang(belanja)).orderBy(desc(belanja.waktu)),
     db.select().from(kas).where(rentang(kas)).orderBy(desc(kas.waktu)),
     db.select().from(tapEvent).where(rentang(tapEvent)).orderBy(asc(tapEvent.waktu)),
     getSemuaHarga(),
     getMenu(),
     getHppCtx(),
+    // Potongan gateway: pesanan yang lunas di periode, termasuk yang kemudian dibatalkan (CR-005)
+    db
+      .select({ n: sql<number>`coalesce(sum(${pesanan.potongan}), 0)` })
+      .from(pesanan)
+      .where(and(isNotNull(pesanan.dibayar), gt(pesanan.dibayar, dari), lte(pesanan.dibayar, sampai))),
   ]);
-  // potongan: Σ potongan pesanan online yang lunas di periode (CR-005 Tahap 3; belum ada tabel pesanan → 0)
-  return { belanja: b, kas: k, taps: t, harga: h, menu: m, hpp, potongan: 0 } satisfies PeriodeData;
+  return { belanja: b, kas: k, taps: t, harga: h, menu: m, hpp, potongan: pot?.n ?? 0 } satisfies PeriodeData;
 }
 
 const jumlah = (taps: { delta: number }[]) => taps.reduce((a, t) => a + t.delta, 0);

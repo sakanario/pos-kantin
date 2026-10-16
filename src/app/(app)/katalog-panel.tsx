@@ -13,13 +13,14 @@ export function KatalogPanel({ buka, menu }: { buka: boolean; menu: MenuKatalog[
     <section className="card space-y-3">
       <div className="flex items-baseline justify-between">
         <h2 className="font-bold">Katalog pembeli</h2>
-        <Link href="/pesan" className="text-sm font-bold text-accent">
-          Lihat ›
-        </Link>
+        <span className="flex gap-3 text-sm font-bold text-accent">
+          <Link href="/pesanan">Pesanan ›</Link>
+          <Link href="/pesan">Katalog ›</Link>
+        </span>
       </div>
       <Sakelar
         label={<span className="text-lg font-bold">{buka ? "🟢 Kantin buka" : "⚪ Kantin tutup"}</span>}
-        sub={buka ? "Katalog menampilkan ● Buka" : "Katalog tetap bisa dilihat, tapi tidak bisa pesan"}
+        sub={buka ? "Pembeli bisa pesan dari katalog" : "Katalog tetap bisa dilihat, tapi tidak bisa pesan"}
         nilai={buka}
         simpan={aturKantinBukaAction}
       />

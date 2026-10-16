@@ -21,6 +21,9 @@ Pengguna bukan akuntan: jelaskan dengan contoh angka, bukan istilah.
 - Setor modal / tarik tidak mengubah profit; fungsinya mengoreksi perubahan saldo.
 - Saldo payment gateway (pesan online, CR-005) = kantong kedua di tutup buku; potongan gateway = biaya yang
   mengurangi untung jualan, dan "uang hilang" = selisih + potongan. Pencairan gateway → Kantong tidak dicatat.
+- Pesanan online yang lunas = tap terjual otomatis (racikan saja; barang jadi tetap dari sisa stok). Pembayarannya
+  tidak dicatat sebagai uang; uangnya terbaca dari saldo gateway saat tutup buku.
+- Env `GATEWAY=palsu` = tombol "Simulasikan bayar" (lunas tanpa uang). Hanya untuk laptop; ditolak di Vercel.
 - Konsumsi pribadi (tap "Sendiri") = biaya: mengurangi untung jualan.
 
 ## Stack
@@ -50,10 +53,14 @@ src/lib/data.ts        query baca (periode berjalan, riwayat, ringkasan harian, 
 src/lib/hitung-ulang.ts hitung ulang hasil semua tutup buku sejak waktu tertentu
 src/app/actions.ts     semua server action (tulis). Setiap action memanggil requireAuth()
 src/app/(app)/         halaman setelah login: beranda, catat (belanja/kopi/kas + edit), tutup-buku,
-                       laporan (+ /[id] detail), lainnya (+ /menu, /bahan, /uang-barang, /pengeluaran), setelan
+                       laporan (+ /[id] detail), lainnya (+ /menu, /bahan, /uang-barang, /pengeluaran, /qr-katalog),
+                       pesanan (pesanan online), setelan
 src/app/login, setup   tanpa login
-src/app/pesan/         katalog publik pembeli (CR-005, tanpa login) + route foto /pesan/foto/[id]
-src/db/schema.ts       10 tabel (menu.foto = BLOB: jangan ikut di-select, pakai getMenu / columns: { foto: false }): settings, menu, bahan, resep, bahan_aktif, harga, tap_event, belanja, kas, tutup_buku
+src/app/pesan/         halaman pembeli (CR-005, tanpa login): katalog, keranjang, [kode]/bayar, [kode] (struk),
+                       riwayat, foto/[id]; actions.ts = server action publik (validasi ulang di lib/pesanan.ts)
+src/lib/pesanan.ts     pesanan online: buat, kedaluwarsa, tandaiLunas (idempoten, tap otomatis), majukan status
+src/db/schema.ts       12 tabel: settings, menu, bahan, resep, bahan_aktif, harga, tap_event, belanja, kas, tutup_buku, pesanan, pesanan_item
+                       (menu.foto = BLOB: jangan ikut di-select, pakai getMenu / columns: { foto: false })
 scripts/seed-dummy.ts  generator dummy.db (pakai calc.ts yang sama)
 ```
 

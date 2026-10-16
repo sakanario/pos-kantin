@@ -1,0 +1,336 @@
+import "server-only";
+import { randomBytes } from "node:crypto";
+import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { db } from "@/db";
+import { menu, pesanan, pesananItem, tapEvent, type Pesanan, type PesananItem, type StatusPesanan } from "@/db/schema";
+import { getKatalog, getTutupTerakhir } from "./data";
+import { awalHariWib, isoTanggalWib } from "./format";
+import { hitungUlangSejak } from "./hitung-ulang";
+
+// Pesanan online (CR-005 Tahap 3). Lunas ditentukan gateway (webhook / simulasi gateway palsu), bukan halaman
+// yang sedang terbuka di HP pembeli.
+
+export const MASA_BAYAR_MS = 15 * 60 * 1000;
+export const MAKS_BELUM_BAYAR = 3; // per perangkat
+const MAKS_QTY_BARIS = 20;
+const MAKS_ITEM = 30;
+
+export type Gateway = "palsu" | "midtrans";
+
+/**
+ * Gateway yang dipakai, dari env `GATEWAY`. Gateway palsu (tombol "Simulasikan bayar") hanya untuk mencoba di
+ * laptop: ditolak di Vercel supaya tidak ada yang bisa "membayar" tanpa uang. Tanpa gateway, pesan online mati.
+ */
+export function gatewayAktif(): Gateway | null {
+  const g = process.env.GATEWAY;
+  if (g === "palsu") return process.env.VERCEL ? null : "palsu";
+  if (g === "midtrans") return null; // Tahap 3b
+  return null;
+}
+
+/** Potongan gateway palsu: meniru MDR QRIS 0,7%. */
+export function potonganPalsu(total: number) {
+  return Math.round(total * 0.007);
+}
+
+export type PesananLengkap = Pesanan & { item: PesananItem[] };
+
+const STATUS_AKTIF: StatusPesanan[] = ["lunas", "diterima", "dibuat"];
+const STATUS_SELESAI: StatusPesanan[] = ["siap", "diantar"];
+
+/** Status berikutnya yang dipilih pengguna di /pesanan (null = sudah selesai). */
+export function statusBerikutnya(p: Pick<Pesanan, "status" | "cara">): StatusPesanan | null {
+  switch (p.status) {
+    case "lunas":
+      return "diterima";
+    case "diterima":
+      return "dibuat";
+    case "dibuat":
+      return p.cara === "delivery" ? "diantar" : "siap";
+    default:
+      return null;
+  }
+}
+
+export const LABEL_STATUS: Record<StatusPesanan, string> = {
+  menunggu_bayar: "Menunggu pembayaran",
+  lunas: "Lunas",
+  diterima: "Diterima",
+  dibuat: "Sedang dibuat",
+  siap: "Siap diambil",
+  diantar: "Diantar",
+  kedaluwarsa: "Kedaluwarsa",
+  batal: "Dibatalkan",
+};
+
+/** Sisa waktu bayar (ms) saat ini. */
+export function sisaBayar(p: Pick<Pesanan, "kedaluwarsaPada">) {
+  return Math.max(0, p.kedaluwarsaPada - Date.now());
+}
+
+export const sedangBerjalan = (s: StatusPesanan) => s === "menunggu_bayar" || STATUS_AKTIF.includes(s);
+
+/** Tandai pesanan belum bayar yang lewat 15 menit sebagai kedaluwarsa (dipanggil sebelum membaca). */
+export async function tandaiKedaluwarsa() {
+  const now = Date.now();
+  await db
+    .update(pesanan)
+    .set({ status: "kedaluwarsa", diperbarui: now })
+    .where(and(eq(pesanan.status, "menunggu_bayar"), lt(pesanan.kedaluwarsaPada, now)));
+}
+
+async function lengkapi(rows: Pesanan[]): Promise<PesananLengkap[]> {
+  if (rows.length === 0) return [];
+  const item = await db
+    .select()
+    .from(pesananItem)
+    .where(inArray(pesananItem.pesananId, rows.map((r) => r.id)))
+    .orderBy(asc(pesananItem.id));
+  return rows.map((r) => ({ ...r, item: item.filter((i) => i.pesananId === r.id) }));
+}
+
+export async function getPesananKode(kode: string): Promise<PesananLengkap | null> {
+  await tandaiKedaluwarsa();
+  const row = await db.query.pesanan.findFirst({ where: eq(pesanan.kode, kode) });
+  return row ? (await lengkapi([row]))[0] : null;
+}
+
+export async function getPesananKodeBanyak(kode: string[]): Promise<PesananLengkap[]> {
+  if (kode.length === 0) return [];
+  await tandaiKedaluwarsa();
+  const rows = await db.select().from(pesanan).where(inArray(pesanan.kode, kode)).orderBy(desc(pesanan.dibuat));
+  return lengkapi(rows);
+}
+
+/**
+ * Untuk katalog pembeli: pesanan yang diingat HP ini (cookie), pesanan belum bayar milik perangkat ini, dan
+ * pesanan terakhir yang kedaluwarsa (< 1 jam, belum diganti pesanan baru) untuk ajakan "Pesan lagi".
+ */
+export async function getPesananku(kode: string[], perangkat: string | null) {
+  const milikku = await getPesananKodeBanyak(kode);
+  const sekarang = Date.now();
+  const punyaku = milikku.filter((p) => p.perangkat === perangkat);
+  const belumBayar = punyaku.find((p) => p.status === "menunggu_bayar") ?? null;
+  const terbaru = punyaku[0];
+  const kedaluwarsa =
+    !belumBayar && terbaru?.status === "kedaluwarsa" && sekarang - terbaru.kedaluwarsaPada < 60 * 60 * 1000 ? terbaru : null;
+  return {
+    milikku,
+    belumBayar,
+    sisaBayarMs: belumBayar ? belumBayar.kedaluwarsaPada - sekarang : 0,
+    kedaluwarsa,
+    berjalan: milikku.filter((p) => sedangBerjalan(p.status)).length,
+  };
+}
+
+/** Riwayat di HP pembeli: 30 hari terakhir; pesanan yang tidak jadi dibayar tidak ikut (kecuali yang masih menunggu). */
+export async function getRiwayatPembeli(kode: string[]) {
+  const batas = Date.now() - 30 * 86400000;
+  const semua = (await getPesananKodeBanyak(kode)).filter((p) => p.dibuat >= batas && (p.dibayar !== null || p.status === "menunggu_bayar"));
+  return { berjalan: semua.filter((p) => sedangBerjalan(p.status)), selesai: semua.filter((p) => !sedangBerjalan(p.status)) };
+}
+
+/** Pesanan belum bayar milik perangkat ini (terbaru dulu). */
+export async function getBelumBayar(perangkat: string): Promise<PesananLengkap[]> {
+  await tandaiKedaluwarsa();
+  const rows = await db
+    .select()
+    .from(pesanan)
+    .where(and(eq(pesanan.perangkat, perangkat), eq(pesanan.status, "menunggu_bayar")))
+    .orderBy(desc(pesanan.dibuat));
+  return lengkapi(rows);
+}
+
+/** Untuk /pesanan: pesanan lunas yang belum selesai, nomor kecil dulu. */
+export async function getPesananAktif(): Promise<PesananLengkap[]> {
+  const rows = await db
+    .select()
+    .from(pesanan)
+    .where(inArray(pesanan.status, STATUS_AKTIF))
+    .orderBy(asc(pesanan.dibayar), asc(pesanan.id));
+  return lengkapi(rows);
+}
+
+export async function getJumlahPesananAktif(): Promise<number> {
+  const [r] = await db.select({ n: sql<number>`count(*)` }).from(pesanan).where(inArray(pesanan.status, STATUS_AKTIF));
+  return r?.n ?? 0;
+}
+
+/** Pesanan yang sudah selesai pada tanggal WIB `iso` (lunas hari itu), terbaru dulu. */
+export async function getPesananSelesai(iso: string): Promise<PesananLengkap[]> {
+  const dari = awalHariWib(iso);
+  const rows = await db
+    .select()
+    .from(pesanan)
+    .where(and(inArray(pesanan.status, [...STATUS_SELESAI, "batal"]), isNotNull(pesanan.dibayar), gte(pesanan.dibayar, dari), lt(pesanan.dibayar, dari + 86400000)))
+    .orderBy(desc(pesanan.dibayar));
+  return lengkapi(rows);
+}
+
+/** Sudah pernah ada pesanan lunas? (input saldo gateway di Tutup Buku tampil) */
+export async function adaPesananLunas(): Promise<boolean> {
+  const row = await db.query.pesanan.findFirst({ where: isNotNull(pesanan.dibayar), columns: { id: true } });
+  return !!row;
+}
+
+// ─── Membuat pesanan ─────────────────────────────────────────────
+
+export type BarisKeranjang = { menuId: number; lessSugar: boolean; qty: number };
+export type PesananInput = { nama: string; cara: "pickup" | "delivery"; catatan: string; item: BarisKeranjang[] };
+
+/** Tanda keranjang untuk membandingkan "keranjang sama" (urutan baris tidak penting). */
+function tandaKeranjang(i: { nama: string; cara: string; catatan: string | null; item: BarisKeranjang[] }) {
+  const baris = i.item.map((x) => `${x.menuId}:${x.lessSugar ? 1 : 0}:${x.qty}`).sort();
+  return JSON.stringify([i.nama, i.cara, i.catatan ?? "", baris]);
+}
+
+function kodeAcak() {
+  return randomBytes(6).toString("hex"); // 12 karakter, 48 bit: cukup untuk link yang tidak bisa ditebak
+}
+
+/**
+ * Buat pesanan `menunggu_bayar` dari keranjang. Keranjang sama dengan pesanan belum bayar milik perangkat ini →
+ * pesanan itu dipakai lagi. Keranjang berubah → pesanan belum bayar sebelumnya dibatalkan.
+ */
+export async function buatPesanan(raw: PesananInput, perangkat: string): Promise<{ kode: string } | { error: string }> {
+  const gateway = gatewayAktif();
+  if (!gateway) return { error: "Pembayaran online belum aktif. Pesan langsung di kantin ya." };
+
+  const nama = String(raw.nama ?? "").trim().slice(0, 40);
+  const cara = raw.cara === "delivery" ? "delivery" : "pickup";
+  const catatan = String(raw.catatan ?? "").trim().slice(0, 120) || null;
+  if (!nama) return { error: "Isi nama kamu dulu." };
+  if (cara === "delivery" && !catatan) return { error: "Untuk diantar, tulis posisi atau ciri-ciri kamu di catatan." };
+
+  // Gabungkan baris yang sama, validasi jumlah
+  const peta = new Map<string, BarisKeranjang>();
+  for (const x of Array.isArray(raw.item) ? raw.item : []) {
+    const qty = Math.floor(Number(x?.qty));
+    const menuId = Math.floor(Number(x?.menuId));
+    if (!Number.isFinite(qty) || qty <= 0 || !Number.isFinite(menuId)) continue;
+    const k = `${menuId}:${x.lessSugar ? 1 : 0}`;
+    const ada = peta.get(k);
+    peta.set(k, { menuId, lessSugar: !!x.lessSugar, qty: (ada?.qty ?? 0) + qty });
+  }
+  const item = [...peta.values()];
+  if (item.length === 0) return { error: "Keranjang masih kosong." };
+  if (item.some((x) => x.qty > MAKS_QTY_BARIS) || item.reduce((a, x) => a + x.qty, 0) > MAKS_ITEM) {
+    return { error: `Maksimal ${MAKS_ITEM} item per pesanan.` };
+  }
+
+  // Menu & harga dari katalog sekarang (bukan dari HP pembeli)
+  const katalog = await getKatalog();
+  if (!katalog.buka) return { error: "Kantin sedang tutup." };
+  const baris: { menuId: number; nama: string; qty: number; harga: number; lessSugar: boolean }[] = [];
+  for (const x of item) {
+    const m = katalog.menu.find((k) => k.id === x.menuId);
+    if (!m) return { error: "Ada menu yang sudah tidak tersedia. Cek keranjang lagi ya." };
+    if (m.habis) return { error: `${m.nama} sedang habis. Hapus dari keranjang dulu ya.` };
+    baris.push({ menuId: m.id, nama: m.nama, qty: x.qty, harga: m.harga, lessSugar: m.bisaLessSugar && x.lessSugar });
+  }
+  const total = baris.reduce((a, b) => a + b.qty * b.harga, 0);
+  if (total <= 0) return { error: "Total pesanan tidak valid." };
+
+  const now = Date.now();
+  const belum = await getBelumBayar(perangkat);
+  const tanda = tandaKeranjang({ nama, cara, catatan, item: baris });
+  const sama = belum.find((p) => p.total === total && tandaKeranjang({ ...p, item: p.item }) === tanda);
+  if (sama) return { kode: sama.kode };
+  if (belum.length > 0) {
+    await db
+      .update(pesanan)
+      .set({ status: "batal", diperbarui: now })
+      .where(and(eq(pesanan.perangkat, perangkat), eq(pesanan.status, "menunggu_bayar")));
+  }
+  // Batas per perangkat (jaga-jaga bila cookie diakali; pesanan lama di atas sudah dibatalkan)
+  const [{ n }] = await db
+    .select({ n: sql<number>`count(*)` })
+    .from(pesanan)
+    .where(and(eq(pesanan.perangkat, perangkat), eq(pesanan.status, "menunggu_bayar")));
+  if (n >= MAKS_BELUM_BAYAR) return { error: "Masih ada pesanan yang belum dibayar. Bayar atau batalkan dulu ya." };
+
+  const kode = kodeAcak();
+  const [row] = await db
+    .insert(pesanan)
+    .values({
+      kode,
+      nama,
+      cara,
+      catatan,
+      status: "menunggu_bayar",
+      total,
+      gateway,
+      gatewayRef: `${gateway}-${kode}`,
+      perangkat,
+      dibuat: now,
+      kedaluwarsaPada: now + MASA_BAYAR_MS,
+      diperbarui: now,
+    })
+    .returning({ id: pesanan.id });
+  await db.insert(pesananItem).values(baris.map((b) => ({ ...b, pesananId: row.id })));
+  return { kode };
+}
+
+/** Pembeli membatalkan pesanan yang belum dibayar (hanya dari perangkat yang membuatnya). */
+export async function batalkanBelumBayar(kode: string, perangkat: string) {
+  await db
+    .update(pesanan)
+    .set({ status: "batal", diperbarui: Date.now() })
+    .where(and(eq(pesanan.kode, kode), eq(pesanan.perangkat, perangkat), eq(pesanan.status, "menunggu_bayar")));
+}
+
+// ─── Lunas ───────────────────────────────────────────────────────
+
+/**
+ * Tandai lunas: dipanggil oleh webhook gateway (atau simulasi gateway palsu). Idempoten: hanya pesanan yang
+ * `dibayar`-nya masih kosong yang diproses, jadi notifikasi ganda tidak mencatat dua kali. Pesanan yang sudah
+ * kedaluwarsa / dibatalkan pembeli tetap dicatat lunas bila uangnya ternyata masuk.
+ *
+ * - Nomor antrean = nomor terbesar hari itu (WIB) + 1.
+ * - Racikan → tap `terjual` (delta = qty, waktu = dibayar). Barang jadi tidak di-tap (terjual dihitung dari
+ *   sisa stok saat tutup buku).
+ * - Waktu bayar di periode yang sudah ditutup → hitung ulang.
+ */
+export async function tandaiLunas(a: { kode: string; dibayar: number; potongan: number; metode: string }): Promise<boolean> {
+  const awalHari = awalHariWib(isoTanggalWib(a.dibayar));
+  const [row] = await db
+    .update(pesanan)
+    .set({
+      status: "lunas",
+      dibayar: a.dibayar,
+      potongan: Math.max(0, Math.round(a.potongan)),
+      metode: a.metode,
+      diperbarui: Date.now(),
+      nomor: sql`(select coalesce(max(p2.nomor), 0) + 1 from pesanan p2 where p2.dibayar >= ${awalHari} and p2.dibayar < ${awalHari + 86400000})`,
+    })
+    .where(and(eq(pesanan.kode, a.kode), isNull(pesanan.dibayar)))
+    .returning({ id: pesanan.id });
+  if (!row) return false;
+
+  const item = await db
+    .select({ menuId: pesananItem.menuId, qty: pesananItem.qty, jenis: menu.jenis })
+    .from(pesananItem)
+    .innerJoin(menu, eq(menu.id, pesananItem.menuId))
+    .where(eq(pesananItem.pesananId, row.id));
+  const racikan = item.filter((i) => i.jenis === "racikan");
+  if (racikan.length > 0) {
+    await db.insert(tapEvent).values(
+      racikan.map((i) => ({ waktu: a.dibayar, menuId: i.menuId, jenis: "terjual" as const, delta: i.qty, pesananId: row.id })),
+    );
+  }
+  const terakhir = await getTutupTerakhir();
+  if (terakhir && terakhir.hasilJson !== null && a.dibayar <= terakhir.waktu) await hitungUlangSejak(a.dibayar);
+  return true;
+}
+
+/** Majukan status satu langkah (pengguna di /pesanan). `dari` mencegah tekan ganda melompati langkah. */
+export async function majukanPesanan(id: number, dari: StatusPesanan) {
+  const row = await db.query.pesanan.findFirst({ where: eq(pesanan.id, id), columns: { status: true, cara: true } });
+  if (!row || row.status !== dari) return;
+  const ke = statusBerikutnya(row);
+  if (!ke) return;
+  await db
+    .update(pesanan)
+    .set({ status: ke, diperbarui: Date.now() })
+    .where(and(eq(pesanan.id, id), eq(pesanan.status, dari)));
+}
