@@ -4,13 +4,15 @@
 // lib/pesanan.ts; harga selalu dari database.
 
 import { revalidatePath } from "next/cache";
-import { ingatKode, pastikanPerangkat, getPerangkat } from "@/lib/pembeli";
+import { aturKodePesananku, getKodePesananku, getPerangkat, ingatKode, pastikanPerangkat } from "@/lib/pembeli";
 import {
   batalkanBelumBayar,
   buatPesanan,
   gatewayAktif,
   getPesananKode,
+  getPesananKodeBanyak,
   potonganPalsu,
+  sedangBerjalan,
   tandaiLunas,
   type PesananInput,
 } from "@/lib/pesanan";
@@ -34,6 +36,15 @@ export async function batalkanPesananAction(kode: string) {
 export async function ingatPesananAction(kode: string) {
   const p = await getPesananKode(String(kode));
   if (p) await ingatKode(p.kode);
+}
+
+/** Hapus pesanan selesai dari daftar "Pesananku" di HP ini saja (database tidak berubah). */
+export async function bersihkanRiwayatAction() {
+  const kode = await getKodePesananku();
+  const semua = await getPesananKodeBanyak(kode);
+  const tetap = new Set(semua.filter((p) => sedangBerjalan(p.status)).map((p) => p.kode));
+  await aturKodePesananku(kode.filter((k) => tetap.has(k)));
+  revalidatePath("/pesan", "layout");
 }
 
 /** Gateway palsu saja: berlaku seperti notifikasi "lunas" dari gateway. */

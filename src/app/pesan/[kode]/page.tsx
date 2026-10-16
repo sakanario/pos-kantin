@@ -63,6 +63,11 @@ export default async function StrukPage(props: PageProps<"/pesan/[kode]">) {
       )}
 
       {lunas && p.status !== "batal" && <Langkah p={p} />}
+      {lunas && p.status === "batal" && (
+        <p className="card text-center text-sm">
+          Maaf, pesanan ini dibatalkan kantin. Uangnya dikembalikan oleh kantin; tanyakan langsung bila belum diterima.
+        </p>
+      )}
 
       <div className="card flex flex-col gap-1">
         <div className="flex justify-between gap-3 border-b border-dashed border-outline pb-2 text-[13px] text-muted">

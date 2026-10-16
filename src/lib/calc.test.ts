@@ -396,3 +396,27 @@ test("balik modal menghitung saldo gateway yang belum dicairkan", () => {
   assert.equal(bep.uangKembali, 14930);
   assert.equal(bep.posisi, -5070);
 });
+
+test("pesanan dibatalkan, refund dari Kantong: potongan tetap biaya, uang hilang 0", () => {
+  // Pesanan Rp10.000 lunas (gateway +9.930), lalu dibatalkan: tap dihapus, Rp10.000 dikembalikan dari Kantong
+  const h = hitungPeriode(
+    { saldoKantong: 50000, cashBelumDisetor: 0, saldoGateway: 0, stok: {} },
+    { waktu: 1000, saldoKantong: 40000, cashBelumDisetor: 0, saldoGateway: 9930, sisa: {} },
+    data({ taps: [], hpp: hppTetap(7000), potongan: 70 }),
+  );
+  assert.equal(h.omzetNyata, -70);
+  assert.equal(h.uangHilang, 0);
+  assert.equal(h.untungJualan, -70);
+  assert.equal(h.uangBersih, -70);
+});
+
+test("pesanan dibatalkan, refund dari uang pribadi = setor modal sebesar total", () => {
+  const h = hitungPeriode(
+    { saldoKantong: 50000, cashBelumDisetor: 0, saldoGateway: 0, stok: {} },
+    { waktu: 1000, saldoKantong: 50000, cashBelumDisetor: 0, saldoGateway: 9930, sisa: {} },
+    data({ taps: [], hpp: hppTetap(7000), potongan: 70, kas: [{ jenis: "setor", nominal: 10000 }] }),
+  );
+  assert.equal(h.omzetNyata, -70);
+  assert.equal(h.uangHilang, 0);
+  assert.equal(h.untungJualan, -70);
+});

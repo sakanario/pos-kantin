@@ -190,14 +190,22 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 - `/pesan/[kode]` = struk & lacak: nomor antrean, status 4 langkah (Lunas → Diterima → Dibuat → Siap diambil / Diantar),
   item, total + metode, QR ke halaman itu sendiri. Polling 5 detik sampai selesai. Membukanya menambah ke Pesananku.
 - Katalog: kartu **Menunggu pembayaran** (sisa waktu, Lanjut bayar) / **Pembayaran kedaluwarsa**; tombol **Pesananku**
-  (badge = pesanan berjalan) → `/pesan/riwayat` (cookie `pesananku`, 30 hari, Sedang berjalan / Selesai).
+  (badge = pesanan berjalan) → `/pesan/riwayat` (cookie `pesananku`, 30 hari, tidak termasuk yang tidak jadi dibayar):
+  **Sedang berjalan** (nomor + status, atau "Menunggu pembayaran" + sisa waktu → halaman bayar) dan **Selesai**
+  (tanggal · nomor · status, item, total, tombol **Pesan lagi** = isi ulang keranjang; menu habis dilewati dan
+  diberi tahu di keranjang). Tombol sapu di label SELESAI → dialog "Bersihkan riwayat selesai?" (hanya daftar di HP
+  ini; database tidak berubah).
 - **Lunas** (webhook / simulasi): nomor antrean = terbesar hari itu (WIB) + 1; racikan → tap `terjual` (delta = qty,
   waktu = dibayar, `pesanan_id`); barang jadi tidak di-tap; potongan disimpan; idempoten (`dibayar` masih kosong).
 
 ### 4.10 Pesanan (`/pesanan`, pakai PIN)
 - **Aktif**: kartu per pesanan lunas yang belum selesai (nomor, nama, Pickup/Delivery, item + less sugar, catatan),
   satu tombol maju: **Terima → Mulai dibuat → Siap diambil / Sudah diantar**. Diperbarui otomatis tiap 10 detik.
-- **Selesai** per hari (‹ ›). Tolak / batal + refund menyusul (CR-005 3b).
+- **Selesai** per hari (‹ ›), dengan keterangan refund untuk yang dibatalkan.
+- **Tolak pesanan…** (status Lunas) / **Batalkan pesanan…** (Diterima / Dibuat): pengguna mengembalikan uang pembeli
+  sendiri, lalu memilih **Kantong Kantin** (hapus tap pesanan; saldo Kantong turun sendiri) atau **Uang pribadi**
+  (hapus tap + catat setor modal sebesar total). Potongan gateway tetap biaya. Hanya untuk pesanan yang lunas di
+  periode berjalan (sesudah tutup buku terakhir). Struk pembeli menampilkan "dibatalkan kantin".
 - Header: logo, "Kopi Ksatria", label ● Buka / ● Tutup, tagline. Bagian **KOPI** (racikan) dan **CAMILAN** (barang jadi).
 - Hanya menu `aktif && di_katalog`, harga jual yang berlaku sekarang. Tanpa foto → ubin krem + ikon garis.
 - Habis: foto pudar, harga dicoret, pil "Habis". Tutup: kartu "Kantin sedang tutup" di atas daftar.

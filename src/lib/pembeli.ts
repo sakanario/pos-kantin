@@ -29,6 +29,11 @@ export async function getKodePesananku(): Promise<string[]> {
   return v.split(".").filter((k) => /^[a-z0-9]{6,16}$/.test(k));
 }
 
+/** Hanya di server action / route handler. Menimpa daftar kode (mis. setelah bersihkan riwayat). */
+export async function aturKodePesananku(kode: string[]) {
+  (await cookies()).set(COOKIE_PESANANKU, kode.slice(0, MAKS_KODE).join("."), opsi);
+}
+
 /** Hanya di server action / route handler. */
 export async function ingatKode(kode: string) {
   const lama = await getKodePesananku();

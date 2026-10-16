@@ -4,6 +4,7 @@ import { hariTanggal, rupiah } from "@/lib/format";
 import { getPesananAktif, getPesananSelesai, LABEL_STATUS, type PesananLengkap } from "@/lib/pesanan";
 import { getTanggalPesanan } from "@/lib/data";
 import { Pantau } from "@/app/pesan/hidup";
+import { TombolBatal } from "./tombol-batal";
 import { TombolMaju } from "./tombol-maju";
 
 /** Pesanan online: yang aktif (perlu dikerjakan) dan yang selesai per hari. */
@@ -61,7 +62,10 @@ export default async function PesananPage(props: PageProps<"/pesanan">) {
                   </span>
                   <span className="text-right">
                     <span className="num block">{rupiah(p.total)}</span>
-                    <span className={`block text-xs ${p.status === "batal" ? "text-bad" : "text-muted"}`}>{LABEL_STATUS[p.status]}</span>
+                    <span className={`block text-xs ${p.status === "batal" ? "text-bad" : "text-muted"}`}>
+                      {LABEL_STATUS[p.status]}
+                      {p.refundDari && ` · refund ${p.refundDari === "kantong" ? "Kantong" : "pribadi"}`}
+                    </span>
                   </span>
                 </li>
               ))}
@@ -98,6 +102,7 @@ function KartuPesanan({ p }: { p: PesananLengkap }) {
       </ul>
       {p.catatan && <p className="rounded-xl bg-accent-soft px-3 py-2 text-sm">📝 {p.catatan}</p>}
       <TombolMaju id={p.id} status={p.status} cara={p.cara} />
+      <TombolBatal id={p.id} nomor={p.nomor} total={p.total} tolak={p.status === "lunas"} />
     </div>
   );
 }

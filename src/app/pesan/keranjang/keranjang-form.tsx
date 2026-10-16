@@ -9,7 +9,17 @@ import { buatPesananAction } from "../actions";
 import { barisValid, Stepper } from "../katalog-client";
 import { bacaNama, simpanNama, tandaiKeranjangUntuk, ubahJumlah, useKeranjang } from "../keranjang";
 
-export function KeranjangForm({ menu, bisaPesan, buka }: { menu: MenuKatalog[]; bisaPesan: boolean; buka: boolean }) {
+export function KeranjangForm({
+  menu,
+  bisaPesan,
+  buka,
+  dilewati: dilewatiPesanLagi,
+}: {
+  menu: MenuKatalog[];
+  bisaPesan: boolean;
+  buka: boolean;
+  dilewati: string | null;
+}) {
   const router = useRouter();
   const keranjang = useKeranjang();
   const valid = barisValid(keranjang, menu);
@@ -48,6 +58,11 @@ export function KeranjangForm({ menu, bisaPesan, buka }: { menu: MenuKatalog[]; 
         Menu
       </Link>
       <h1 className="text-[28px] font-bold">Pesananmu</h1>
+      {dilewatiPesanLagi && (
+        <p className="rounded-2xl bg-bad-soft px-3 py-2 text-sm font-semibold text-bad">
+          {dilewatiPesanLagi} sedang habis, jadi tidak dimasukkan ke keranjang.
+        </p>
+      )}
 
       {valid.length === 0 ? (
         <p className="card text-sm text-muted">

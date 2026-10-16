@@ -1,6 +1,6 @@
 # CR-005: Katalog menu, pesan online, payment gateway, antrean & notifikasi
 
-Status: **Tahap 1, 2, 3a selesai** (2026-10-16); 3b (Midtrans, riwayat lengkap, batal/refund) & 4 belum
+Status: **Tahap 1, 2, 3a selesai**, 3b sebagian (batal/refund & riwayat selesai; Midtrans belum) (2026-10-16); 4 belum
 Tanggal: 2026-10-13
 
 ## Latar belakang
@@ -273,7 +273,8 @@ Tahap 3
   (3a: sudah lewat gateway palsu; sandbox Midtrans di 3b)
 - [ ] Webhook ganda tidak mencatat dua kali; tanda tangan palsu ditolak.
 - [x] Order kedaluwarsa setelah 15 menit; perangkat ke-4 order belum bayar ditolak.
-- [ ] Batal (refund dari Kantong / pribadi) menghapus tap dan (pribadi) membuat setor modal.
+- [x] Batal (refund dari Kantong / pribadi) menghapus tap dan (pribadi) membuat setor modal.
+  Hanya untuk pesanan yang lunas sesudah tutup buku terakhir (tap yang dihapus & uang refund di periode yang sama).
 
 Tahap 4
 - [ ] Notifikasi muncul di HP Android pengguna saat order uji lunas; ketuk membuka `/pesanan`.

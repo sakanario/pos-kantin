@@ -9,9 +9,17 @@ import { KeranjangForm } from "./keranjang-form";
 
 export const metadata: Metadata = { title: `Pesananmu · ${NAMA_KANTIN}` };
 
-export default async function KeranjangPage() {
+export default async function KeranjangPage(props: PageProps<"/pesan/keranjang">) {
   await connection();
   if (!(await isSetupDone())) notFound();
-  const { buka, menu } = await getKatalog();
-  return <KeranjangForm menu={menu} bisaPesan={buka && gatewayAktif() !== null} buka={buka} />;
+  const [{ buka, menu }, { dilewati }] = await Promise.all([getKatalog(), props.searchParams]);
+  return (
+    <KeranjangForm
+      menu={menu}
+      bisaPesan={buka && gatewayAktif() !== null}
+      buka={buka}
+      // "Pesan lagi": menu yang dilewati karena habis / tidak tersedia
+      dilewati={typeof dilewati === "string" ? dilewati.slice(0, 200) : null}
+    />
+  );
 }

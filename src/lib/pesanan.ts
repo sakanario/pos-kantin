@@ -2,9 +2,9 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { menu, pesanan, pesananItem, tapEvent, type Pesanan, type PesananItem, type StatusPesanan } from "@/db/schema";
+import { kas, menu, pesanan, pesananItem, tapEvent, type Pesanan, type PesananItem, type StatusPesanan } from "@/db/schema";
 import { getKatalog, getTutupTerakhir } from "./data";
-import { awalHariWib, isoTanggalWib } from "./format";
+import { awalHariWib, isoTanggalWib, tanggalPendek } from "./format";
 import { hitungUlangSejak } from "./hitung-ulang";
 
 // Pesanan online (CR-005 Tahap 3). Lunas ditentukan gateway (webhook / simulasi gateway palsu), bukan halaman
@@ -125,10 +125,23 @@ export async function getPesananku(kode: string[], perangkat: string | null) {
 
 /** Riwayat di HP pembeli: 30 hari terakhir; pesanan yang tidak jadi dibayar tidak ikut (kecuali yang masih menunggu). */
 export async function getRiwayatPembeli(kode: string[]) {
-  const batas = Date.now() - 30 * 86400000;
-  const semua = (await getPesananKodeBanyak(kode)).filter((p) => p.dibuat >= batas && (p.dibayar !== null || p.status === "menunggu_bayar"));
+  const now = Date.now();
+  const hariIni = isoTanggalWib(now);
+  const jam = (ms: number) => new Date(ms).toLocaleTimeString("id-ID", { timeZone: "Asia/Jakarta", hour: "2-digit", minute: "2-digit" });
+  const semua = (await getPesananKodeBanyak(kode))
+    .filter((p) => p.dibuat >= now - 30 * 86400000 && (p.dibayar !== null || p.status === "menunggu_bayar"))
+    .map((p) => {
+      const t = p.dibayar ?? p.dibuat;
+      return {
+        ...p,
+        // "Hari ini 10.42" / "14 Okt"
+        waktuLabel: isoTanggalWib(t) === hariIni ? `Hari ini ${jam(t)}` : tanggalPendek(t),
+        sisaMs: p.status === "menunggu_bayar" ? Math.max(0, p.kedaluwarsaPada - now) : 0,
+      };
+    });
   return { berjalan: semua.filter((p) => sedangBerjalan(p.status)), selesai: semua.filter((p) => !sedangBerjalan(p.status)) };
 }
+export type PesananRiwayat = Awaited<ReturnType<typeof getRiwayatPembeli>>["selesai"][number];
 
 /** Pesanan belum bayar milik perangkat ini (terbaru dulu). */
 export async function getBelumBayar(perangkat: string): Promise<PesananLengkap[]> {
@@ -321,6 +334,43 @@ export async function tandaiLunas(a: { kode: string; dibayar: number; potongan: 
   const terakhir = await getTutupTerakhir();
   if (terakhir && terakhir.hasilJson !== null && a.dibayar <= terakhir.waktu) await hitungUlangSejak(a.dibayar);
   return true;
+}
+
+/**
+ * Tolak / batalkan pesanan yang sudah lunas (bahan habis, dll.). Refund dilakukan pengguna sendiri di luar app;
+ * di sini dicatat sumber uangnya:
+ * - `kantong`: saldo Kantong turun sendiri saat refund → cukup hapus tap pesanan.
+ * - `pribadi`: uang pesanan tetap di saldo gateway tapi bukan penjualan → hapus tap + catat setor modal sebesar total.
+ * Potongan gateway tetap biaya (tidak dikembalikan gateway). Hanya untuk pesanan di periode berjalan, supaya
+ * tap yang dihapus & uang refund jatuh di periode yang sama.
+ */
+export async function batalkanLunas(id: number, refundDari: "kantong" | "pribadi"): Promise<string | null> {
+  const p = await db.query.pesanan.findFirst({ where: eq(pesanan.id, id) });
+  if (!p || p.dibayar === null) return "Pesanan tidak ditemukan.";
+  if (!STATUS_AKTIF.includes(p.status) && !STATUS_SELESAI.includes(p.status)) return "Pesanan ini sudah dibatalkan.";
+  const terakhir = await getTutupTerakhir();
+  if (terakhir && terakhir.hasilJson !== null && p.dibayar <= terakhir.waktu) {
+    return "Pesanan ini sudah masuk tutup buku, jadi tidak bisa dibatalkan lagi.";
+  }
+  const now = Date.now();
+  await db.batch([
+    db
+      .update(pesanan)
+      .set({ status: "batal", refundDari, diperbarui: now })
+      .where(and(eq(pesanan.id, id), eq(pesanan.status, p.status))),
+    db.delete(tapEvent).where(eq(tapEvent.pesananId, id)),
+    ...(refundDari === "pribadi"
+      ? [
+          db.insert(kas).values({
+            waktu: now,
+            jenis: "setor" as const,
+            nominal: p.total,
+            catatan: `Refund pesanan online #${p.nomor} (${p.nama}) dari uang pribadi`,
+          }),
+        ]
+      : []),
+  ]);
+  return null;
 }
 
 /** Majukan status satu langkah (pengguna di /pesanan). `dari` mencegah tekan ganda melompati langkah. */

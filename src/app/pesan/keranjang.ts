@@ -62,6 +62,11 @@ export function ubahJumlah(menuId: number, lessSugar: boolean, delta: number) {
   tulis(baru.filter((x) => x.qty > 0));
 }
 
+/** Ganti isi keranjang ("Pesan lagi" dari riwayat). */
+export function isiKeranjang(b: Baris[]) {
+  tulis(b.filter((x) => x.qty > 0));
+}
+
 export function kosongkan() {
   tulis([]);
 }

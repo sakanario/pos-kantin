@@ -12,7 +12,7 @@ import { awalData, getDataPeriode, getHppCtx, getSemuaHarga, getTutupTerakhir, p
 import { hitungUlangSejak } from "@/lib/hitung-ulang";
 import { FOTO_MAKS_BYTE, jenisFoto } from "@/lib/foto";
 import { awalHariWib, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
-import { majukanPesanan } from "@/lib/pesanan";
+import { batalkanLunas, majukanPesanan } from "@/lib/pesanan";
 import { getSetting, isSetupDone, setSetting } from "@/lib/settings";
 import { COOKIE_TEMA, isTema, type Tema } from "@/lib/tema";
 
@@ -636,6 +636,15 @@ export async function majukanPesananAction(id: number, dari: StatusPesanan) {
   await requireAuth();
   await majukanPesanan(id, dari);
   refreshSemua();
+}
+
+/** /pesanan: tolak / batalkan pesanan lunas; refund dilakukan pengguna sendiri. */
+export async function batalkanPesananLunasAction(id: number, refundDari: "kantong" | "pribadi"): Promise<string | undefined> {
+  await requireAuth();
+  if (refundDari !== "kantong" && refundDari !== "pribadi") return "Pilih sumber uang refund.";
+  const err = await batalkanLunas(id, refundDari);
+  refreshSemua();
+  return err ?? undefined;
 }
 
 export async function aturKantinBukaAction(buka: boolean) {
