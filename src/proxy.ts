@@ -14,5 +14,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!login|setup|_next|favicon.ico|icon|apple-icon|manifest.webmanifest).*)"],
+  // sw.js: service worker notifikasi (CR-005 Tahap 4), harus bisa diambil tanpa redirect
+  matcher: ["/((?!login|setup|_next|favicon.ico|icon|apple-icon|manifest.webmanifest|sw.js).*)"],
 };

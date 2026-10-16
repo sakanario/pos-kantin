@@ -145,6 +145,16 @@ export const pesananItem = sqliteTable("pesanan_item", {
   lessSugar: integer("less_sugar", { mode: "boolean" }).notNull().default(false),
 });
 
+// Langganan web push (HP pengguna yang mengaktifkan notifikasi pesanan, CR-005 Tahap 4). Bisa lebih dari satu.
+export const pushLangganan = sqliteTable("push_langganan", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  perangkat: text("perangkat"), // keterangan singkat dari user agent
+  dibuat: integer("dibuat").notNull(),
+});
+
 export type Pesanan = typeof pesanan.$inferSelect;
 export type PesananItem = typeof pesananItem.$inferSelect;
 export type Belanja = typeof belanja.$inferSelect;

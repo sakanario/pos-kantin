@@ -1,6 +1,6 @@
 # CR-005: Katalog menu, pesan online, payment gateway, antrean & notifikasi
 
-Status: **Tahap 1, 2, 3a selesai**, 3b sebagian (batal/refund & riwayat selesai; Midtrans belum) (2026-10-16); 4 belum
+Status: **Tahap 1, 2, 3a, 4 selesai**, 3b sebagian (batal/refund & riwayat selesai; **Midtrans belum**) (2026-10-16)
 Tanggal: 2026-10-13
 
 ## Latar belakang
@@ -180,6 +180,11 @@ Pesanan aktif
 - Setelan: tombol **Aktifkan notifikasi pesanan di HP ini** (+ tombol kirim notifikasi uji).
 - Saat order lunas: *"Pesanan #7 · Budi · 1× Kopi Susu SKM"*, ketuk → `/pesanan`.
 - Langganan yang ditolak server push (410) dihapus otomatis.
+- **Catatan implementasi**: `src/lib/push.ts` (`kabariPesananLunas` dipanggil di akhir `tandaiLunas`, tidak pernah
+  melempar error), `public/sw.js` (dikecualikan di `proxy.ts`), Setelan → "Notifikasi pesanan online"
+  (`setelan/notifikasi.tsx`). Push hanya bisa diaktifkan dari https:// atau localhost, bukan IP WiFi.
+  Env: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (opsional). Dites dengan layanan push tiruan lokal
+  (terkirim terenkripsi; 410 → langganan terhapus); belum dites di HP sungguhan.
 
 ## Keputusan (2026-10-13)
 
@@ -278,6 +283,7 @@ Tahap 3
 
 Tahap 4
 - [ ] Notifikasi muncul di HP Android pengguna saat order uji lunas; ketuk membuka `/pesanan`.
+  (pengiriman sudah dites dengan layanan push tiruan; perlu dicoba di HP lewat https)
 
 Semua tahap
 - [ ] `npx tsc --noEmit`, `npx eslint src`, `npm test` lulus.

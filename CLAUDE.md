@@ -58,8 +58,10 @@ src/app/(app)/         halaman setelah login: beranda, catat (belanja/kopi/kas +
 src/app/login, setup   tanpa login
 src/app/pesan/         halaman pembeli (CR-005, tanpa login): katalog, keranjang, [kode]/bayar, [kode] (struk),
                        riwayat, foto/[id]; actions.ts = server action publik (validasi ulang di lib/pesanan.ts)
-src/lib/pesanan.ts     pesanan online: buat, kedaluwarsa, tandaiLunas (idempoten, tap otomatis), majukan status
-src/db/schema.ts       12 tabel: settings, menu, bahan, resep, bahan_aktif, harga, tap_event, belanja, kas, tutup_buku, pesanan, pesanan_item
+src/lib/pesanan.ts     pesanan online: buat, kedaluwarsa, tandaiLunas (idempoten, tap otomatis), majukan, batalkanLunas
+src/lib/push.ts        web push saat pesanan lunas (public/sw.js; kunci VAPID di env)
+src/db/schema.ts       13 tabel: settings, menu, bahan, resep, bahan_aktif, harga, tap_event, belanja, kas, tutup_buku,
+                       pesanan, pesanan_item, push_langganan
                        (menu.foto = BLOB: jangan ikut di-select, pakai getMenu / columns: { foto: false })
 scripts/seed-dummy.ts  generator dummy.db (pakai calc.ts yang sama)
 ```

@@ -13,6 +13,7 @@ import { hitungUlangSejak } from "@/lib/hitung-ulang";
 import { FOTO_MAKS_BYTE, jenisFoto } from "@/lib/foto";
 import { awalHariWib, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
 import { batalkanLunas, majukanPesanan } from "@/lib/pesanan";
+import { hapusLangganan, kirimKeSemua, simpanLangganan, type Langganan } from "@/lib/push";
 import { getSetting, isSetupDone, setSetting } from "@/lib/settings";
 import { COOKIE_TEMA, isTema, type Tema } from "@/lib/tema";
 
@@ -651,6 +652,27 @@ export async function aturKantinBukaAction(buka: boolean) {
   await requireAuth();
   await setSetting("kantin_buka", buka ? "1" : "0");
   refreshSemua();
+}
+
+// ─── Notifikasi pesanan (web push) ───────────────────────────────
+
+export async function simpanLanggananAction(sub: Langganan, perangkat: string): Promise<FormState> {
+  await requireAuth();
+  if (!sub?.endpoint?.startsWith("https://") || !sub.keys?.p256dh || !sub.keys?.auth) return { error: "Langganan tidak valid." };
+  await simpanLangganan(sub, String(perangkat ?? "").slice(0, 60));
+  return { ok: "Notifikasi aktif di HP ini." };
+}
+
+export async function hapusLanggananAction(endpoint: string) {
+  await requireAuth();
+  await hapusLangganan(String(endpoint));
+}
+
+export async function kirimNotifikasiUjiAction(): Promise<FormState> {
+  await requireAuth();
+  const r = await kirimKeSemua({ title: "Notifikasi uji", body: "Pesanan online akan muncul seperti ini.", url: "/pesanan", tag: "uji" });
+  if (r.terkirim === 0) return { error: "Tidak ada HP yang menerima. Aktifkan notifikasi dulu." };
+  return { ok: `Terkirim ke ${r.terkirim} HP.` };
 }
 
 // ─── Pengaturan ──────────────────────────────────────────────────

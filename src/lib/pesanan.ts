@@ -6,6 +6,7 @@ import { kas, menu, pesanan, pesananItem, tapEvent, type Pesanan, type PesananIt
 import { getKatalog, getTutupTerakhir } from "./data";
 import { awalHariWib, isoTanggalWib, tanggalPendek } from "./format";
 import { hitungUlangSejak } from "./hitung-ulang";
+import { kabariPesananLunas } from "./push";
 
 // Pesanan online (CR-005 Tahap 3). Lunas ditentukan gateway (webhook / simulasi gateway palsu), bukan halaman
 // yang sedang terbuka di HP pembeli.
@@ -303,6 +304,7 @@ export async function batalkanBelumBayar(kode: string, perangkat: string) {
  * - Racikan → tap `terjual` (delta = qty, waktu = dibayar). Barang jadi tidak di-tap (terjual dihitung dari
  *   sisa stok saat tutup buku).
  * - Waktu bayar di periode yang sudah ditutup → hitung ulang.
+ * - Kirim notifikasi ke HP pengguna.
  */
 export async function tandaiLunas(a: { kode: string; dibayar: number; potongan: number; metode: string }): Promise<boolean> {
   const awalHari = awalHariWib(isoTanggalWib(a.dibayar));
@@ -333,6 +335,7 @@ export async function tandaiLunas(a: { kode: string; dibayar: number; potongan: 
   }
   const terakhir = await getTutupTerakhir();
   if (terakhir && terakhir.hasilJson !== null && a.dibayar <= terakhir.waktu) await hitungUlangSejak(a.dibayar);
+  await kabariPesananLunas(row.id); // web push ke HP pengguna (Tahap 4); tidak pernah melempar error
   return true;
 }
 

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { logoutAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
+import { jumlahLangganan, kunciPublik } from "@/lib/push";
 import { getTema } from "@/lib/tema-server";
 import { GantiPinForm, HitungUlangForm, TemaPicker } from "./forms";
+import { NotifikasiPesanan } from "./notifikasi";
 
 export default async function SetelanPage() {
-  const tema = await getTema();
+  const [tema, jumlahHp] = await Promise.all([getTema(), jumlahLangganan()]);
   return (
     <main>
       <PageHeader title="Setelan" back="/lainnya" />
@@ -32,6 +34,14 @@ export default async function SetelanPage() {
             <TemaPicker tema={tema} />
             <p className="text-xs text-muted">&ldquo;Ikut HP&rdquo; mengikuti mode gelap HP.</p>
           </div>
+        </section>
+
+        <section className="card space-y-3">
+          <div>
+            <h2 className="font-bold">Notifikasi pesanan online</h2>
+            <p className="text-xs text-muted">HP ini berbunyi saat ada pesanan online yang lunas. Bisa di lebih dari satu HP.</p>
+          </div>
+          <NotifikasiPesanan kunci={kunciPublik()} jumlahHp={jumlahHp} />
         </section>
 
         <section className="card space-y-3">

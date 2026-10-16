@@ -202,6 +202,9 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 - **Aktif**: kartu per pesanan lunas yang belum selesai (nomor, nama, Pickup/Delivery, item + less sugar, catatan),
   satu tombol maju: **Terima → Mulai dibuat → Siap diambil / Sudah diantar**. Diperbarui otomatis tiap 10 detik.
 - **Selesai** per hari (‹ ›), dengan keterangan refund untuk yang dibatalkan.
+- **Notifikasi** (Setelan → "Notifikasi pesanan online", web push, bisa beberapa HP): saat lunas muncul
+  "Pesanan #7 · Budi" / "1× Kopi Susu SKM", ketuk → `/pesanan`. Tombol Aktifkan / Kirim uji / Matikan. Hanya dari
+  https:// atau localhost.
 - **Tolak pesanan…** (status Lunas) / **Batalkan pesanan…** (Diterima / Dibuat): pengguna mengembalikan uang pembeli
   sendiri, lalu memilih **Kantong Kantin** (hapus tap pesanan; saldo Kantong turun sendiri) atau **Uang pribadi**
   (hapus tap + catat setor modal sebesar total). Potongan gateway tetap biaya. Hanya untuk pesanan yang lunas di
@@ -364,6 +367,9 @@ pesanan                              -- pesan online (CR-005)
 
 pesanan_item
   id, pesanan_id, menu_id, nama (saat pesan), qty, harga (saat pesan), less_sugar BOOL
+
+push_langganan                       -- web push ke HP pengguna (CR-005 Tahap 4)
+  id, endpoint UNIQUE, p256dh, auth, perangkat NULL (mis. "Android · Chrome"), dibuat
 
 bahan
   id, nama, satuan ('gr' | 'pcs'), harga_awal REAL (per satuan)
