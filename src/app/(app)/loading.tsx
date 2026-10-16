@@ -27,7 +27,7 @@ export default function LoadingBeranda() {
                 <Bone className={`h-5 ${i ? "w-1/2" : "w-2/3"}`} />
                 <Bone className="h-3.5 w-1/4" />
               </div>
-              <Bone className="h-14 w-24 rounded-[var(--r-ctl)] poster:w-16" />
+              <Bone className="h-14 w-24 rounded-[var(--r-ctl)]" />
             </div>
           ))}
         </div>

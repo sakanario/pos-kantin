@@ -26,7 +26,7 @@ export function SisaKemasan({
         aria-label="Sisa kemasan"
       >
         {Array.from({ length: SEGMEN }, (_, i) => (
-          // warna & bentuk segmen per gaya: .meter di globals.css
+          // warna & bentuk segmen: .meter di globals.css
           <span key={i} className={i < terisi ? "on" : undefined} />
         ))}
       </div>

@@ -139,7 +139,7 @@ Fokus ke laporan saja (kartu saldo & Riwayat Pengeluaran ada di Lainnya, CR-004)
 - Rekap bulanan (gabungan periode yang tutup bukunya jatuh di bulan tersebut), dengan dua bagian: **Terjual** (per menu: jumlah terjual, untung dari yang terjual = `untung + nilai_sendiri`) dan **Dimakan / diminum sendiri** (per menu: jumlah, `−nilai_sendiri`). Tiap bagian punya baris total; untung bulan = total terjual + total dimakan/diminum sendiri.
 - Angka utama tiap periode & bulan: **untung jualan**; angka kedua (lebih kecil): **uang bersih**
 - **Grafik harian** (CR-006), satu kartu berisi dua grafik batang bertumpuk per menu (urut `menu.urutan`, warna
-  `--grafik-1..6` per gaya/tema, berulang bila lebih dari 6 menu; angka di atas batang = total hari itu; `title` =
+  `--grafik-1..6` per tema, berulang bila lebih dari 6 menu; angka di atas batang = total hari itu; `title` =
   rincian per menu; keterangan warna hanya menu yang terjual di rentang itu):
   - **Racikan terjual**: Σ tap terjual per hari.
   - **Barang jadi terjual · perkiraan**: terjual tiap periode dibagi ke hari bukanya (§5.6), hanya sampai tanggal

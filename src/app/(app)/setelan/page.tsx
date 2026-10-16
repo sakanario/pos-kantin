@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { logoutAction } from "@/app/actions";
 import { PageHeader } from "@/components/page-header";
-import { getGaya, getTema } from "@/lib/tema-server";
-import { GantiPinForm, GayaPicker, HitungUlangForm, TemaPicker } from "./forms";
+import { getTema } from "@/lib/tema-server";
+import { GantiPinForm, HitungUlangForm, TemaPicker } from "./forms";
 
 export default async function SetelanPage() {
-  const [gaya, tema] = await Promise.all([getGaya(), getTema()]);
+  const tema = await getTema();
   return (
     <main>
       <PageHeader title="Setelan" back="/lainnya" />
@@ -26,11 +26,6 @@ export default async function SetelanPage() {
           <div>
             <h2 className="font-bold">Tampilan</h2>
             <p className="text-xs text-muted">Berlaku untuk perangkat ini saja.</p>
-          </div>
-          <div className="space-y-1.5">
-            <p className="text-sm font-semibold">Gaya</p>
-            <GayaPicker gaya={gaya} />
-            <p className="text-xs text-muted">Pop = kuning-biru, tepi tebal. Poster = kuning mustard, label arang, huruf sempit. Latte = krem kopi susu, tombol pil espresso.</p>
           </div>
           <div className="space-y-1.5">
             <p className="text-sm font-semibold">Tema</p>

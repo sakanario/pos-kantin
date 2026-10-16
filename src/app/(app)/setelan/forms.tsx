@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState, useOptimistic, useTransition } from "react";
-import { aturGayaAction, aturTemaAction, gantiPinAction, hitungUlangSemuaAction } from "@/app/actions";
-import { dataTheme, type Gaya, type Tema } from "@/lib/tema";
+import { aturTemaAction, gantiPinAction, hitungUlangSemuaAction } from "@/app/actions";
+import { dataTheme, type Tema } from "@/lib/tema";
 import { FormMessage, SubmitButton } from "@/components/form";
 
 export function GantiPinForm() {
@@ -34,12 +34,6 @@ const pilihanTema: [Tema, string][] = [
   ["terang", "Terang"],
   ["gelap", "Gelap"],
   ["hp", "Ikut HP"],
-];
-
-const pilihanGaya: [Gaya, string][] = [
-  ["pop", "Pop"],
-  ["poster", "Poster"],
-  ["latte", "Latte"],
 ];
 
 /** Deretan tombol pilihan; yang dipilih langsung tampil (optimistic), lalu disimpan lewat `simpan`. */
@@ -86,7 +80,7 @@ function Pilihan<T extends string>({
   );
 }
 
-/** Tema & gaya langsung diterapkan ke <html>, lalu disimpan sebagai cookie di perangkat ini. */
+/** Tema langsung diterapkan ke <html>, lalu disimpan sebagai cookie di perangkat ini. */
 export function TemaPicker({ tema }: { tema: Tema }) {
   return (
     <Pilihan
@@ -99,21 +93,6 @@ export function TemaPicker({ tema }: { tema: Tema }) {
         else delete document.documentElement.dataset.theme;
       }}
       simpan={aturTemaAction}
-    />
-  );
-}
-
-export function GayaPicker({ gaya }: { gaya: Gaya }) {
-  return (
-    <Pilihan
-      nilai={gaya}
-      opsi={pilihanGaya}
-      label="Gaya"
-      terapkan={(g) => {
-        if (g === "pop") delete document.documentElement.dataset.gaya;
-        else document.documentElement.dataset.gaya = g;
-      }}
-      simpan={aturGayaAction}
     />
   );
 }

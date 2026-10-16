@@ -1,4 +1,4 @@
-Gaya ketiga aplikasi Kantin, diambil dari halaman kafe kopi: latar krem busa susu dengan lingkaran buram seperti foto yang tidak fokus, kartu kaca buram bersudut besar, tombol pil espresso dengan bayangan lembut, label harga pil yang menggantung di tepi kartu, dan aksen karamel. Nama token sama dengan Kantin Pop dan Kantin Poster, jadi aplikasi bisa berganti gaya tanpa mengubah halaman.
+Gaya tampilan aplikasi Kantin (satu-satunya sejak 2026-10-16; Pop & Poster dihapus), diambil dari halaman kafe kopi: latar krem busa susu dengan lingkaran buram seperti foto yang tidak fokus, kartu kaca buram bersudut besar, tombol pil espresso dengan bayangan lembut, label harga pil yang menggantung di tepi kartu, dan aksen karamel.
 
 ## Isi dan bahasa
 
@@ -45,9 +45,9 @@ Gaya ketiga aplikasi Kantin, diambil dari halaman kafe kopi: latar krem busa sus
 
 ## Ikon
 
-- Ikon garis 22px, tebal 2, ujung membulat, warna mengikuti teks. Sama bentuknya dengan Kantin Pop (kopi, catatan, gembok, grafik, menu).
+- Ikon garis 22px, tebal 2, ujung membulat, warna mengikuti teks. (kopi, catatan, gembok, grafik, menu).
 - Ikon di atas `accent` memakai `accent-fg`.
 
 ## Pemetaan ke kode
 
-Nama token warna, jarak, sudut, bayangan dan `stroke` sama persis dengan Kantin Pop dan Poster; aplikasi cukup mengganti nilai token (dan dua keluarga huruf) lewat `data-gaya="latte"`. Bedanya ada di nilai bentuk: `stroke` 0, sudut besar, kontrol pil, bayangan ber-blur, latar lingkaran buram, kartu kaca buram, dan navigasi bawah gelap.
+Token didefinisikan di `:root` pada `src/app/globals.css` (tema gelap: `data-theme="dark"` / `prefers-color-scheme`). Ciri bentuknya: `stroke` 0, sudut besar, kontrol pil, bayangan ber-blur, latar lingkaran buram, kartu kaca buram, dan navigasi bawah gelap.

@@ -12,7 +12,7 @@ export default async function LoginPage() {
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6">
       <div className="mb-8 text-center">
-        {/* logo Kopi Ksatria di ubin krem, jadi tetap terlihat di semua gaya & tema */}
+        {/* logo Kopi Ksatria di ubin krem, jadi tetap terlihat di kedua tema */}
         <Image
           src="/icons/logo.png"
           alt="Logo Kopi Ksatria"
