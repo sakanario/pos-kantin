@@ -53,7 +53,7 @@ src/lib/data.ts        query baca (periode berjalan, riwayat, ringkasan harian, 
 src/lib/hitung-ulang.ts hitung ulang hasil semua tutup buku sejak waktu tertentu
 src/app/actions.ts     semua server action (tulis). Setiap action memanggil requireAuth()
 src/app/(app)/         halaman setelah login: beranda, catat (belanja/kopi/kas + edit), tutup-buku,
-                       laporan (+ /[id] detail), lainnya (+ /menu, /bahan, /uang-barang, /pengeluaran, /qr-katalog),
+                       laporan (+ /[id] detail), lainnya (+ /menu, /bahan, /uang-barang, /pengeluaran, /riwayat-pesanan, /qr-katalog),
                        pesanan (pesanan online), setelan
 src/app/login, setup   tanpa login
 src/app/pesan/         halaman pembeli (CR-005, tanpa login): katalog, keranjang, [kode]/bayar, [kode] (struk),

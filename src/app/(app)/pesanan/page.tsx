@@ -1,17 +1,16 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
-import { hariTanggal, rupiah } from "@/lib/format";
+import { rupiah } from "@/lib/format";
 import { getPesananAktif, getPesananSelesai, LABEL_STATUS, type PesananLengkap } from "@/lib/pesanan";
-import { getTanggalPesanan } from "@/lib/data";
+import { hariIniWib } from "@/lib/data";
 import { Pantau } from "@/app/pesan/hidup";
 import { TombolBatal } from "./tombol-batal";
 import { TombolMaju } from "./tombol-maju";
+import { BarisPesanan } from "./baris-pesanan";
 
-/** Pesanan online: yang aktif (perlu dikerjakan) dan yang selesai per hari. */
-export default async function PesananPage(props: PageProps<"/pesanan">) {
-  const { tgl } = await props.searchParams;
-  const { hariIni, tanggal, kemarin, besok } = getTanggalPesanan(typeof tgl === "string" ? tgl : undefined);
-  const [aktif, selesai] = await Promise.all([getPesananAktif(), getPesananSelesai(tanggal)]);
+/** Pesanan online: yang aktif (perlu dikerjakan) dan yang selesai hari ini. Hari lain: Riwayat Pesanan. */
+export default async function PesananPage() {
+  const [aktif, selesai] = await Promise.all([getPesananAktif(), getPesananSelesai(hariIniWib())]);
 
   return (
     <main>
@@ -35,39 +34,17 @@ export default async function PesananPage(props: PageProps<"/pesanan">) {
 
         <section>
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-muted">
-              Selesai · {tanggal === hariIni ? "hari ini" : hariTanggal(tanggal)} ({selesai.length})
-            </h2>
-            <div className="flex gap-1 text-sm font-bold">
-              <Link href={`/pesanan?tgl=${kemarin}`} className="chip px-3 py-1" aria-label="Hari sebelumnya">
-                ‹
-              </Link>
-              {besok && (
-                <Link href={besok === hariIni ? "/pesanan" : `/pesanan?tgl=${besok}`} className="chip px-3 py-1" aria-label="Hari berikutnya">
-                  ›
-                </Link>
-              )}
-            </div>
+            <h2 className="text-sm font-bold text-muted">Selesai · hari ini ({selesai.length})</h2>
+            <Link href="/lainnya/riwayat-pesanan" className="text-sm font-bold text-accent">
+              Riwayat ›
+            </Link>
           </div>
           {selesai.length === 0 ? (
             <p className="card text-sm text-muted">Tidak ada.</p>
           ) : (
             <ul className="card divide-y divide-line p-0">
               {selesai.map((p) => (
-                <li key={p.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                  <span className="num w-9 font-display font-bold">#{p.nomor}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block font-medium">{p.nama}</span>
-                    <span className="block truncate text-xs text-muted">{ringkas(p)}</span>
-                  </span>
-                  <span className="text-right">
-                    <span className="num block">{rupiah(p.total)}</span>
-                    <span className={`block text-xs ${p.status === "batal" ? "text-bad" : "text-muted"}`}>
-                      {LABEL_STATUS[p.status]}
-                      {p.refundDari && ` · refund ${p.refundDari === "kantong" ? "Kantong" : "pribadi"}`}
-                    </span>
-                  </span>
-                </li>
+                <BarisPesanan key={p.id} p={p} />
               ))}
             </ul>
           )}
@@ -76,8 +53,6 @@ export default async function PesananPage(props: PageProps<"/pesanan">) {
     </main>
   );
 }
-
-const ringkas = (p: PesananLengkap) => p.item.map((i) => `${i.qty}× ${i.nama}${i.lessSugar ? " (less sugar)" : ""}`).join(", ");
 
 function KartuPesanan({ p }: { p: PesananLengkap }) {
   return (

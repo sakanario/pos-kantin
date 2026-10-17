@@ -181,6 +181,28 @@ export async function getPesananSelesai(iso: string): Promise<PesananLengkap[]> 
   return lengkapi(rows);
 }
 
+/** Riwayat Pesanan: semua pesanan yang lunas di bulan `ym` (WIB, menurut waktu bayar), terbaru dulu. */
+export async function getPesananBulan(ym: string): Promise<PesananLengkap[]> {
+  const [y, m] = ym.split("-").map(Number);
+  const berikut = m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, "0")}`;
+  const rows = await db
+    .select()
+    .from(pesanan)
+    .where(and(isNotNull(pesanan.dibayar), gte(pesanan.dibayar, awalHariWib(`${ym}-01`)), lt(pesanan.dibayar, awalHariWib(`${berikut}-01`))))
+    .orderBy(desc(pesanan.dibayar), desc(pesanan.id));
+  return lengkapi(rows);
+}
+
+/** Waktu bayar pesanan pertama, untuk batas navigasi bulan. */
+export async function getPesananPertama(): Promise<number | null> {
+  const row = await db.query.pesanan.findFirst({
+    where: isNotNull(pesanan.dibayar),
+    orderBy: [asc(pesanan.dibayar)],
+    columns: { dibayar: true },
+  });
+  return row?.dibayar ?? null;
+}
+
 /** Sudah pernah ada pesanan lunas? (input saldo gateway di Tutup Buku tampil) */
 export async function adaPesananLunas(): Promise<boolean> {
   const row = await db.query.pesanan.findFirst({ where: isNotNull(pesanan.dibayar), columns: { id: true } });

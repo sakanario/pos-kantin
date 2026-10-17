@@ -58,14 +58,6 @@ const kolomMenu = {
   fotoAtur: k.fotoAtur,
 };
 
-/** Tanggal WIB untuk daftar pesanan selesai (`?tgl=`), dengan tanggal sebelum/sesudahnya (tidak melewati hari ini). */
-export function getTanggalPesanan(tgl: string | undefined) {
-  const hariIni = isoTanggalWib(Date.now());
-  const tanggal = tgl && /^\d{4}-\d{2}-\d{2}$/.test(tgl) && tgl <= hariIni ? tgl : hariIni;
-  const geser = (n: number) => new Date(Date.parse(`${tanggal}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
-  return { hariIni, tanggal, kemarin: geser(-1), besok: tanggal < hariIni ? geser(1) : null };
-}
-
 /** Menu katalog untuk halaman publik /pesan & Beranda: aktif && di_katalog, harga jual sekarang. */
 export async function getKatalog() {
   const [semua, h, buka] = await Promise.all([getMenu(), getSemuaHarga(), getSetting("kantin_buka")]);

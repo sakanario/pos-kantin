@@ -63,7 +63,7 @@ hpp_menu(t)    = Σ takaran(resep yang berlaku pada t) × harga_bahan(t)
 
 Navigasi bawah: ☕ Beranda · 📝 Catat · 🔒 Tutup Buku · 📊 Laporan · ☰ Lainnya.
 Tab **Lainnya** (`/lainnya`) berisi daftar: 🍽️ Menu (§4.6), 🧂 Bahan (§4.6), 💰 Uang & Barang (§4.8),
-🧾 Riwayat Pengeluaran (`/lainnya/pengeluaran`), 📋 Pesanan Online (§4.10), 🔳 QR katalog (§4.9), ⚙️ Setelan (`/setelan`). Tab ini aktif di `/lainnya*` dan
+🧾 Riwayat Pengeluaran (`/lainnya/pengeluaran`), 📋 Riwayat Pesanan (§4.10), 🔳 QR katalog (§4.9), ⚙️ Setelan (`/setelan`). Tab ini aktif di `/lainnya*` dan
 `/setelan`; halaman di bawahnya punya tombol "‹ Kembali".
 
 ### 4.1 Beranda (tap counter)
@@ -207,7 +207,11 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 ### 4.10 Pesanan (`/pesanan`, pakai PIN)
 - **Aktif**: kartu per pesanan lunas yang belum selesai (nomor, nama, Pickup/Delivery, item + less sugar, catatan),
   satu tombol maju: **Terima → Mulai dibuat → Siap diambil / Sudah diantar**. Diperbarui otomatis tiap 10 detik.
-- **Selesai** per hari (‹ ›), dengan keterangan refund untuk yang dibatalkan.
+- **Selesai · hari ini**, dengan keterangan refund untuk yang dibatalkan; link **Riwayat ›**.
+- **Riwayat Pesanan** (`/lainnya/riwayat-pesanan`, dari Lainnya / link di atas): per bulan ‹ › menurut waktu bayar.
+  Ringkasan: jumlah pesanan & total (tanpa yang batal), **Terlaris** (3 menu, jumlah porsi), filter Semua / Selesai /
+  Batal (`?status=`). **Pilih tanggal** (kalender HP, `?tgl=`) = satu hari saja, "Semua hari" untuk kembali. Daftar
+  dikelompokkan per hari ("Jum, 16 Okt · 6 pesanan · Rp 60.000"), tiap baris dengan jam bayar.
 - **Notifikasi** (Setelan → "Notifikasi pesanan online", web push, bisa beberapa HP): saat lunas muncul
   "Pesanan #7 · Budi" / "1× Kopi Susu SKM", ketuk → `/pesanan`. Tombol Aktifkan / Kirim uji / Matikan. Hanya dari
   https:// atau localhost.
