@@ -149,7 +149,7 @@ function KartuGelap({ ikon, judul, isi }: { ikon: React.ReactNode; judul: string
 function StatusBuka({ buka }: { buka: boolean }) {
   return (
     <span
-      className={`mt-0.5 inline-flex items-center gap-1.5 rounded-full bg-card-raised px-2.5 py-0.5 text-xs font-bold ${buka ? "text-good" : "text-muted"}`}
+      className={`mt-0.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ring-1 ${buka ? "bg-good/15 text-good ring-good/35" : "bg-muted/15 text-muted ring-muted/35"}`}
     >
       <span className={`size-[7px] rounded-full ${buka ? "bg-good" : "bg-outline"}`} />
       {buka ? "Buka" : "Tutup"}

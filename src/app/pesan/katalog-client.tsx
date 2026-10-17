@@ -8,7 +8,7 @@ import { urlFoto } from "@/lib/foto";
 import { rupiah } from "@/lib/format";
 import { jeda } from "@/lib/gerak";
 import { Lapisan, Segmen } from "./gerak";
-import { ubahJumlah, useKeranjang, type Baris } from "./keranjang";
+import { lessSugarTerakhir, ubahJumlah, useKeranjang, type Baris } from "./keranjang";
 
 const ikonPlus = (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
@@ -182,7 +182,7 @@ function TombolTambah({
 
 /** Panel bawah: pilih gula + jumlah, lalu "Tambah · Rp X". */
 function PanelGula({ m, onTutup }: { m: MenuKatalog; onTutup: () => void }) {
-  const [less, setLess] = useState(false);
+  const [less, setLess] = useState(() => lessSugarTerakhir(m.id));
   const [qty, setQty] = useState(1);
 
   return (

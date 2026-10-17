@@ -10,6 +10,7 @@ export type Baris = { menuId: number; lessSugar: boolean; qty: number };
 const KUNCI = "kantin.keranjang";
 const KUNCI_NAMA = "kantin.nama";
 const KUNCI_UNTUK = "kantin.keranjang-untuk";
+const KUNCI_PILIHAN = "kantin.pilihan";
 const KOSONG: Baris[] = [];
 
 let cache: Baris[] | null = null;
@@ -82,6 +83,38 @@ export function bacaNama(): string {
 export function simpanNama(nama: string) {
   try {
     localStorage.setItem(KUNCI_NAMA, nama);
+  } catch {}
+}
+
+// Pilihan dari pesanan terakhir HP ini, jadi bawaan pesanan berikutnya: cara ambil + gula per menu.
+// Catatan sengaja tidak diingat (posisi meja / baju beda tiap hari).
+export type Cara = "pickup" | "delivery";
+type Pilihan = { cara?: Cara; gula?: Record<string, boolean> };
+
+function bacaPilihan(): Pilihan {
+  try {
+    const v = JSON.parse(localStorage.getItem(KUNCI_PILIHAN) ?? "{}");
+    return v && typeof v === "object" ? v : {};
+  } catch {
+    return {};
+  }
+}
+
+export function caraTerakhir(): Cara {
+  return bacaPilihan().cara === "delivery" ? "delivery" : "pickup";
+}
+
+export function lessSugarTerakhir(menuId: number): boolean {
+  return bacaPilihan().gula?.[menuId] === true;
+}
+
+/** Dipanggil saat pesanan dibuat. Menu yang dipesan normal & less sugar sekaligus: baris terakhir yang menang. */
+export function simpanPilihan(cara: Cara, item: { menuId: number; lessSugar: boolean }[]) {
+  const p = bacaPilihan();
+  const gula = { ...p.gula };
+  for (const i of item) gula[i.menuId] = i.lessSugar;
+  try {
+    localStorage.setItem(KUNCI_PILIHAN, JSON.stringify({ cara, gula }));
   } catch {}
 }
 

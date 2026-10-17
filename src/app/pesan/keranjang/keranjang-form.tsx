@@ -9,7 +9,7 @@ import { buatPesananAction } from "../actions";
 import { jeda } from "@/lib/gerak";
 import { Segmen } from "../gerak";
 import { barisValid, Stepper } from "../katalog-client";
-import { bacaNama, simpanNama, tandaiKeranjangUntuk, ubahJumlah, useKeranjang } from "../keranjang";
+import { bacaNama, caraTerakhir, simpanNama, simpanPilihan, tandaiKeranjangUntuk, ubahJumlah, useKeranjang, type Cara } from "../keranjang";
 
 export function KeranjangForm({
   menu,
@@ -27,7 +27,9 @@ export function KeranjangForm({
   const valid = barisValid(keranjang, menu);
   const dilewati = keranjang.filter((b) => !valid.some((v) => v.menuId === b.menuId));
   const total = valid.reduce((a, b) => a + b.qty * b.menu.harga, 0);
-  const [cara, setCara] = useState<"pickup" | "delivery">("pickup");
+  // Bawaan = cara pesanan terakhir HP ini. Form hanya tampil di klien (keranjang dari localStorage), aman dibaca saat render.
+  const [pilihCara, setCara] = useState<Cara | null>(null);
+  const cara = pilihCara ?? caraTerakhir();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
@@ -47,6 +49,7 @@ export function KeranjangForm({
       });
       if ("error" in r) return setError(r.error);
       tandaiKeranjangUntuk(r.kode);
+      simpanPilihan(cara, valid.filter((b) => b.menu.bisaLessSugar));
       router.push(`/pesan/${r.kode}/bayar`);
     });
   }

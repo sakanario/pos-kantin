@@ -63,7 +63,7 @@ hpp_menu(t)    = Σ takaran(resep yang berlaku pada t) × harga_bahan(t)
 
 Navigasi bawah: ☕ Beranda · 📝 Catat · 🔒 Tutup Buku · 📊 Laporan · ☰ Lainnya.
 Tab **Lainnya** (`/lainnya`) berisi daftar: 🍽️ Menu (§4.6), 🧂 Bahan (§4.6), 💰 Uang & Barang (§4.8),
-🧾 Riwayat Pengeluaran (`/lainnya/pengeluaran`), 🔳 QR katalog (§4.9), ⚙️ Setelan (`/setelan`). Tab ini aktif di `/lainnya*` dan
+🧾 Riwayat Pengeluaran (`/lainnya/pengeluaran`), 📋 Pesanan Online (§4.10), 🔳 QR katalog (§4.9), ⚙️ Setelan (`/setelan`). Tab ini aktif di `/lainnya*` dan
 `/setelan`; halaman di bawahnya punya tombol "‹ Kembali".
 
 ### 4.1 Beranda (tap counter)
@@ -185,6 +185,9 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 - Pesan online aktif bila env `GATEWAY` diisi (3a: `palsu`, hanya di laptop). Tanpa gateway: lihat saja.
 - Tombol `+` (racikan dengan less sugar → panel "GULA Normal | Less sugar" + jumlah; lainnya → stepper `− n +`),
   bar keranjang mengambang "N item · Rp X · Lanjut". Keranjang & nama terakhir disimpan di HP (localStorage).
+- **Pilihan terakhir jadi bawaan** (localStorage `kantin.pilihan`, disimpan saat pesanan dibuat): gula **per menu**
+  (Creamy Latte terakhir less sugar → panel gula langsung "Less sugar") dan **Pickup / Delivery**. Catatan tidak diingat
+  (posisi meja beda tiap hari). Menu yang dipesan normal & less sugar sekaligus: baris terakhir di keranjang yang dipakai.
 - `/pesan/keranjang`: daftar + stepper, nama, **Pickup / Delivery** (Delivery wajib catatan posisi), catatan, Bayar.
   Harga & ketersediaan dicek ulang di server. Keranjang sama dengan pesanan belum bayar → pesanan itu dipakai lagi;
   berubah → yang lama dibatalkan. Maks 3 pesanan belum bayar per HP (cookie `perangkat`).
