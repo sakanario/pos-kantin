@@ -193,6 +193,13 @@ export async function getPesananBulan(ym: string): Promise<PesananLengkap[]> {
   return lengkapi(rows);
 }
 
+/** Detail pesanan untuk pemilik (Riwayat Pesanan). Hanya yang sudah lunas. */
+export async function getPesananId(id: number): Promise<PesananLengkap | null> {
+  if (!Number.isInteger(id)) return null;
+  const row = await db.query.pesanan.findFirst({ where: and(eq(pesanan.id, id), isNotNull(pesanan.dibayar)) });
+  return row ? (await lengkapi([row]))[0] : null;
+}
+
 /** Waktu bayar pesanan pertama, untuk batas navigasi bulan. */
 export async function getPesananPertama(): Promise<number | null> {
   const row = await db.query.pesanan.findFirst({

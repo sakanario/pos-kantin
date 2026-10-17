@@ -212,6 +212,9 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
   Ringkasan: jumlah pesanan & total (tanpa yang batal), **Terlaris** (3 menu, jumlah porsi), filter Semua / Selesai /
   Batal (`?status=`). **Pilih tanggal** (kalender HP, `?tgl=`) = satu hari saja, "Semua hari" untuk kembali. Daftar
   dikelompokkan per hari ("Jum, 16 Okt · 6 pesanan · Rp 60.000"), tiap baris dengan jam bayar.
+- **Detail pesanan** (`/lainnya/riwayat-pesanan/[id]`, ketuk baris di Riwayat atau Selesai hari ini; hanya pesanan
+  lunas): nama, status, cara ambil, catatan, kode; isi + harga satuan; uang (dibayar + metode, potongan gateway, masuk ke
+  saldo gateway; bila batal: refund dari Kantong / uang pribadi); waktu dipesan, dibayar, status terakhir.
 - **Notifikasi** (Setelan → "Notifikasi pesanan online", web push, bisa beberapa HP): saat lunas muncul
   "Pesanan #7 · Budi" / "1× Kopi Susu SKM", ketuk → `/pesanan`. Tombol Aktifkan / Kirim uji / Matikan. Hanya dari
   https:// atau localhost.
