@@ -188,7 +188,7 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 - **Pilihan terakhir jadi bawaan** (localStorage `kantin.pilihan`, disimpan saat pesanan dibuat): gula **per menu**
   (Creamy Latte terakhir less sugar → panel gula langsung "Less sugar") dan **Pickup / Delivery**. Catatan tidak diingat
   (posisi meja beda tiap hari). Menu yang dipesan normal & less sugar sekaligus: baris terakhir di keranjang yang dipakai.
-- `/pesan/keranjang`: daftar + stepper, nama, **Pickup / Delivery** (Delivery wajib catatan posisi), catatan, Bayar.
+- `/pesan/keranjang`: daftar + stepper, nama, **Pickup / Delivery** (catatan selalu opsional; untuk Delivery ada saran menulis posisi), catatan, Bayar.
   Harga & ketersediaan dicek ulang di server. Keranjang sama dengan pesanan belum bayar → pesanan itu dipakai lagi;
   berubah → yang lama dibatalkan. Maks 3 pesanan belum bayar per HP (cookie `perangkat`).
 - `/pesan/[kode]/bayar`: total, QR (berlaku 15 menit, hitung mundur), Simpan gambar QR, Batalkan pesanan; pindah sendiri

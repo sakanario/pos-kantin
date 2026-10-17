@@ -139,17 +139,16 @@ export function KeranjangForm({
             </fieldset>
             <div>
               <label htmlFor="catatan" className="label">
-                Catatan {cara === "pickup" && <span className="font-normal">(opsional)</span>}
+                Catatan <span className="font-normal">(opsional)</span>
               </label>
               <input
                 id="catatan"
                 name="catatan"
                 maxLength={120}
-                required={cara === "delivery"}
                 placeholder={cara === "pickup" ? "mis. esnya dikit" : "mis. meja pojok dekat jendela, baju biru"}
                 className="input"
               />
-              {cara === "delivery" && <p className="mt-1 animate-muncul text-[13px] text-muted">Tulis posisi atau ciri-ciri biar gampang dicari.</p>}
+              {cara === "delivery" && <p className="mt-1 animate-muncul text-[13px] text-muted">Tulis posisi atau ciri-ciri biar lebih gampang dicari.</p>}
             </div>
           </div>
 

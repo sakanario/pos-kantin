@@ -243,7 +243,6 @@ export async function buatPesanan(raw: PesananInput, perangkat: string): Promise
   const cara = raw.cara === "delivery" ? "delivery" : "pickup";
   const catatan = String(raw.catatan ?? "").trim().slice(0, 120) || null;
   if (!nama) return { error: "Isi nama kamu dulu." };
-  if (cara === "delivery" && !catatan) return { error: "Untuk diantar, tulis posisi atau ciri-ciri kamu di catatan." };
 
   // Gabungkan baris yang sama, validasi jumlah
   const peta = new Map<string, BarisKeranjang>();
