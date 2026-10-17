@@ -4,6 +4,8 @@
 // lib/pesanan.ts; harga selalu dari database.
 
 import { revalidatePath } from "next/cache";
+import { cookies } from "next/headers";
+import { COOKIE_TEMA_PEMBELI, type TemaPembeli } from "@/lib/tema";
 import { aturKodePesananku, getKodePesananku, getPerangkat, ingatKode, pastikanPerangkat } from "@/lib/pembeli";
 import {
   batalkanBelumBayar,
@@ -36,6 +38,15 @@ export async function batalkanPesananAction(kode: string) {
 export async function ingatPesananAction(kode: string) {
   const p = await getPesananKode(String(kode));
   if (p) await ingatKode(p.kode);
+}
+
+/** Tema terang/gelap pilihan pembeli (cookie HP ini). */
+export async function aturTemaPembeliAction(tema: TemaPembeli) {
+  (await cookies()).set(COOKIE_TEMA_PEMBELI, tema === "gelap" ? "gelap" : "terang", {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+    sameSite: "lax",
+  });
 }
 
 /** Hapus pesanan selesai dari daftar "Pesananku" di HP ini saja (database tidak berubah). */

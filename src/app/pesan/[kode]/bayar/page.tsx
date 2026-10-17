@@ -6,7 +6,8 @@ import QRCode from "qrcode";
 import { rupiah } from "@/lib/format";
 import { NAMA_KANTIN } from "@/lib/katalog";
 import { getPesananKode, LABEL_STATUS, sisaBayar } from "@/lib/pesanan";
-import { ikonJam, Pantau, SisaWaktu } from "../../hidup";
+import { ikonJam } from "@/components/ikon";
+import { Pantau, SisaWaktu } from "../../hidup";
 import { AksiBayar } from "./aksi-bayar";
 
 export const metadata: Metadata = { title: `Bayar · ${NAMA_KANTIN}` };
@@ -21,7 +22,7 @@ export default async function BayarPage(props: PageProps<"/pesan/[kode]/bayar">)
 
   if (p.status !== "menunggu_bayar") {
     return (
-      <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-4 px-4 pt-10 text-center">
+      <main className="mx-auto flex min-h-dvh max-w-md animate-masuk flex-col gap-4 px-4 pt-10 text-center">
         <h1 className="text-2xl font-bold">{p.status === "kedaluwarsa" ? "Pembayaran kedaluwarsa" : LABEL_STATUS[p.status]}</h1>
         <p className="text-muted">
           {p.status === "kedaluwarsa"
@@ -46,12 +47,12 @@ export default async function BayarPage(props: PageProps<"/pesan/[kode]/bayar">)
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-[18px] px-4 pb-10 pt-7">
       <Pantau ms={3000} />
-      <div className="text-center">
+      <div className="animate-masuk text-center">
         <p className="font-display text-xs font-semibold uppercase tracking-[.12em] text-muted">Bayar pesanan {p.nama}</p>
         <p className="num mt-1.5 font-display text-[40px] font-extrabold leading-[44px]">{rupiah(p.total)}</p>
       </div>
 
-      <div className="card flex flex-col items-center gap-3.5 p-5">
+      <div className="card flex animate-muncul flex-col items-center gap-3.5 p-5" style={{ animationDelay: "80ms" }}>
         <div className="relative size-[232px] rounded-[var(--r-md)] bg-white p-2 [&>svg]:size-full" dangerouslySetInnerHTML={{ __html: svg }} />
         {palsu && <p className="-mt-1 text-xs font-bold text-bad">QR CONTOH (gateway palsu) · tidak bisa dibayar</p>}
         <p className="inline-flex items-center gap-1.5 rounded-full bg-sun px-3.5 py-1.5 font-display text-sm font-bold text-on-sun">
@@ -61,7 +62,7 @@ export default async function BayarPage(props: PageProps<"/pesan/[kode]/bayar">)
 
       <AksiBayar kode={p.kode} png={png} palsu={palsu} />
 
-      <p className="text-center text-sm text-muted">Halaman ini pindah sendiri setelah pembayaran masuk.</p>
+      <p className="animate-masuk text-center text-sm text-muted" style={{ animationDelay: "240ms" }}>Halaman ini pindah sendiri setelah pembayaran masuk.</p>
     </main>
   );
 }

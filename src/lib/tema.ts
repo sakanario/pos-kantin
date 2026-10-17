@@ -3,6 +3,12 @@ export type Tema = "terang" | "gelap" | "hp";
 
 export const COOKIE_TEMA = "tema";
 
+/** Tema halaman pembeli (/pesan): terpisah dari tema pengguna, bawaan terang, tidak ikut setelan HP. */
+export type TemaPembeli = "terang" | "gelap";
+export const COOKIE_TEMA_PEMBELI = "tema_pembeli";
+/** Header yang dipasang proxy.ts untuk request halaman pembeli. */
+export const HEADER_AREA = "x-area";
+
 export function isTema(v: unknown): v is Tema {
   return v === "terang" || v === "gelap" || v === "hp";
 }

@@ -39,7 +39,7 @@ export default async function StrukPage(props: PageProps<"/pesan/[kode]">) {
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-[18px] px-4 pb-10 pt-5">
       <IngatPesanan kode={p.kode} lunas={lunas} />
       {sedangBerjalan(p.status) && <Pantau ms={5000} />}
-      <Link href="/pesan" className="inline-flex min-h-11 items-center gap-1 self-start text-[15px] font-bold">
+      <Link href="/pesan" className="inline-flex min-h-11 animate-masuk items-center gap-1 self-start text-[15px] font-bold">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M15 6l-6 6 6 6" />
         </svg>
@@ -47,16 +47,18 @@ export default async function StrukPage(props: PageProps<"/pesan/[kode]">) {
       </Link>
 
       {lunas ? (
-        <div className="flex flex-col items-center gap-1 text-center">
+        <div className="flex animate-masuk flex-col items-center gap-1 text-center">
           <p className="font-display text-[22px] font-bold">Halo, {p.nama}!</p>
           <p className="mt-2 font-display text-xs font-semibold tracking-[.12em] text-muted">NOMOR ANTREAN</p>
-          <p className="num font-display text-[88px] font-extrabold leading-[92px]">#{p.nomor}</p>
-          <p className="rounded-full bg-accent px-3.5 py-1.5 font-display text-[15px] font-bold text-accent-fg shadow-pop">
+          <p className="num animate-pop font-display text-[88px] font-extrabold leading-[92px]" style={{ animationDelay: "120ms" }}>
+            #{p.nomor}
+          </p>
+          <p key={p.status} className="animate-pop rounded-full bg-accent px-3.5 py-1.5 font-display text-[15px] font-bold text-accent-fg shadow-pop">
             {LABEL_STATUS[p.status]}
           </p>
         </div>
       ) : (
-        <div className="card text-center">
+        <div className="card animate-masuk text-center">
           <p className="font-display text-xl font-bold">{p.status === "kedaluwarsa" ? "Pembayaran kedaluwarsa" : "Pesanan dibatalkan"}</p>
           <p className="mt-1 text-sm text-muted">Pesanan ini belum dibayar.</p>
         </div>
@@ -64,12 +66,12 @@ export default async function StrukPage(props: PageProps<"/pesan/[kode]">) {
 
       {lunas && p.status !== "batal" && <Langkah p={p} />}
       {lunas && p.status === "batal" && (
-        <p className="card text-center text-sm">
+        <p className="card animate-muncul text-center text-sm">
           Maaf, pesanan ini dibatalkan kantin. Uangnya dikembalikan oleh kantin; tanyakan langsung bila belum diterima.
         </p>
       )}
 
-      <div className="card flex flex-col gap-1">
+      <div className="card flex animate-masuk flex-col gap-1" style={{ animationDelay: "200ms" }}>
         <div className="flex justify-between gap-3 border-b border-dashed border-outline pb-2 text-[13px] text-muted">
           <span>{tanggalJam(p.dibayar ?? p.dibuat)}</span>
           <span className="font-bold">{p.cara === "delivery" ? "Delivery" : "Pickup"}</span>
@@ -101,7 +103,9 @@ export default async function StrukPage(props: PageProps<"/pesan/[kode]">) {
       </div>
 
       {sedangBerjalan(p.status) ? (
-        <p className="text-center text-sm text-muted">Status diperbarui otomatis.</p>
+        <p className="animate-masuk text-center text-sm text-muted" style={{ animationDelay: "260ms" }}>
+          Status diperbarui otomatis.
+        </p>
       ) : (
         !lunas && (
           <Link href="/pesan/keranjang" className="btn-primary self-center">
@@ -120,7 +124,7 @@ function Langkah({ p }: { p: PesananLengkap }) {
   const posisi = urutan.indexOf(p.status as (typeof urutan)[number]);
   const selesai = posisi === urutan.length - 1;
   return (
-    <div className="card px-3 py-[18px]">
+    <div className="card animate-masuk px-3 py-[18px]" style={{ animationDelay: "160ms" }}>
       <ol className="grid grid-cols-4 gap-1 text-center">
         {urutan.map((s, i) => {
           const lewat = i < posisi || (selesai && i === posisi);
@@ -128,11 +132,13 @@ function Langkah({ p }: { p: PesananLengkap }) {
           return (
             <li key={s} aria-current={kini ? "step" : undefined} className="flex flex-col items-center gap-1.5">
               <span
-                className={`flex size-9 items-center justify-center rounded-full ${
+                // key berubah saat langkah ini berubah keadaan → animasi pop (status diperbarui lewat polling)
+                key={lewat ? "lewat" : kini ? "kini" : "nanti"}
+                className={`flex size-9 items-center justify-center rounded-full transition-colors duration-500 ${
                   lewat
-                    ? "bg-good text-accent-fg"
+                    ? "animate-pop bg-good text-accent-fg"
                     : kini
-                      ? "bg-accent text-accent-fg shadow-[0_0_0_4px_var(--sun)]"
+                      ? "animate-denyut bg-accent text-accent-fg"
                       : "bg-card-raised shadow-[inset_0_0_0_1.5px_var(--outline)]"
                 }`}
               >

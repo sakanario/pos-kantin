@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { DM_Sans, Rubik } from "next/font/google";
-import { dataTheme, WARNA_BAR } from "@/lib/tema";
-import { getTema } from "@/lib/tema-server";
+import { WARNA_BAR } from "@/lib/tema";
+import { getDataThemeHalaman } from "@/lib/tema-server";
 import "./globals.css";
 
 const rubik = Rubik({ variable: "--font-rubik", subsets: ["latin"], weight: ["500", "600", "700", "800"] });
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export async function generateViewport(): Promise<Viewport> {
-  const t = dataTheme(await getTema());
+  const t = await getDataThemeHalaman();
   return {
     themeColor: t
       ? WARNA_BAR[t]
@@ -26,12 +26,12 @@ export async function generateViewport(): Promise<Viewport> {
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const tema = await getTema();
+  const tema = await getDataThemeHalaman();
   const fonts = [rubik, dmSans].map((f) => f.variable).join(" ");
   return (
     <html
       lang="id"
-      data-theme={dataTheme(tema)}
+      data-theme={tema}
       className={`${fonts} h-full antialiased`}
     >
       <body className="min-h-full font-sans">{children}</body>

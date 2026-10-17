@@ -98,9 +98,14 @@ scripts/seed-dummy.ts  generator dummy.db (pakai calc.ts yang sama)
   tanpa itu JS diblokir di dev dan tombol tidak berfungsi. IP berubah → restart dev server.
 - **Tampilan**: satu gaya saja, Kantin Latte (`docs/design-system/latte/`). Gaya Pop & Poster dihapus
   2026-10-16 supaya UI baru cukup dicek di terang & gelap. Tema terang/gelap/ikut HP = cookie per perangkat
-  (Setelan) → `data-theme` di <html>. Warna & bentuk lewat variabel di `globals.css` (`--r-sm/md/lg/ctl`,
+  (Setelan) → `data-theme` di <html>. Halaman pembeli `/pesan` punya tema sendiri (cookie `tema_pembeli`, bawaan terang,
+  tidak ikut HP), dipilih root layout lewat header `x-area` dari `proxy.ts` (`lib/tema-server.ts`). Warna & bentuk lewat variabel di `globals.css` (`--r-sm/md/lg/ctl`,
   `--stroke*`, `--pop-shadow*`, `--font-ui/judul`); jangan pakai `--radius-*`/`--shadow-*` untuk variabel
   sendiri (bentrok dengan tema bawaan Tailwind).
+- **Dialog `position: fixed` di dalam `.card`**: kartu kaca memakai `backdrop-filter`, yang menjadi containing block
+  untuk elemen fixed (dialog jadi terkurung di kartu). Render dialog seperti itu lewat `createPortal(…, document.body)`.
+- **File `"use client"`**: fungsi/konstanta yang diekspor darinya tidak bisa dipanggil dari komponen server
+  (error "Attempted to call X() from the server"). Taruh helper bersama di `src/lib/` (mis. `lib/gerak.ts`).
 - **Tailwind v4**: kelas kustom (`card`, `input`, `btn-primary`, …) didefinisikan dengan `@utility`
   di `globals.css`, bukan `@layer components`.
 - Next.js menolak dua `next dev` di folder yang sama.

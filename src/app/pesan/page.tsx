@@ -8,7 +8,10 @@ import { NAMA_KANTIN, TAGLINE_KATALOG } from "@/lib/katalog";
 import { getKodePesananku, getPerangkat } from "@/lib/pembeli";
 import { gatewayAktif, getPesananku, type PesananLengkap } from "@/lib/pesanan";
 import { isSetupDone } from "@/lib/settings";
-import { ikonJam, SisaWaktu } from "./hidup";
+import { ikonJam } from "@/components/ikon";
+import { getTemaPembeli } from "@/lib/tema-server";
+import { TombolTema } from "./gerak";
+import { SisaWaktu } from "./hidup";
 import { KatalogClient } from "./katalog-client";
 
 export const metadata: Metadata = {
@@ -23,13 +26,13 @@ const ringkasItem = (p: PesananLengkap) => p.item.map((i) => `${i.qty}× ${i.nam
 export default async function KatalogPage() {
   await connection();
   if (!(await isSetupDone())) notFound();
-  const [{ buka, menu }, kode, perangkat] = await Promise.all([getKatalog(), getKodePesananku(), getPerangkat()]);
+  const [{ buka, menu }, kode, perangkat, tema] = await Promise.all([getKatalog(), getKodePesananku(), getPerangkat(), getTemaPembeli()]);
   const adaPesan = gatewayAktif() !== null;
   const { milikku, belumBayar, sisaBayarMs, kedaluwarsa, berjalan } = await getPesananku(kode, perangkat);
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-4 pb-32 pt-7">
-      <header className="space-y-2.5">
+      <header className="animate-masuk space-y-2.5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
             {/* eslint-disable-next-line @next/next/no-img-element -- logo statis kecil */}
@@ -45,25 +48,28 @@ export default async function KatalogPage() {
               <StatusBuka buka={buka} />
             </div>
           </div>
-          {adaPesan && milikku.length > 0 && (
-            <Link
-              href="/pesan/riwayat"
-              aria-label={berjalan ? `Pesananku, ${berjalan} sedang berjalan` : "Pesananku"}
-              className="relative flex size-12 shrink-0 items-center justify-center rounded-full bg-card-raised text-accent shadow-pop"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M15 9.5V3H5v18l2-1.5L9 21l2-1.5" />
-                <path d="M8 7h4M8 11h3" />
-                <circle cx="17" cy="17" r="4.5" />
-                <path d="M17 15v2l1.3 1.3" />
-              </svg>
-              {berjalan > 0 && (
-                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-sun px-1.5 font-display text-xs font-bold text-on-sun">
-                  {berjalan}
-                </span>
-              )}
-            </Link>
-          )}
+          <div className="flex shrink-0 items-center gap-2">
+            <TombolTema tema={tema} />
+            {adaPesan && milikku.length > 0 && (
+              <Link
+                href="/pesan/riwayat"
+                aria-label={berjalan ? `Pesananku, ${berjalan} sedang berjalan` : "Pesananku"}
+                className="relative flex size-12 shrink-0 items-center justify-center rounded-full bg-card-raised text-accent shadow-pop transition-transform duration-150 active:scale-90"
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M15 9.5V3H5v18l2-1.5L9 21l2-1.5" />
+                  <path d="M8 7h4M8 11h3" />
+                  <circle cx="17" cy="17" r="4.5" />
+                  <path d="M17 15v2l1.3 1.3" />
+                </svg>
+                {berjalan > 0 && (
+                  <span className="absolute -right-1 -top-1 flex h-5 min-w-5 animate-pop items-center justify-center rounded-full bg-sun px-1.5 font-display text-xs font-bold text-on-sun">
+                    {berjalan}
+                  </span>
+                )}
+              </Link>
+            )}
+          </div>
         </div>
         <p className="text-sm text-muted">{TAGLINE_KATALOG}</p>
       </header>
@@ -82,7 +88,7 @@ export default async function KatalogPage() {
       )}
 
       {belumBayar && (
-        <div className="space-y-3 rounded-[var(--r-lg)] bg-accent p-4 text-accent-fg shadow-pop-lg">
+        <div className="animate-masuk space-y-3 rounded-[var(--r-lg)] bg-accent p-4 text-accent-fg shadow-pop-lg" style={{ animationDelay: "60ms" }}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="font-display text-[17px] font-bold">Menunggu pembayaran</p>
@@ -96,7 +102,7 @@ export default async function KatalogPage() {
             </span>
             <Link
               href={`/pesan/${belumBayar.kode}/bayar`}
-              className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-accent-fg px-[18px] font-display text-[15px] font-bold text-accent"
+              className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-accent-fg px-[18px] font-display text-[15px] font-bold text-accent transition-transform duration-150 active:scale-95"
             >
               Lanjut bayar ›
             </Link>
@@ -112,7 +118,7 @@ export default async function KatalogPage() {
             <>
               {ringkasItem(kedaluwarsa)} belum dibayar dalam 15 menit.{" "}
               {buka && (
-                <Link href="/pesan/keranjang" className="font-bold text-sun underline">
+                <Link href="/pesan/keranjang" className="font-bold underline">
                   Pesan lagi
                 </Link>
               )}
@@ -121,7 +127,7 @@ export default async function KatalogPage() {
         />
       )}
 
-      {menu.length === 0 && <p className="card text-sm text-muted">Menu belum tersedia. Coba lagi nanti ya.</p>}
+      {menu.length === 0 && <p className="card animate-masuk text-sm text-muted">Menu belum tersedia. Coba lagi nanti ya.</p>}
 
       <KatalogClient menu={menu} bisaPesan={buka && adaPesan} adaPesan={adaPesan} />
     </main>
@@ -130,7 +136,7 @@ export default async function KatalogPage() {
 
 function KartuGelap({ ikon, judul, isi }: { ikon: React.ReactNode; judul: string; isi: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-3.5 rounded-[var(--r-lg)] bg-accent px-[18px] py-4 text-accent-fg shadow-pop-lg">
+    <div className="flex animate-masuk items-center gap-3.5 rounded-[var(--r-lg)] bg-accent px-[18px] py-4 text-accent-fg shadow-pop-lg" style={{ animationDelay: "60ms" }}>
       <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-sun text-on-sun">{ikon}</span>
       <div>
         <p className="font-display text-[17px] font-bold">{judul}</p>

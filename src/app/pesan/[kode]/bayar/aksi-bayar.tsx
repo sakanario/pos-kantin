@@ -11,9 +11,9 @@ export function AksiBayar({ kode, png, palsu }: { kode: string; png: string; pal
 
   return (
     <>
-      <div className="card flex flex-col gap-2.5">
+      <div className="card flex animate-masuk flex-col gap-2.5" style={{ animationDelay: "140ms" }}>
         <p className="font-display text-[15px] font-semibold">Bayar dari HP ini?</p>
-        <a href={png} download={`bayar-${kode}.png`} className="btn-primary font-display">
+        <a href={png} download={`bayar-${kode}.png`} className="btn-primary font-display transition-transform active:scale-[.98]">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
           </svg>
@@ -24,7 +24,7 @@ export function AksiBayar({ kode, png, palsu }: { kode: string; png: string; pal
       </div>
 
       {palsu && (
-        <div className="card space-y-2 border-2 border-dashed border-warn">
+        <div className="card animate-masuk space-y-2 border-2 border-dashed border-warn" style={{ animationDelay: "190ms" }}>
           <p className="text-sm font-semibold">🧪 Mode coba (gateway palsu)</p>
           <p className="text-[13px] text-muted">
             Tombol ini berlaku seperti notifikasi &quot;lunas&quot; dari payment gateway. Hanya ada di laptop, tidak di Vercel.
@@ -43,14 +43,15 @@ export function AksiBayar({ kode, png, palsu }: { kode: string; png: string; pal
           >
             {pending ? "Memproses…" : "Simulasikan bayar"}
           </button>
-          {error && <p className="text-sm font-semibold text-bad">{error}</p>}
+          {error && <p className="animate-muncul text-sm font-semibold text-bad">{error}</p>}
         </div>
       )}
 
       <button
         type="button"
         disabled={pending}
-        className="btn-danger self-center px-5"
+        className="btn-danger animate-masuk self-center px-5"
+        style={{ animationDelay: "240ms" }}
         onClick={() =>
           startTransition(async () => {
             await batalkanPesananAction(kode);

@@ -163,7 +163,10 @@ HPP & untung (%) dihitung langsung saat mengetik dari harga bahan yang aktif sek
 `harga` (berlaku sejak sekarang); ubah resep → versi resep baru. Tombol Nonaktifkan / Aktifkan lagi.
 Kartu **Katalog pembeli** (menu yang sudah ada; langsung tersimpan): sakelar **Tampil di katalog**, **Bisa less sugar**
 (racikan), dan **Foto** dari kamera/galeri. Foto dikecilkan di browser (sisi terpanjang 800 px, WebP; JPEG bila browser
-tidak bisa WebP; maks 400 KB) lalu disimpan mentah di `menu.foto`.
+tidak bisa WebP; maks 400 KB) lalu disimpan mentah di `menu.foto`. **Atur foto** (otomatis terbuka setelah unggah,
+atau tombol ✂️ Atur): seret untuk menggeser, slider zoom 1–3×, pratinjau 84 & 40 px, Atur ulang. Disimpan sebagai
+bingkai `menu.foto_atur` (titik fokus x/y % + zoom); foto asli tidak diubah, ganti foto → bingkai kembali ke tengah.
+Bingkai berlaku sama di katalog, panel gula, dan Beranda (`gayaFoto` di `lib/foto.ts`).
 
 **Bahan** (`/lainnya/bahan`): daftar bahan (harga per satuan sekarang + kemasan yang aktif), form bahan baru
 (nama, satuan, harga awal), dan daftar **"Belanja bahan belum ditandai"** (belanja lama dari sebelum CR-003): pilih
@@ -213,7 +216,14 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 - Hanya menu `aktif && di_katalog`, harga jual yang berlaku sekarang. Tanpa foto → ubin krem + ikon garis.
 - Habis: foto pudar, harga dicoret, pil "Habis". Tutup: kartu "Kantin sedang tutup" di atas daftar.
 - Foto: `/pesan/foto/[menuId]?v=<foto_versi>`, `Cache-Control: immutable` bila `v` cocok (ganti foto → URL baru).
-- Terang/gelap mengikuti HP pembeli (tanpa cookie tema).
+- **Tema pembeli**: tombol bulan/matahari di header katalog. Bawaan **terang**, tidak ikut setelan HP; pilihan disimpan
+  di cookie `tema_pembeli` (terpisah dari tema pengguna di Setelan). `proxy.ts` menandai request `/pesan` (header
+  `x-area`), root layout memilih tema dari situ.
+- **Ketuk foto** di kartu menu → pratinjau foto utuh (tidak dipotong) + nama & harga; tutup dengan ✕, ketuk latar, Esc.
+- **Animasi** (semua halaman `/pesan`, `src/app/pesan/gerak.tsx` + keyframe `animate-*` di `globals.css`): kartu masuk
+  berurutan, tombol membal saat ditekan, badge/angka "pop" saat berubah, bar keranjang naik, panel/dialog/pratinjau
+  masuk & keluar (panel bawah: handle bisa diseret, lepas jauh / kibas = tutup, selain itu memantul balik), pilihan Normal/Less sugar & Pickup/Delivery dengan pil meluncur, struk: nomor pop, langkah aktif
+  berdenyut, langkah yang selesai pop saat status berubah. Mati otomatis bila HP memilih "kurangi gerakan".
 - **QR katalog** (`/lainnya/qr-katalog`): lembar siap cetak berisi QR ke `<host yang sedang dipakai>/pesan`;
   peringatan bila dibuka dari localhost / IP WiFi (buka dari domain online sebelum mencetak).
 
@@ -357,7 +367,8 @@ settings
 menu
   id, nama, jenis ('racikan' | 'barang_jadi'), aktif BOOL, urutan INTEGER,
   di_katalog BOOL, habis BOOL, bisa_less_sugar BOOL,   -- katalog /pesan (CR-005)
-  foto BLOB NULL (WebP/JPEG mentah), foto_versi INTEGER NULL (waktu foto diganti)
+  foto BLOB NULL (WebP/JPEG mentah), foto_versi INTEGER NULL (waktu foto diganti),
+  foto_atur TEXT NULL ({"x":50,"y":50,"z":1}: bingkai thumbnail)
 
 pesanan                              -- pesan online (CR-005)
   id, kode TEXT UNIQUE (acak, link), nomor NULL (antrean harian, saat lunas), nama, cara ('pickup' | 'delivery'),

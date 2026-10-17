@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { Lapisan } from "../gerak";
 import type { MenuKatalog } from "@/lib/data";
 import { bersihkanRiwayatAction } from "../actions";
 import { isiKeranjang } from "../keranjang";
@@ -32,7 +33,7 @@ export function PesanLagi({
   return (
     <button
       type="button"
-      className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-full bg-accent px-4 font-display text-sm font-bold text-accent-fg shadow-pop"
+      className="inline-flex min-h-10 items-center gap-1.5 self-start rounded-full bg-accent px-4 font-display text-sm font-bold text-accent-fg shadow-pop transition-transform duration-150 active:scale-95"
       onClick={() => {
         const ada = item.filter((i) => menu.some((m) => m.id === i.menuId && !m.habis));
         const lewat = item.filter((i) => !ada.includes(i)).map((i) => i.nama);
@@ -61,49 +62,50 @@ export function BersihkanRiwayat({ jumlah }: { jumlah: number }) {
         onClick={() => setBuka(true)}
         className="-mr-1.5 flex size-11 shrink-0 items-center justify-center text-muted"
       >
-        <span className="flex size-8 items-center justify-center rounded-full bg-card-raised shadow-pop">{ikonSapu(18)}</span>
+        <span className="flex size-8 items-center justify-center rounded-full bg-card-raised shadow-pop transition-transform duration-150 active:scale-90">
+          {ikonSapu(18)}
+        </span>
       </button>
       {buka && (
-        <div className="fixed inset-0 z-20 flex items-center justify-center px-6">
-          <button type="button" aria-label="Tutup" className="absolute inset-0 bg-[rgb(43_16_12/.45)]" onClick={() => setBuka(false)} />
-          <div
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="judul-hapus"
-            aria-describedby="isi-hapus"
-            className="relative flex w-full max-w-sm flex-col gap-2.5 rounded-[var(--r-lg)] bg-card px-5 pb-5 pt-11 text-center shadow-pop-lg"
-          >
-            <span className="absolute -top-7 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-accent text-accent-fg shadow-[0_0_0_6px_var(--card)]">
-              {ikonSapu(26)}
-            </span>
-            <h2 id="judul-hapus" className="text-xl font-bold">
-              Bersihkan riwayat selesai?
-            </h2>
-            <p id="isi-hapus" className="text-[15px] leading-[22px] text-muted">
-              {jumlah} pesanan selesai dihapus dari daftar <strong className="text-fg">di HP ini saja</strong>. Pesanan yang sedang
-              berjalan tetap ada.
-            </p>
-            <div className="mt-2.5 grid grid-cols-2 gap-2">
-              <button type="button" className="btn-ghost font-display" disabled={pending} onClick={() => setBuka(false)}>
-                Batal
-              </button>
-              <button
-                type="button"
-                disabled={pending}
-                className="btn font-display text-accent-fg"
-                style={{ backgroundColor: "var(--bad)", borderColor: "transparent" }}
-                onClick={() =>
-                  startTransition(async () => {
-                    await bersihkanRiwayatAction();
-                    setBuka(false);
-                  })
-                }
-              >
-                {pending ? "…" : "Bersihkan"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <Lapisan
+          onTutup={() => setBuka(false)}
+          posisi="tengah"
+          peran="alertdialog"
+          label="Bersihkan riwayat selesai?"
+          className="flex max-w-sm flex-col gap-2.5 rounded-[var(--r-lg)] bg-card px-5 pb-5 pt-11 text-center shadow-pop-lg"
+        >
+          {(tutup) => (
+            <>
+              <span className="absolute -top-7 left-1/2 flex size-14 -translate-x-1/2 items-center justify-center rounded-full bg-accent text-accent-fg shadow-[0_0_0_6px_var(--card)]">
+                {ikonSapu(26)}
+              </span>
+              <h2 className="text-xl font-bold">Bersihkan riwayat selesai?</h2>
+              <p className="text-[15px] leading-[22px] text-muted">
+                {jumlah} pesanan selesai dihapus dari daftar <strong className="text-fg">di HP ini saja</strong>. Pesanan yang sedang
+                berjalan tetap ada.
+              </p>
+              <div className="mt-2.5 grid grid-cols-2 gap-2">
+                <button type="button" className="btn-ghost font-display" disabled={pending} onClick={tutup}>
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  className="btn font-display text-accent-fg"
+                  style={{ backgroundColor: "var(--bad)", borderColor: "transparent" }}
+                  onClick={() =>
+                    startTransition(async () => {
+                      await bersihkanRiwayatAction();
+                      tutup();
+                    })
+                  }
+                >
+                  {pending ? "…" : "Bersihkan"}
+                </button>
+              </div>
+            </>
+          )}
+        </Lapisan>
       )}
     </>
   );
