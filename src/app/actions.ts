@@ -10,7 +10,7 @@ import { cekPin, endSession, hashPin, isValidPin, requireAuth, startSession } fr
 import { daftarTanggal, hargaPada, hariBukaBawaan, hitungPeriode, pemakaianBahan, resepPada, type HasilPeriode } from "@/lib/calc";
 import { awalData, getDataPeriode, getHppCtx, getSemuaHarga, getTutupTerakhir, perkiraanCup, stokDari } from "@/lib/data";
 import { hitungUlangSejak } from "@/lib/hitung-ulang";
-import { FOTO_MAKS_BYTE, jenisFoto } from "@/lib/foto";
+import { FOTO_MAKS_BYTE, jenisFoto, rapikanAtur, type AturFoto } from "@/lib/foto";
 import { awalHariWib, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
 import { batalkanLunas, majukanPesanan } from "@/lib/pesanan";
 import { hapusLangganan, kirimKeSemua, simpanLangganan, type Langganan } from "@/lib/push";
@@ -611,24 +611,31 @@ export async function aturKatalogMenuAction(id: number, patch: { diKatalog?: boo
 }
 
 /** Foto menu, sudah dikecilkan di browser (lihat lainnya/menu/katalog-menu.tsx). */
-export async function simpanFotoMenuAction(id: number, fd: FormData): Promise<FormState> {
+export async function simpanFotoMenuAction(id: number, fd: FormData): Promise<FormState & { fotoVersi?: number }> {
   await requireAuth();
   const f = fd.get("foto");
   if (!(f instanceof Blob) || f.size === 0) return { error: "Pilih fotonya dulu." };
   if (f.size > FOTO_MAKS_BYTE) return { error: "Foto terlalu besar (maks 400 KB setelah dikecilkan)." };
   const bytes = new Uint8Array(await f.arrayBuffer());
   if (!jenisFoto(bytes)) return { error: "Format foto tidak dikenali." };
-  await db
-    .update(menu)
-    .set({ foto: Buffer.from(bytes), fotoVersi: Date.now() })
-    .where(eq(menu.id, id));
+  const fotoVersi = Date.now();
+  // Foto baru → bingkai lama tidak berlaku lagi
+  await db.update(menu).set({ foto: Buffer.from(bytes), fotoVersi, fotoAtur: null }).where(eq(menu.id, id));
   refreshSemua();
-  return { ok: "Foto disimpan." };
+  return { ok: "Foto disimpan.", fotoVersi };
+}
+
+/** Bingkai thumbnail (geser + zoom). Foto asli tidak diubah. */
+export async function aturFotoMenuAction(id: number, atur: AturFoto): Promise<FormState> {
+  await requireAuth();
+  await db.update(menu).set({ fotoAtur: JSON.stringify(rapikanAtur(atur)) }).where(eq(menu.id, id));
+  refreshSemua();
+  return { ok: "Tampilan foto disimpan." };
 }
 
 export async function hapusFotoMenuAction(id: number) {
   await requireAuth();
-  await db.update(menu).set({ foto: null, fotoVersi: null }).where(eq(menu.id, id));
+  await db.update(menu).set({ foto: null, fotoVersi: null, fotoAtur: null }).where(eq(menu.id, id));
   refreshSemua();
 }
 

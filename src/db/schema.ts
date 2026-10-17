@@ -24,6 +24,8 @@ export const menu = sqliteTable("menu", {
   // Jangan ikut di-select di query biasa (lihat getMenu di lib/data.ts).
   foto: blob("foto", { mode: "buffer" }),
   fotoVersi: integer("foto_versi"), // waktu foto terakhir diganti; null = tanpa foto
+  // Bingkai thumbnail: {"x":50,"y":50,"z":1} (titik fokus % dan zoom 1–3). Null = tengah, tanpa zoom.
+  fotoAtur: text("foto_atur"),
 });
 
 export const bahan = sqliteTable("bahan", {

@@ -21,6 +21,7 @@ import {
   type PeriodeData,
   type Stok,
 } from "./calc";
+import { bacaAtur } from "./foto";
 import { awalHariWib, bulanWib, isoTanggalWib } from "./format";
 import { getSetting } from "./settings";
 
@@ -54,6 +55,7 @@ const kolomMenu = {
   habis: k.habis,
   bisaLessSugar: k.bisaLessSugar,
   fotoVersi: k.fotoVersi,
+  fotoAtur: k.fotoAtur,
 };
 
 /** Tanggal WIB untuk daftar pesanan selesai (`?tgl=`), dengan tanggal sebelum/sesudahnya (tidak melewati hari ini). */
@@ -79,6 +81,7 @@ export async function getKatalog() {
         habis: m.habis,
         bisaLessSugar: m.bisaLessSugar,
         fotoVersi: m.fotoVersi,
+        atur: bacaAtur(m.fotoAtur),
         harga: hargaPada(h, m.id, now),
       })),
   };

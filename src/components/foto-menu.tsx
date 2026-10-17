@@ -1,4 +1,4 @@
-import { urlFoto } from "@/lib/foto";
+import { gayaFoto, urlFoto, type AturFoto } from "@/lib/foto";
 
 /** Ikon garis pengganti foto: cangkir (racikan) atau bungkus camilan (barang jadi). */
 export function IkonMenu({ jenis, size = 34 }: { jenis: "racikan" | "barang_jadi"; size?: number }) {
@@ -35,12 +35,15 @@ export function FotoMenu({
   id,
   jenis,
   fotoVersi,
+  atur,
   size = 84,
   className = "",
 }: {
   id: number;
   jenis: "racikan" | "barang_jadi";
   fotoVersi: number | null;
+  /** Bingkai (geser + zoom) dari edit menu; tanpa = tengah. */
+  atur?: AturFoto;
   size?: number;
   className?: string;
 }) {
@@ -53,15 +56,18 @@ export function FotoMenu({
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element -- foto dari route sendiri, sudah dikecilkan & di-cache
-    <img
-      src={urlFoto(id, fotoVersi)}
-      alt=""
-      width={size}
-      height={size}
-      loading="lazy"
-      className={`${kotak} bg-card-raised object-cover`}
-      style={{ width: size, height: size }}
-    />
+    <div className={`${kotak} bg-card-raised`} style={{ width: size, height: size }}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- foto dari route sendiri, sudah dikecilkan & di-cache */}
+      <img
+        src={urlFoto(id, fotoVersi)}
+        alt=""
+        width={size}
+        height={size}
+        loading="lazy"
+        draggable={false}
+        className="size-full"
+        style={atur ? gayaFoto(atur) : { objectFit: "cover" }}
+      />
+    </div>
   );
 }
