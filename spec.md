@@ -193,8 +193,8 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
   berubah → yang lama dibatalkan. Maks 3 pesanan belum bayar per HP (cookie `perangkat`).
 - `/pesan/[kode]/bayar`: total, QR (berlaku 15 menit, hitung mundur), Simpan gambar QR, Batalkan pesanan; pindah sendiri
   ke struk setelah lunas (polling 3 detik). Kedaluwarsa → "Pesan lagi" (keranjang masih ada).
-- `/pesan/[kode]` = struk & lacak: nomor antrean, status 4 langkah (Lunas → Diterima → Dibuat → Siap diambil / Diantar),
-  item, total + metode, QR ke halaman itu sendiri. Polling 5 detik sampai selesai. Membukanya menambah ke Pesananku.
+- `/pesan/[kode]` = struk & lacak: status 4 langkah (Lunas → Diterima → Dibuat → Siap diambil / Diantar),
+  kode pesanan (huruf besar) di atas rincian, item, total + metode, QR ke halaman itu sendiri. Polling 5 detik sampai selesai. Membukanya menambah ke Pesananku.
 - Katalog: kartu **Menunggu pembayaran** (sisa waktu, Lanjut bayar) / **Pembayaran kedaluwarsa**; tombol **Pesananku**
   (badge = pesanan berjalan) → `/pesan/riwayat` (cookie `pesananku`, 30 hari, tidak termasuk yang tidak jadi dibayar):
   **Sedang berjalan** (nomor + status, atau "Menunggu pembayaran" + sisa waktu → halaman bayar) dan **Selesai**
@@ -225,7 +225,7 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 - **Ketuk foto** di kartu menu → pratinjau foto utuh (tidak dipotong) + nama & harga; tutup dengan ✕, ketuk latar, Esc.
 - **Animasi** (semua halaman `/pesan`, `src/app/pesan/gerak.tsx` + keyframe `animate-*` di `globals.css`): kartu masuk
   berurutan, tombol membal saat ditekan, badge/angka "pop" saat berubah, bar keranjang naik, panel/dialog/pratinjau
-  masuk & keluar (panel bawah: handle bisa diseret, lepas jauh / kibas = tutup, selain itu memantul balik), pilihan Normal/Less sugar & Pickup/Delivery dengan pil meluncur, struk: nomor pop, langkah aktif
+  masuk & keluar (panel bawah: handle bisa diseret, lepas jauh / kibas = tutup, selain itu memantul balik), pilihan Normal/Less sugar & Pickup/Delivery dengan pil meluncur, struk: langkah aktif
   berdenyut, langkah yang selesai pop saat status berubah. Mati otomatis bila HP memilih "kurangi gerakan".
 - **QR katalog** (`/lainnya/qr-katalog`): lembar siap cetak berisi QR ke `<host yang sedang dipakai>/pesan`;
   peringatan bila dibuka dari localhost / IP WiFi (buka dari domain online sebelum mencetak).

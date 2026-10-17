@@ -6,7 +6,7 @@ import QRCode from "qrcode";
 import { alamatAsal } from "@/lib/alamat";
 import { rupiah, tanggalJam } from "@/lib/format";
 import { NAMA_KANTIN } from "@/lib/katalog";
-import { getPesananKode, LABEL_STATUS, sedangBerjalan, type PesananLengkap } from "@/lib/pesanan";
+import { getPesananKode, sedangBerjalan, type PesananLengkap } from "@/lib/pesanan";
 import { IngatPesanan, Pantau } from "../hidup";
 
 export const metadata: Metadata = { title: `Pesanan · ${NAMA_KANTIN}` };
@@ -46,18 +46,7 @@ export default async function StrukPage(props: PageProps<"/pesan/[kode]">) {
         Menu
       </Link>
 
-      {lunas ? (
-        <div className="flex animate-masuk flex-col items-center gap-1 text-center">
-          <p className="font-display text-[22px] font-bold">Halo, {p.nama}!</p>
-          <p className="mt-2 font-display text-xs font-semibold tracking-[.12em] text-muted">NOMOR ANTREAN</p>
-          <p className="num animate-pop font-display text-[88px] font-extrabold leading-[92px]" style={{ animationDelay: "120ms" }}>
-            #{p.nomor}
-          </p>
-          <p key={p.status} className="animate-pop rounded-full bg-accent px-3.5 py-1.5 font-display text-[15px] font-bold text-accent-fg shadow-pop">
-            {LABEL_STATUS[p.status]}
-          </p>
-        </div>
-      ) : (
+      {!lunas && (
         <div className="card animate-masuk text-center">
           <p className="font-display text-xl font-bold">{p.status === "kedaluwarsa" ? "Pembayaran kedaluwarsa" : "Pesanan dibatalkan"}</p>
           <p className="mt-1 text-sm text-muted">Pesanan ini belum dibayar.</p>
@@ -72,6 +61,10 @@ export default async function StrukPage(props: PageProps<"/pesan/[kode]">) {
       )}
 
       <div className="card flex animate-masuk flex-col gap-1" style={{ animationDelay: "200ms" }}>
+        <div className="flex items-baseline justify-between gap-3 pb-1">
+          <span className="text-[13px] text-muted">Kode pesanan</span>
+          <span className="num font-display font-bold tracking-wider">{p.kode.toUpperCase()}</span>
+        </div>
         <div className="flex justify-between gap-3 border-b border-dashed border-outline pb-2 text-[13px] text-muted">
           <span>{tanggalJam(p.dibayar ?? p.dibuat)}</span>
           <span className="font-bold">{p.cara === "delivery" ? "Delivery" : "Pickup"}</span>
