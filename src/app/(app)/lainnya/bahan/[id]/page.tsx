@@ -1,13 +1,17 @@
 import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
-import { getDetailBahan, getInfoTutup } from "@/lib/data";
+import { getDetailBahan, getInfoTutup, getTerbuangBahan } from "@/lib/data";
 import { desimal, perSatuan, rupiah, tanggalPendek } from "@/lib/format";
-import { BahanForm, HapusBahanButton, PakaiIniForm } from "../forms";
+import { BahanForm, HapusBahanButton, HapusTerbuangButton, PakaiIniForm, TerbuangForm } from "../forms";
 import { SisaKemasan } from "../sisa-kemasan";
 
 export default async function DetailBahanPage(props: PageProps<"/lainnya/bahan/[id]">) {
   const { id } = await props.params;
-  const [b, { setup, tutup }] = await Promise.all([getDetailBahan(Number(id)), getInfoTutup()]);
+  const [b, { setup, tutup }, terbuang] = await Promise.all([
+    getDetailBahan(Number(id)),
+    getInfoTutup(),
+    getTerbuangBahan(Number(id), 5),
+  ]);
   if (!b) notFound();
   const { hariIni } = b;
 
@@ -53,7 +57,15 @@ export default async function DetailBahanPage(props: PageProps<"/lainnya/bahan/[
                       {p.aktif && p.aktifSejak !== null && ` · aktif ${p.aktifSejak === 0 ? "sejak awal" : `sejak ${tanggalPendek(p.aktifSejak)}`}`}
                     </div>
                   </div>
-                  {p.hargaSatuan !== null && <PakaiIniForm belanjaId={p.id} aktif={p.aktif} hariIni={hariIni} info={{ setup, tutup }} />}
+                  {p.hargaSatuan !== null && (
+                    <PakaiIniForm
+                      belanjaId={p.id}
+                      aktif={p.aktif}
+                      hariIni={hariIni}
+                      info={{ setup, tutup }}
+                      sisaLama={{ nama: b.nama, sisa: b.sisaSatuan, satuan: b.satuan }}
+                    />
+                  )}
                 </li>
               ))}
             </ul>
@@ -63,6 +75,36 @@ export default async function DetailBahanPage(props: PageProps<"/lainnya/bahan/[
             baru.
           </p>
         </section>
+
+        {b.beliAktif && (
+          <TerbuangForm
+            bahanId={b.id}
+            nama={b.nama}
+            satuan={b.satuan}
+            sisa={b.sisaSatuan}
+            hariIni={hariIni}
+            info={{ setup, tutup }}
+          />
+        )}
+
+        {terbuang.length > 0 && (
+          <section>
+            <h2 className="mb-2 text-sm font-bold text-muted">Terbuang terakhir</h2>
+            <ul className="card divide-y divide-line p-0">
+              {terbuang.map((t) => (
+                <li key={t.id} className="flex items-center gap-3 px-4 py-2 text-sm">
+                  <div className="min-w-0 flex-1">
+                    <div className="num">
+                      {desimal(t.jumlah)} {b.satuan} · {tanggalPendek(t.waktu)}
+                    </div>
+                    {t.catatan && <div className="truncate text-xs text-muted">{t.catatan}</div>}
+                  </div>
+                  <HapusTerbuangButton id={t.id} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         <BahanForm edit={b} />
         {b.pembelian.length === 0 && b.dipakaiDi.length === 0 && <HapusBahanButton id={b.id} />}

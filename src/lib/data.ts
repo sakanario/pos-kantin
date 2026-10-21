@@ -1,7 +1,7 @@
 import "server-only";
 import { and, asc, desc, eq, gt, isNull, lt, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { bahan, bahanAktif, belanja, harga, kas, menu, resep, tapEvent, tutupBuku, type TutupBuku } from "@/db/schema";
+import { bahan, bahanAktif, bahanTerbuang, belanja, harga, kas, menu, resep, tapEvent, tutupBuku, type TutupBuku } from "@/db/schema";
 import {
   bagiPerHari,
   daftarTanggal,
@@ -13,6 +13,7 @@ import {
   hppPada,
   nilaiBahanPada,
   pemakaianBahan,
+  rekapTerbuang,
   resepPada,
   untungDariTap,
   type HargaRow,
@@ -69,17 +70,18 @@ export function awalData(tutupSebelumnya: { waktu: number; hasilJson: string | n
 
 /** Semua catatan dengan waktu di (dari, sampai]. */
 export async function getDataPeriode(dari: number, sampai: number) {
-  const rentang = <T extends typeof belanja | typeof kas | typeof tapEvent>(t: T) =>
+  const rentang = <T extends typeof belanja | typeof kas | typeof tapEvent | typeof bahanTerbuang>(t: T) =>
     and(gt(t.waktu, dari), lte(t.waktu, sampai));
-  const [b, k, t, h, m, hpp] = await Promise.all([
+  const [b, k, t, tb, h, m, hpp] = await Promise.all([
     db.select().from(belanja).where(rentang(belanja)).orderBy(desc(belanja.waktu)),
     db.select().from(kas).where(rentang(kas)).orderBy(desc(kas.waktu)),
     db.select().from(tapEvent).where(rentang(tapEvent)).orderBy(asc(tapEvent.waktu)),
+    db.select().from(bahanTerbuang).where(rentang(bahanTerbuang)).orderBy(desc(bahanTerbuang.waktu)),
     getSemuaHarga(),
     getMenu(),
     getHppCtx(),
   ]);
-  return { belanja: b, kas: k, taps: t, harga: h, menu: m, hpp } satisfies PeriodeData;
+  return { belanja: b, kas: k, taps: t, terbuang: tb, harga: h, menu: m, hpp } satisfies PeriodeData;
 }
 
 const jumlah = (taps: { delta: number }[]) => taps.reduce((a, t) => a + t.delta, 0);
@@ -98,6 +100,7 @@ export async function getPeriodeBerjalan() {
     .from(tapEvent)
     .where(and(gt(tapEvent.waktu, awalHariIni - 1), lte(tapEvent.waktu, now)));
 
+  const nilaiTerbuang = (xs: typeof data.terbuang) => rekapTerbuang(data.hpp, xs).reduce((a, x) => a + x.nilai, 0);
   const per = (taps: typeof tapsHariIni, menuId: number, jenis: "terjual" | "sendiri") =>
     jumlah(taps.filter((t) => t.menuId === menuId && t.jenis === jenis));
 
@@ -132,9 +135,9 @@ export async function getPeriodeBerjalan() {
       return daftarTanggal(terakhir.waktu, now).map((iso) => ({ iso, bawaan: bawaan.has(iso) }));
     })(),
     belanjaPeriode: data.belanja.reduce((a, b) => a + b.total, 0),
-    // Untung jualan dari tap saja; barang jadi terjual baru diketahui saat tutup buku.
-    untungHariIni: untungDariTap(tapsHariIni, data, stok),
-    untungPeriode: untungDariTap(data.taps, data, stok),
+    // Untung jualan dari tap (dikurangi bahan terbuang); barang jadi terjual baru diketahui saat tutup buku.
+    untungHariIni: untungDariTap(tapsHariIni, data, stok) - nilaiTerbuang(data.terbuang.filter((x) => x.waktu >= awalHariIni)),
+    untungPeriode: untungDariTap(data.taps, data, stok) - nilaiTerbuang(data.terbuang),
   };
 }
 
@@ -377,13 +380,14 @@ export async function getUangBarang() {
   if (!terakhir) return null;
   const stok = stokDari(terakhir);
   const t = terakhir.waktu;
-  const [semuaMenu, beli, taps, hargaJual, ctx, tapsSampai] = await Promise.all([
+  const [semuaMenu, beli, taps, hargaJual, ctx, tapsSampai, terbuangSampai] = await Promise.all([
     getMenu(),
     db.select().from(belanja).where(and(eq(belanja.kategori, "barang"), gt(belanja.waktu, t))),
     db.select().from(tapEvent).where(and(eq(tapEvent.jenis, "sendiri"), gt(tapEvent.waktu, t))),
     getSemuaHarga(),
     getHppCtx(),
     db.select().from(tapEvent).where(lte(tapEvent.waktu, t)),
+    db.select().from(bahanTerbuang).where(lte(bahanTerbuang.waktu, t)),
   ]);
   const now = Date.now();
   const menuAktif = semuaMenu.filter((m) => m.jenis === "racikan" && m.aktif).map((m) => m.id);
@@ -404,7 +408,7 @@ export async function getUangBarang() {
         sendiriSejak: jumlah(taps.filter((x) => x.menuId === m.id)),
       };
     });
-  const bahanAda = nilaiBahanPada(ctx, ctx.belanja, tapsSampai, menuAktif, t)
+  const bahanAda = nilaiBahanPada(ctx, ctx.belanja, tapsSampai, terbuangSampai, menuAktif, t)
     .map((x) => {
       const b = ctx.bahan.find((y) => y.id === x.bahanId)!;
       return { ...x, nama: b.nama, satuan: b.satuan };
@@ -422,6 +426,26 @@ export async function getUangBarang() {
     // Belanja bahan sesudah tutup buku: belum masuk (saldo tutup buku belum dikurangi belanja ini)
     bahanSejak: { jumlah: bahanSejak.length, total: bahanSejak.reduce((a, b) => a + b.total, 0) },
   };
+}
+
+/** Kemasan yang sedang dipakai pada waktu `t` dan sisanya (satuan bahan, menurut resep & yang terbuang). */
+export async function getSisaKemasanPada(bahanId: number, t: number) {
+  const [ctx, taps, terbuang] = await Promise.all([
+    getHppCtx(),
+    db.select().from(tapEvent).where(lte(tapEvent.waktu, t)),
+    db.select().from(bahanTerbuang).where(lte(bahanTerbuang.waktu, t)),
+  ]);
+  return nilaiBahanPada(ctx, ctx.belanja, taps, terbuang, [], t).find((x) => x.bahanId === bahanId)?.aktif ?? null;
+}
+
+/** Catatan bahan terbuang terbaru untuk satu bahan. */
+export async function getTerbuangBahan(bahanId: number, limit: number) {
+  return db
+    .select()
+    .from(bahanTerbuang)
+    .where(eq(bahanTerbuang.bahanId, bahanId))
+    .orderBy(desc(bahanTerbuang.waktu), desc(bahanTerbuang.id))
+    .limit(limit);
 }
 
 // ─── Menu & bahan ─────────────────────────────────────────────────
@@ -459,6 +483,8 @@ export async function getDaftarBahan() {
           const k = kemasan.get(b.id);
           return k && k.perkiraan !== null ? { perkiraan: k.perkiraan, sudah: k.pakai.cup, sisa: k.perkiraan - k.pakai.cup } : null;
         })(),
+        // Sisa kemasan yang sedang dipakai, dalam satuan bahan (menurut resep, dikurangi yang terbuang)
+        sisaSatuan: kemasan.get(b.id)?.sisaSatuan ?? null,
         // Kemasan cadangan: tidak dihitung ke perkiraan kemasan aktif
         cadangan: belumDibuka(ctx, b.id).map((x) => x.nama),
         dipakaiDi: semuaMenu
@@ -542,15 +568,28 @@ async function getKemasanAktif(ctx: Ctx, now: number) {
     const beli = aktif?.belanjaId != null ? ctx.belanja.find((x) => x.id === aktif.belanjaId) : undefined;
     return aktif && beli ? [{ bahanId: b.id, beli, dari: Math.max(aktif.mulai, beli.waktu) }] : [];
   });
-  const hasil = new Map<number, (typeof daftar)[number] & { pakai: { cup: number; satuan: number }; perkiraan: number | null }>();
+  const hasil = new Map<
+    number,
+    (typeof daftar)[number] & { pakai: { cup: number; satuan: number }; terbuang: number; sisaSatuan: number; perkiraan: number | null }
+  >();
   if (daftar.length === 0) return hasil;
-  const taps = await db
-    .select()
-    .from(tapEvent)
-    .where(and(gt(tapEvent.waktu, Math.min(...daftar.map((d) => d.dari))), lte(tapEvent.waktu, now)));
+  const awal = Math.min(...daftar.map((d) => d.dari));
+  const [taps, terbuang] = await Promise.all([
+    db.select().from(tapEvent).where(and(gt(tapEvent.waktu, awal), lte(tapEvent.waktu, now))),
+    db.select().from(bahanTerbuang).where(and(gt(bahanTerbuang.waktu, awal), lte(bahanTerbuang.waktu, now))),
+  ]);
   for (const d of daftar) {
     const pakai = pemakaianBahan(ctx, taps.filter((t) => t.waktu > d.dari), d.bahanId);
-    hasil.set(d.bahanId, { ...d, pakai, perkiraan: perkiraanCup(d.beli, pakai, ctx, d.bahanId, now) });
+    const dibuang = terbuang.filter((x) => x.bahanId === d.bahanId && x.waktu > d.dari).reduce((a, x) => a + x.jumlah, 0);
+    const isi = (d.beli.isiKemasan ?? 0) * (d.beli.jumlahKemasan ?? 0);
+    hasil.set(d.bahanId, {
+      ...d,
+      pakai,
+      terbuang: dibuang,
+      sisaSatuan: Math.max(0, isi - pakai.satuan - dibuang),
+      // Yang terbuang mengurangi isi kemasan: perkiraan cup ikut turun
+      perkiraan: perkiraanCup(d.beli, pakai, ctx, d.bahanId, now, dibuang),
+    });
   }
   return hasil;
 }
@@ -593,6 +632,7 @@ export function perkiraanCup(
   ctx: HppCtx,
   bahanId: number,
   now: number,
+  terbuang = 0,
 ): number | null {
   const isi = (beli.isiKemasan ?? 0) * (beli.jumlahKemasan ?? 0);
   let takaran = pakai.cup > 0 ? pakai.satuan / pakai.cup : 0;
@@ -602,5 +642,5 @@ export function perkiraanCup(
       .filter((t) => t > 0);
     takaran = semua.length ? Math.min(...semua) : 0;
   }
-  return isi > 0 && takaran > 0 ? Math.floor(isi / takaran) : null;
+  return isi > 0 && takaran > 0 ? Math.floor(Math.max(0, isi - terbuang) / takaran) : null;
 }

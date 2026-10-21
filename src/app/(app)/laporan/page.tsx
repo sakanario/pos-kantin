@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/page-header";
 import { getGrafikHarian, getRiwayatTutupBuku, hariIniWib } from "@/lib/data";
 import { AsetCard } from "@/components/aset-card";
 import { LaporanBasi } from "@/components/laporan-basi";
-import { bulanWib, isoTanggalWib, namaBulan, plus, rupiah, tanggal } from "@/lib/format";
+import { bulanWib, desimal, isoTanggalWib, namaBulan, plus, rupiah, tanggal } from "@/lib/format";
 import { GrafikBatang, NavGrafik, rentangGrafik } from "./grafik";
 
 export default async function LaporanPage(props: PageProps<"/laporan">) {
@@ -23,13 +23,14 @@ export default async function LaporanPage(props: PageProps<"/laporan">) {
     selisih: number;
     // untung = dari yang terjual saja; konsumsi sendiri dipisah (untung menu = untung − nilaiSendiri)
     menu: Map<string, { terjual: number; untung: number; sendiri: number; nilaiSendiri: number; satuan: string }>;
+    terbuang: Map<string, { jumlah: number; satuan: string; nilai: number }>;
   };
   const bulanan = new Map<string, Rekap>();
   for (const r of periode) {
     if (r.basi) continue;
     const h = r.hasil!;
     const k = bulanWib(r.waktu);
-    const b = bulanan.get(k) ?? { untung: 0, uangBersih: 0, omzet: 0, belanja: 0, selisih: 0, menu: new Map() };
+    const b = bulanan.get(k) ?? { untung: 0, uangBersih: 0, omzet: 0, belanja: 0, selisih: 0, menu: new Map(), terbuang: new Map() };
     b.untung += h.untungJualan;
     b.uangBersih += h.uangBersih;
     b.omzet += h.omzetNyata;
@@ -48,6 +49,12 @@ export default async function LaporanPage(props: PageProps<"/laporan">) {
       x.sendiri += m.sendiri;
       x.nilaiSendiri += m.nilaiSendiri;
       b.menu.set(m.nama, x);
+    }
+    for (const t of h.terbuang ?? []) {
+      const x = b.terbuang.get(t.nama) ?? { jumlah: 0, satuan: t.satuan, nilai: 0 };
+      x.jumlah += t.jumlah;
+      x.nilai += t.nilai;
+      b.terbuang.set(t.nama, x);
     }
     bulanan.set(k, b);
   }
@@ -106,6 +113,14 @@ export default async function LaporanPage(props: PageProps<"/laporan">) {
                     baris={[...b.menu.entries()]
                       .filter(([, x]) => x.sendiri !== 0 || x.nilaiSendiri !== 0)
                       .map(([nama, x]) => ({ nama, jumlah: `${x.sendiri} ${x.satuan}`, nilai: -x.nilaiSendiri }))}
+                  />
+                  <RekapMenu
+                    judul="Bahan terbuang"
+                    baris={[...b.terbuang.entries()].map(([nama, x]) => ({
+                      nama,
+                      jumlah: `${desimal(x.jumlah)} ${x.satuan}`,
+                      nilai: -x.nilai,
+                    }))}
                   />
                 </div>
               ))}

@@ -20,6 +20,7 @@ Pengguna bukan akuntan: jelaskan dengan contoh angka, bukan istilah.
 - Dua angka per periode: **untung jualan** (per item, pakai HPP/modal) dan **uang bersih** (omzet nyata − belanja).
 - Setor modal / tarik tidak mengubah profit; fungsinya mengoreksi perubahan saldo.
 - Konsumsi pribadi (tap "Sendiri") = biaya: mengurangi untung jualan.
+- Bahan terbuang (basi/tumpah) = biaya juga, tapi dicatat per bahan (`bahan_terbuang`), bukan lewat tap "Sendiri".
 
 ## Stack
 
@@ -50,7 +51,8 @@ src/app/actions.ts     semua server action (tulis). Setiap action memanggil requ
 src/app/(app)/         halaman setelah login: beranda, catat (belanja/kopi/kas + edit), tutup-buku,
                        laporan (+ /[id] detail), lainnya (+ /menu, /bahan, /uang-barang, /pengeluaran), setelan
 src/app/login, setup   tanpa login
-src/db/schema.ts       10 tabel: settings, menu, bahan, resep, bahan_aktif, harga, tap_event, belanja, kas, tutup_buku
+src/db/schema.ts       11 tabel: settings, menu, bahan, resep, bahan_aktif, harga, tap_event, belanja, kas, tutup_buku,
+                       bahan_terbuang
 scripts/seed-dummy.ts  generator dummy.db (pakai calc.ts yang sama)
 ```
 

@@ -75,6 +75,16 @@ export const belanja = sqliteTable("belanja", {
   catatan: text("catatan"),
 });
 
+// Bahan terbuang (basi, tumpah): biaya yang mengurangi untung jualan, dinilai harga bahan pada `waktu`.
+// Juga mengurangi sisa kemasan yang sedang dipakai.
+export const bahanTerbuang = sqliteTable("bahan_terbuang", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  waktu: integer("waktu").notNull(),
+  bahanId: integer("bahan_id").notNull(),
+  jumlah: real("jumlah").notNull(), // dalam satuan bahan (gr/pcs)
+  catatan: text("catatan"),
+});
+
 export const kas = sqliteTable("kas", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   waktu: integer("waktu").notNull(),
@@ -103,3 +113,4 @@ export type TutupBuku = typeof tutupBuku.$inferSelect;
 export type Harga = typeof harga.$inferSelect;
 export type Menu = typeof menu.$inferSelect;
 export type Bahan = typeof bahan.$inferSelect;
+export type BahanTerbuang = typeof bahanTerbuang.$inferSelect;

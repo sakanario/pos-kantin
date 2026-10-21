@@ -5,12 +5,21 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { bahan, bahanAktif, belanja, harga, kas, menu, resep, tapEvent, tutupBuku } from "@/db/schema";
+import { bahan, bahanAktif, bahanTerbuang, belanja, harga, kas, menu, resep, tapEvent, tutupBuku } from "@/db/schema";
 import { cekPin, endSession, hashPin, isValidPin, requireAuth, startSession } from "@/lib/auth";
 import { daftarTanggal, hargaPada, hariBukaBawaan, hitungPeriode, pemakaianBahan, resepPada, type HasilPeriode } from "@/lib/calc";
-import { awalData, getDataPeriode, getHppCtx, getSemuaHarga, getTutupTerakhir, perkiraanCup, stokDari } from "@/lib/data";
+import {
+  awalData,
+  getDataPeriode,
+  getHppCtx,
+  getSemuaHarga,
+  getSisaKemasanPada,
+  getTutupTerakhir,
+  perkiraanCup,
+  stokDari,
+} from "@/lib/data";
 import { hitungUlangSejak } from "@/lib/hitung-ulang";
-import { awalHariWib, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
+import { awalHariWib, desimal, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
 import { getSetting, isSetupDone, setSetting } from "@/lib/settings";
 import { COOKIE_GAYA, COOKIE_TEMA, isGaya, isTema, type Gaya, type Tema } from "@/lib/tema";
 
@@ -150,9 +159,10 @@ async function infoGantiKemasan(bahanId: number, waktu: number): Promise<string>
 /**
  * Jadikan belanja `belanjaId` kemasan aktif mulai `mulai`. Pilihan kemasan lain di waktu itu atau
  * sesudahnya diganti, supaya kemasan ini benar-benar yang dipakai sejak `mulai` sampai diganti lagi.
+ * `buangSisa`: sisa kemasan lama (menurut resep) dicatat terbuang tepat sebelum `mulai`.
  * Mengembalikan info "habis setelah N cup".
  */
-async function aktifkan(bahanId: number, belanjaId: number, mulai: number): Promise<string> {
+async function aktifkan(bahanId: number, belanjaId: number, mulai: number, buangSisa = false): Promise<string> {
   await db.delete(bahanAktif).where(and(eq(bahanAktif.bahanId, bahanId), gte(bahanAktif.mulai, mulai)));
   // Kemasan ini memang sudah dipakai sebelum `mulai`: tidak perlu dicatat lagi
   const sebelum = await db
@@ -161,9 +171,20 @@ async function aktifkan(bahanId: number, belanjaId: number, mulai: number): Prom
     .where(and(eq(bahanAktif.bahanId, bahanId), lt(bahanAktif.mulai, mulai)))
     .orderBy(asc(bahanAktif.mulai), asc(bahanAktif.id));
   if (sebelum.at(-1)?.belanjaId === belanjaId) return "";
-  const info = await infoGantiKemasan(bahanId, mulai);
+  let info = await infoGantiKemasan(bahanId, mulai);
+  if (buangSisa) info += await buangSisaKemasan(bahanId, mulai - 1, "Sisa kemasan lama dibuang saat ganti kemasan");
   await db.insert(bahanAktif).values({ bahanId, belanjaId, mulai });
   return info;
+}
+
+/** Catat seluruh sisa kemasan yang dipakai pada `waktu` sebagai terbuang. Mengembalikan info untuk pesan. */
+async function buangSisaKemasan(bahanId: number, waktu: number, catatan: string | null): Promise<string> {
+  const k = await getSisaKemasanPada(bahanId, waktu);
+  const b = await db.query.bahan.findFirst({ where: eq(bahan.id, bahanId) });
+  if (!k || !b || k.sisa <= 0) return "";
+  const jumlah = Math.round(k.sisa * 10) / 10;
+  await db.insert(bahanTerbuang).values({ waktu, bahanId, jumlah, catatan });
+  return ` Sisa ±${desimal(jumlah)} ${b.satuan} dicatat terbuang.`;
 }
 
 /** Pembelian pertama suatu bahan langsung aktif, berlaku sejak awal (menggantikan harga awal). */
@@ -242,7 +263,9 @@ export async function tambahBelanjaAction(_: FormState, fd: FormData): Promise<F
       await aktifkan(r.values.bahanId, row.id, 0);
       paling = 0;
     } else if (str(fd, "pakai_sekarang")) {
-      info = await aktifkan(r.values.bahanId, row.id, r.values.waktu);
+      const buang = !!str(fd, "buang_sisa");
+      info = await aktifkan(r.values.bahanId, row.id, r.values.waktu, buang);
+      if (buang) paling = r.values.waktu - 1;
     }
   }
   info += await setelahUbah(paling);
@@ -315,9 +338,40 @@ export async function pakaiKemasanAction(id: number, _: FormState, fd: FormData)
   if (!row?.bahanId) return { error: "Catatan tidak ditemukan." };
   const w = await waktuDariTanggal(str(fd, "tanggal"), str(fd, "posisi"));
   if ("error" in w) return { error: w.error };
-  const info = await aktifkan(row.bahanId, id, w.waktu);
-  const info2 = await setelahUbah(w.waktu);
+  const buang = !!str(fd, "buang_sisa");
+  const info = await aktifkan(row.bahanId, id, w.waktu, buang);
+  const info2 = await setelahUbah(buang ? w.waktu - 1 : w.waktu);
   return { ok: `Sekarang memakai ${row.nama}.${info}${info2}` };
+}
+
+// ─── Bahan terbuang ──────────────────────────────────────────────
+
+/** Catat bahan terbuang (basi, tumpah): jumlah tertentu, atau semua sisa kemasan yang sedang dipakai. */
+export async function catatTerbuangAction(bahanId: number, _: FormState, fd: FormData): Promise<FormState> {
+  await requireAuth();
+  const b = await db.query.bahan.findFirst({ where: eq(bahan.id, bahanId) });
+  if (!b) return { error: "Bahan tidak ditemukan." };
+  const w = await waktuDariTanggal(str(fd, "tanggal"), str(fd, "posisi"));
+  if ("error" in w) return { error: w.error };
+  const catatan = str(fd, "catatan") || null;
+  if (str(fd, "semua")) {
+    const info = await buangSisaKemasan(bahanId, w.waktu, catatan);
+    if (!info) return { error: `Menurut resep, kemasan ${b.nama} yang dipakai sudah habis.` };
+    return { ok: `${b.nama}:${info}${await setelahUbah(w.waktu)}` };
+  }
+  const jumlah = parseDesimal(fd.get("jumlah"));
+  if (!Number.isFinite(jumlah) || jumlah <= 0) return { error: `Jumlah (${b.satuan}) harus lebih dari 0.` };
+  await db.insert(bahanTerbuang).values({ waktu: w.waktu, bahanId, jumlah, catatan });
+  return { ok: `${b.nama} ${desimal(jumlah)} ${b.satuan} dicatat terbuang.${await setelahUbah(w.waktu)}` };
+}
+
+export async function hapusTerbuangAction(id: number) {
+  await requireAuth();
+  const row = await db.query.bahanTerbuang.findFirst({ where: eq(bahanTerbuang.id, id) });
+  if (!row) return { error: "Catatan tidak ditemukan." };
+  await db.delete(bahanTerbuang).where(eq(bahanTerbuang.id, id));
+  await setelahUbah(row.waktu);
+  return {};
 }
 
 /** Dari pengingat di Beranda: ganti ke kemasan baru mulai sekarang. */

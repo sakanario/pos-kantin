@@ -164,6 +164,15 @@ bahan, isi/kemasan, jumlah, dan "Kemasan ini yang dipakai" (berlaku sejak awal).
 resepnya memakai bahan itu selama kemasan lama aktif; perkiraan = isi total ÷ takaran rata-rata. Tidak ditampilkan bila
 kemasan lama adalah harga awal.
 
+**Bahan terbuang** (basi, tumpah; tabel `bahan_terbuang`: waktu, bahan, jumlah dalam satuan bahan, catatan):
+- Detail bahan → kartu **🗑️ Catat terbuang**: "Sebagian" (isi gr/pcs) atau "Semua sisa (±N)" = sisa kemasan aktif
+  menurut resep; tanggal + catatan. Di bawahnya "Terbuang terakhir" (5) dengan tombol Hapus.
+- Saat ganti kemasan (Pakai ini di detail bahan, atau "Langsung dipakai sekarang" di form belanja) dan kemasan lama
+  masih bersisa menurut resep: pilihan **Habis terpakai / Dibuang (basi/tumpah)**. Dibuang → sisa dicatat terbuang
+  pada `mulai − 1` (dinilai harga kemasan lama).
+- Terbuang mengurangi sisa kemasan (perkiraan "±N cup lagi" & Uang & Barang) dan untung jualan (§5.3b); bukan
+  konsumsi sendiri. Pengingat kemasan di Beranda tidak menanyakan ini (dipicu saat sisa menurut resep sudah 0).
+
 **Setelan**: Hitung ulang semua laporan (rumus terbaru; juga setelah data diubah langsung di DB; laporan dengan
 snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 
@@ -250,6 +259,9 @@ untung_jualan = Σ untung semua menu
 ```
 - **Konsumsi pribadi = biaya**: yang dikonsumsi sendiri mengurangi untung (bahannya habis, uang tidak kembali).
   Contoh: jual 3 kopi (10.000, HPP 7.000) → +9.000; minum 1 → −7.000; untung 2.000.
+- **Bahan terbuang = biaya**: `untung_jualan −= Σ jumlah × harga bahan pada waktu dicatat` (per bahan di
+  `hasil.terbuang`, total `hasil.nilaiTerbuang`; snapshot lama tidak punya kolom ini = 0). Tampil sebagai baris
+  "🗑️ Bahan terbuang" di laporan periode dan rekap bulanan, terpisah dari "Dimakan / diminum sendiri".
 - `Blain` (biasanya alat) tidak masuk untung jualan, tetapi masuk uang bersih & balik modal.
 - Takaran resep diisi worst case, jadi untung sebenarnya bisa lebih besar. Jangka panjang ≈ uang bersih bila HPP akurat.
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { tambahBelanjaAction, ubahBelanjaAction } from "@/app/actions";
 import { FormMessage, RupiahInput, SubmitButton } from "@/components/form";
+import { SisaLamaPilih } from "@/components/sisa-lama";
 import { angka, desimal, parseDesimal, parseRupiah, perSatuan, rupiah } from "@/lib/format";
 import { HapusDanKembali, TanggalField, useResetOnOk, type InfoTutup } from "./forms";
 
@@ -15,6 +16,8 @@ export type BahanPilihan = {
   adaPembelian: boolean;
   terakhir: { nama: string; isiKemasan: number | null } | null;
   dipakaiDi: { id: number; nama: string; takaran: number; hpp: number }[];
+  /** Sisa kemasan yang sedang dipakai (menurut resep), untuk pilihan "habis / dibuang" saat langsung dipakai. */
+  sisaSatuan: number | null;
 };
 export type BarangPilihan = { id: number; nama: string; isiKemasan: number | null; namaTerakhir: string | null };
 
@@ -285,13 +288,16 @@ export function BelanjaForm({
 
       {kategori === "bahan" && b && !edit && (
         b.adaPembelian ? (
-          <label className="flex items-start gap-2 text-sm">
-            <input type="checkbox" name="pakai_sekarang" value="1" checked={pakai} onChange={(e) => setPakai(e.target.checked)} className="mt-1" />
-            <span>
-              Langsung dipakai sekarang
-              <span className="block text-xs text-muted">Kosongkan kalau stok lama masih ada. Nanti ganti lewat Lainnya → Bahan.</span>
-            </span>
-          </label>
+          <>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" name="pakai_sekarang" value="1" checked={pakai} onChange={(e) => setPakai(e.target.checked)} className="mt-1" />
+              <span>
+                Langsung dipakai sekarang
+                <span className="block text-xs text-muted">Kosongkan kalau stok lama masih ada. Nanti ganti lewat Lainnya → Bahan.</span>
+              </span>
+            </label>
+            {pakai && <SisaLamaPilih nama={b.nama} sisa={b.sisaSatuan} satuan={b.satuan} />}
+          </>
         ) : (
           <p className="text-xs text-muted">Pembelian pertama {b.nama}: langsung jadi harga yang dipakai.</p>
         )

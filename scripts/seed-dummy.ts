@@ -294,6 +294,7 @@ for (let i = 1; i < tutupRows.length; i++) {
       })),
       kas: dalam(kasRows).map((k) => ({ jenis: k.jenis, nominal: k.nominal })),
       taps: dalam(tapRows).map((t) => ({ menuId: t.menuId, jenis: t.jenis, delta: t.delta, waktu: t.waktu })),
+      terbuang: [],
       harga,
       menu,
       hpp,

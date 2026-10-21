@@ -8,7 +8,7 @@ export type HargaRow = { menuId: number; nilai: number; berlakuMulai: number };
 
 /** Bahan baku, resep, dan pembelian aktif: cukup untuk menghitung HPP racikan pada waktu t. */
 export type HppCtx = {
-  bahan: { id: number; hargaAwal: number }[];
+  bahan: { id: number; hargaAwal: number; nama?: string; satuan?: string }[];
   resep: { menuId: number; berlakuMulai: number; isi: { bahanId: number; takaran: number }[] }[];
   aktif: { bahanId: number; belanjaId: number | null; mulai: number }[];
   belanja: { id: number; total: number; isiKemasan: number | null; jumlahKemasan: number | null }[];
@@ -32,6 +32,9 @@ export type PeriodeAkhir = {
 
 export type TapData = { menuId: number; jenis: "terjual" | "sendiri"; delta: number; waktu: number };
 
+/** Bahan terbuang (basi, tumpah), dalam satuan bahan. */
+export type TerbuangData = { bahanId: number; jumlah: number; waktu: number };
+
 export type PeriodeData = {
   belanja: {
     kategori: "bahan" | "barang" | "lain";
@@ -42,6 +45,7 @@ export type PeriodeData = {
   }[];
   kas: { jenis: "setor" | "tarik"; nominal: number }[];
   taps: TapData[];
+  terbuang: TerbuangData[];
   harga: HargaRow[];
   menu: MenuDef[];
   hpp: HppCtx;
@@ -97,6 +101,9 @@ export type HasilPeriode = {
   /** Untung jualan (perkiraan per cup, pakai HPP). Belanja "lain" tidak masuk. */
   untungJualan: number;
   nilaiPribadi: number;
+  /** Bahan terbuang per bahan; ikut mengurangi untung jualan. Tidak ada di snapshot lama. */
+  terbuang?: { bahanId: number; nama: string; satuan: string; jumlah: number; nilai: number }[];
+  nilaiTerbuang?: number;
 
   // Pembanding
   omzetSeharusnya: number;
@@ -254,6 +261,9 @@ export function hitungPeriode(awal: PeriodeAwal, akhir: PeriodeAkhir, data: Peri
   // Pembanding
   const omzetSeharusnya = sum(menu.map((m) => m.omzetSeharusnya));
 
+  const terbuang = rekapTerbuang(data.hpp, data.terbuang);
+  const nilaiTerbuang = sum(terbuang.map((x) => x.nilai));
+
   return {
     menu,
     stok,
@@ -271,12 +281,33 @@ export function hitungPeriode(awal: PeriodeAwal, akhir: PeriodeAkhir, data: Peri
     belanjaLain: belanjaKategori("lain"),
     omzetNyata,
     uangBersih,
-    untungJualan: sum(menu.map((m) => m.untung)),
+    untungJualan: sum(menu.map((m) => m.untung)) - nilaiTerbuang,
     nilaiPribadi: sum(menu.map((m) => m.nilaiSendiri)),
+    terbuang,
+    nilaiTerbuang,
     omzetSeharusnya,
     selisih: omzetNyata - omzetSeharusnya,
     peringatan,
   };
+}
+
+/** Bahan terbuang dijumlah per bahan, dinilai harga bahan pada waktu dicatat (seperti HPP per waktu tap). */
+export function rekapTerbuang(ctx: HppCtx, terbuang: TerbuangData[]) {
+  const per = new Map<number, { bahanId: number; nama: string; satuan: string; jumlah: number; nilai: number }>();
+  for (const t of terbuang) {
+    const b = ctx.bahan.find((x) => x.id === t.bahanId);
+    const x = per.get(t.bahanId) ?? {
+      bahanId: t.bahanId,
+      nama: b?.nama ?? "Bahan",
+      satuan: b?.satuan ?? "",
+      jumlah: 0,
+      nilai: 0,
+    };
+    x.jumlah += t.jumlah;
+    x.nilai += t.jumlah * hargaBahanPada(ctx, t.bahanId, t.waktu);
+    per.set(t.bahanId, x);
+  }
+  return [...per.values()].map((x) => ({ ...x, nilai: Math.round(x.nilai) }));
 }
 
 /**
@@ -351,10 +382,17 @@ export type BelanjaBahan = {
 
 /**
  * Perkiraan nilai bahan yang masih ada pada waktu `t` (spec §4.8): sisa kemasan yang sedang dipakai
- * (isi − pemakaian menurut resep sejak dibuka) + kemasan yang belum dibuka, dinilai dengan harga belinya.
+ * (isi − pemakaian menurut resep − terbuang, sejak dibuka) + kemasan yang belum dibuka, dinilai dengan harga belinya.
  * Kemasan lama dianggap habis begitu kemasan baru dipakai. `dipakaiResep` = ada di resep menu aktif.
  */
-export function nilaiBahanPada(ctx: HppCtx, belanja: BelanjaBahan[], taps: TapData[], menuAktif: number[], t: number) {
+export function nilaiBahanPada(
+  ctx: HppCtx,
+  belanja: BelanjaBahan[],
+  taps: TapData[],
+  terbuang: TerbuangData[],
+  menuAktif: number[],
+  t: number,
+) {
   const pernahDipakai = new Set(ctx.aktif.filter((a) => a.mulai <= t).map((a) => a.belanjaId));
   return ctx.bahan.map((b) => {
     const dibeli = belanja.filter((x) => x.bahanId === b.id && x.waktu <= t);
@@ -364,7 +402,9 @@ export function nilaiBahanPada(ctx: HppCtx, belanja: BelanjaBahan[], taps: TapDa
     if (aktifRow && beli) {
       const dari = Math.max(aktifRow.mulai, beli.waktu);
       const isi = (beli.isiKemasan ?? 0) * (beli.jumlahKemasan ?? 0);
-      const pakai = pemakaianBahan(ctx, taps.filter((x) => x.waktu > dari && x.waktu <= t), b.id).satuan;
+      const dalam = <T extends { waktu: number }>(xs: T[]) => xs.filter((x) => x.waktu > dari && x.waktu <= t);
+      const pakai =
+        pemakaianBahan(ctx, dalam(taps), b.id).satuan + sum(dalam(terbuang.filter((x) => x.bahanId === b.id)).map((x) => x.jumlah));
       const sisa = Math.min(isi, Math.max(0, isi - pakai));
       aktif = { nama: beli.nama, isi, sisa, nilai: isi > 0 ? Math.round((sisa / isi) * beli.total) : 0 };
     }

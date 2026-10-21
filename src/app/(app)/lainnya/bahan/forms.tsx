@@ -2,7 +2,9 @@
 
 import { useActionState, useState } from "react";
 import {
+  catatTerbuangAction,
   hapusBahanAction,
+  hapusTerbuangAction,
   pakaiKemasanAction,
   tambahBahanAction,
   tandaiBelanjaAction,
@@ -10,7 +12,8 @@ import {
 } from "@/app/actions";
 import { FormMessage, SubmitButton } from "@/components/form";
 import { KonfirmasiButton } from "@/components/konfirmasi";
-import { TanggalField, type InfoTutup } from "@/app/(app)/catat/forms";
+import { SisaLamaPilih } from "@/components/sisa-lama";
+import { TanggalField, useResetOnOk, type InfoTutup } from "@/app/(app)/catat/forms";
 import { desimal } from "@/lib/format";
 
 function SatuanPilih({ awal }: { awal: "gr" | "pcs" }) {
@@ -132,11 +135,14 @@ export function PakaiIniForm({
   aktif,
   hariIni,
   info,
+  sisaLama,
 }: {
   belanjaId: number;
   aktif: boolean;
   hariIni: string;
   info: InfoTutup;
+  /** Sisa kemasan yang sedang dipakai (menurut resep), untuk pilihan "habis / dibuang". */
+  sisaLama: { nama: string; sisa: number | null; satuan: string };
 }) {
   const [buka, setBuka] = useState(false);
   const [state, action] = useActionState(pakaiKemasanAction.bind(null, belanjaId), undefined);
@@ -152,6 +158,7 @@ export function PakaiIniForm({
     <form action={action} className="w-full space-y-2 rounded-xl border border-line p-3">
       <p className="text-sm">Mulai dipakai kapan?</p>
       <TanggalField hariIni={hariIni} info={info} awal={hariIni} />
+      <SisaLamaPilih {...sisaLama} />
       <FormMessage state={state} />
       <div className="grid grid-cols-2 gap-2">
         <button type="button" className="btn-ghost py-1.5 text-sm" onClick={() => setBuka(false)}>
@@ -160,5 +167,90 @@ export function PakaiIniForm({
         <SubmitButton className="btn-primary py-1.5 text-sm">Pakai</SubmitButton>
       </div>
     </form>
+  );
+}
+
+/**
+ * Catat bahan terbuang (basi, tumpah): sejumlah gr/pcs, atau semua sisa kemasan yang sedang dipakai.
+ * Nilainya mengurangi untung jualan dan sisa kemasan.
+ */
+export function TerbuangForm({
+  bahanId,
+  nama,
+  satuan,
+  sisa,
+  hariIni,
+  info,
+}: {
+  bahanId: number;
+  nama: string;
+  satuan: string;
+  sisa: number | null;
+  hariIni: string;
+  info: InfoTutup;
+}) {
+  const [state, action] = useActionState(catatTerbuangAction.bind(null, bahanId), undefined);
+  const ref = useResetOnOk(state, true);
+  const [semua, setSemua] = useState(false);
+  const adaSisa = sisa !== null && sisa > 0;
+  const pilihan = [
+    [false, "Sebagian"],
+    [true, adaSisa ? `Semua sisa (±${desimal(Math.round(sisa))} ${satuan})` : "Semua sisa"],
+  ] as const;
+  return (
+    <form
+      ref={ref}
+      action={action}
+      onReset={() => setSemua(false)}
+      className="card space-y-3"
+    >
+      <div>
+        <h2 className="font-bold">🗑️ Catat terbuang</h2>
+        <p className="text-xs text-muted">
+          {nama} basi atau tumpah. Mengurangi untung jualan, tapi tidak dihitung sebagai diminum sendiri.
+        </p>
+      </div>
+      {/* Hidden input, bukan radio: form.reset() setelah simpan tidak mengubah nilainya */}
+      <input type="hidden" name="semua" value={semua ? "1" : ""} />
+      {adaSisa && (
+        <div className="grid grid-cols-2 gap-2 text-sm">
+          {pilihan.map(([v, l]) => (
+            <button
+              key={String(v)}
+              type="button"
+              aria-pressed={semua === v}
+              onClick={() => setSemua(v)}
+              className={`rounded-xl border px-2 py-2 text-center ${semua === v ? "border-accent bg-accent-soft font-medium" : "border-line"}`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
+      {!semua && (
+        <div>
+          <label className="label">Jumlah ({satuan})</label>
+          <input name="jumlah" inputMode="decimal" required className="input num" placeholder={satuan === "gr" ? "misal: 250" : "misal: 3"} />
+        </div>
+      )}
+      <TanggalField hariIni={hariIni} info={info} awal={hariIni} />
+      <input name="catatan" placeholder="Catatan (opsional), misal: basi" className="input" />
+      <FormMessage state={state} />
+      <SubmitButton>Catat terbuang</SubmitButton>
+    </form>
+  );
+}
+
+export function HapusTerbuangButton({ id }: { id: number }) {
+  return (
+    <KonfirmasiButton
+      pesan="Hapus catatan terbuang ini? Untung jualan dihitung ulang."
+      ya="Ya, hapus"
+      className="btn-ghost px-2 py-1 text-xs"
+      ariaLabel="Hapus catatan terbuang"
+      onConfirm={async () => (await hapusTerbuangAction(id))?.error}
+    >
+      Hapus
+    </KonfirmasiButton>
   );
 }

@@ -36,6 +36,13 @@
       "when": 1791898229125,
       "tag": "0004_hari_buka",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792554190153,
+      "tag": "0005_bahan_terbuang",
+      "breakpoints": true
     }
   ]
 }

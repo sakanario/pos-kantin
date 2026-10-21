@@ -1,5 +1,5 @@
 import type { HasilMenu, HasilPeriode } from "@/lib/calc";
-import { angka, plus, rupiah } from "@/lib/format";
+import { angka, desimal, plus, rupiah } from "@/lib/format";
 
 function Row({
   label,
@@ -79,6 +79,14 @@ export function HasilView({ h }: { h: HasilPeriode }) {
         {h.menu.map((m) => (
           <UntungMenu key={m.id} m={m} />
         ))}
+        {(h.terbuang ?? []).length > 0 && (
+          <>
+            <Row label="🗑️ Bahan terbuang" value={rupiah(-(h.nilaiTerbuang ?? 0))} strong />
+            {h.terbuang!.map((t) => (
+              <Row key={t.bahanId} label={`${t.nama} ${desimal(t.jumlah)} ${t.satuan}`} value={rupiah(-t.nilai)} sub />
+            ))}
+          </>
+        )}
         <div className="my-1 border-t border-line" />
         <Row label="Untung jualan" value={plus(h.untungJualan)} strong tone={h.untungJualan < 0 ? "bad" : undefined} />
         {h.belanjaLain > 0 && (

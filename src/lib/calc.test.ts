@@ -45,6 +45,7 @@ const data = (d: Partial<PeriodeData>): PeriodeData => ({
   belanja: [],
   kas: [],
   taps: [],
+  terbuang: [],
   harga,
   menu,
   hpp: hppTetap(6428),
@@ -302,7 +303,7 @@ test("nilai bahan: sisa kemasan dipakai + kemasan belum dibuka; kemasan lama dia
   ];
   // susu A: 3 cup lalu diganti (sisanya dianggap habis); susu B dibuka di 500, 4 cup sesudahnya
   const t = [...taps(10, "terjual", 3, 100), ...taps(10, "sendiri", 4, 700), ...taps(10, "terjual", 9, 2000)];
-  const [susu, cup] = nilaiBahanPada(ctx, beli, t, [10], 1000);
+  const [susu, cup] = nilaiBahanPada(ctx, beli, t, [], [10], 1000);
   assert.deepEqual(susu.aktif, { nama: "susu B", isi: 1000, sisa: 600, nilai: 13200 });
   assert.deepEqual(susu.cadangan, [{ nama: "susu C", total: 22000 }]);
   assert.equal(susu.nilai, 35200);
@@ -311,9 +312,39 @@ test("nilai bahan: sisa kemasan dipakai + kemasan belum dibuka; kemasan lama dia
   assert.equal(cup.nilai, 50000);
   assert.equal(cup.dipakaiResep, false);
   // sebelum susu C dibeli & sebelum susu B dibuka: B masih cadangan, A sisa 700
-  const [awal] = nilaiBahanPada(ctx, beli, t, [10], 450);
+  const [awal] = nilaiBahanPada(ctx, beli, t, [], [10], 450);
   assert.equal(awal.aktif?.nilai, 14000);
   assert.deepEqual(awal.cadangan, [{ nama: "susu B", total: 22000 }]);
+});
+
+test("bahan terbuang: mengurangi untung jualan (harga bahan saat dicatat) & sisa kemasan", () => {
+  const ctx: HppCtx = {
+    bahan: [{ id: 1, hargaAwal: 20, nama: "Susu", satuan: "gr" }],
+    resep: [{ menuId: KOPI, berlakuMulai: 0, isi: [{ bahanId: 1, takaran: 100 }] }],
+    aktif: [{ bahanId: 1, belanjaId: 1, mulai: 0 }],
+    belanja: [{ id: 1, total: 20000, isiKemasan: 1000, jumlahKemasan: 1 }],
+  };
+  const h = hitungPeriode(
+    { saldoKantong: 0, cashBelumDisetor: 0, stok: {} },
+    { waktu: 1000, saldoKantong: 30000, cashBelumDisetor: 0, sisa: {} },
+    data({
+      hpp: ctx,
+      taps: taps(KOPI, "terjual", 3),
+      terbuang: [
+        { bahanId: 1, jumlah: 250, waktu: 500 },
+        { bahanId: 1, jumlah: 50, waktu: 600 },
+      ],
+    }),
+  );
+  assert.deepEqual(h.terbuang, [{ bahanId: 1, nama: "Susu", satuan: "gr", jumlah: 300, nilai: 6000 }]);
+  assert.equal(h.nilaiTerbuang, 6000);
+  assert.equal(h.untungJualan, 3 * (10000 - 2000) - 6000);
+  assert.equal(h.nilaiPribadi, 0); // terbuang bukan konsumsi sendiri
+
+  const beli = [{ id: 1, bahanId: 1, waktu: 0, nama: "susu", total: 20000, isiKemasan: 1000, jumlahKemasan: 1 }];
+  const [susu] = nilaiBahanPada(ctx, beli, taps(KOPI, "terjual", 3), [{ bahanId: 1, jumlah: 300, waktu: 500 }], [KOPI], 1000);
+  assert.equal(susu.aktif?.sisa, 400);
+  assert.equal(susu.nilai, 8000);
 });
 
 // ─── Balik modal ───────────────────────────────────────────────────
