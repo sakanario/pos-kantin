@@ -176,8 +176,9 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 Uang yang sekarang berbentuk saldo dan barang, **per tutup buku terakhir** (atau setup awal):
 ```
 Saldo Kantong Kantin                 Rp125.000
-Barang (modal)                        Rp21.618    ← Σ sisa × modal rata-rata (tutup_buku.stok_json)
-Total                                Rp146.618
+Barang jualan (modal)                 Rp21.618    ← Σ sisa × modal rata-rata (tutup_buku.stok_json)
+Bahan (perkiraan)                   ±Rp95.000    ← nilaiBahanPada(), lihat di bawah
+Total                                Rp241.618
 
 🍫 Beng Beng     10 pcs × Rp2.162     Rp21.618
    Potensi omzet  10 × Rp3.000        Rp30.000    ← sisa × harga jual sekarang
@@ -186,7 +187,14 @@ Total                                Rp146.618
 - Satu blok per barang jadi (aktif, atau nonaktif yang masih punya stok).
 - Bila ada pembelian / tap sendiri sesudah tutup buku: "Beng Beng sejak tutup buku: +34 pcs dibeli,
   1 dimakan sendiri (yang terjual baru ketahuan saat tutup buku)". Stok 0 → "Tidak ada stok barang".
-- Bahan kopi, alat, dan barang yang tidak dijual tidak dihitung. Angka ini tidak masuk untung jualan maupun uang bersih.
+- **Bahan · perkiraan**, per bahan pada waktu tutup buku: sisa kemasan aktif (isi − Σ tap × takaran resep sejak
+  kemasan dibuka, dinilai proporsional harga belinya) + kemasan yang belum pernah dipakai (harga beli penuh).
+  Kemasan lama dianggap habis begitu kemasan baru dipakai. Bahan yang tidak ada di resep menu aktif (mis. cup 16oz)
+  tetap masuk total, ditaruh di bawah "⚠️ Tidak ada di resep mana pun". Belanja bahan sesudah tutup buku hanya
+  disebut ("masuk di tutup buku berikutnya"), karena saldo tutup buku belum dikurangi belanja itu.
+- Alat dan belanja lain tidak dihitung. Angka ini tidak masuk untung jualan maupun uang bersih.
+- Kartu ringkas **Uang & barang** di atas Laporan (ketuk → halaman ini): total, rincian tunai/barang/bahan, dan
+  "dibanding modal masuk" = posisi balik modal (§4.1) + barang + bahan.
 - Di bawahnya kartu Saldo Kantong Kantin (dengan setor/tarik sejak tutup buku).
 
 ## 5. Perhitungan (per periode)

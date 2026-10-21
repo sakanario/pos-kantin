@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { getGrafikHarian, getRiwayatTutupBuku, hariIniWib } from "@/lib/data";
+import { AsetCard } from "@/components/aset-card";
 import { LaporanBasi } from "@/components/laporan-basi";
 import { bulanWib, isoTanggalWib, namaBulan, plus, rupiah, tanggal } from "@/lib/format";
 import { GrafikBatang, NavGrafik, rentangGrafik } from "./grafik";
@@ -56,6 +57,7 @@ export default async function LaporanPage(props: PageProps<"/laporan">) {
       <PageHeader title="Laporan" />
       <div className="space-y-4 px-4">
         {adaBasi && <LaporanBasi />}
+        <AsetCard />
         <section className="card space-y-4">
           <NavGrafik r={r} />
           <GrafikBatang judul="Racikan terjual" seri={grafik.racikan} satuan="cup" mode={r.mode} />

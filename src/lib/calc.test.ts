@@ -9,6 +9,7 @@ import {
   hitungBep,
   hitungPeriode,
   hppPada,
+  nilaiBahanPada,
   pemakaianBahan,
   untungDariTap,
   type HargaRow,
@@ -277,6 +278,42 @@ test("pemakaian bahan: hanya menu yang resepnya memakai bahan itu", () => {
   const t = [...taps(10, "terjual", 3, 100), ...taps(11, "sendiri", 2, 100), ...taps(BB, "sendiri", 4, 100)];
   assert.deepEqual(pemakaianBahan(rujukan, t, SKM), { cup: 3, satuan: 60 });
   assert.deepEqual(pemakaianBahan(rujukan, t, SUSU), { cup: 5, satuan: 500 });
+});
+
+test("nilai bahan: sisa kemasan dipakai + kemasan belum dibuka; kemasan lama dianggap habis", () => {
+  const ctx: HppCtx = {
+    bahan: [{ id: 1, hargaAwal: 0 }, { id: 2, hargaAwal: 0 }],
+    resep: [
+      { menuId: 10, berlakuMulai: 0, isi: [{ bahanId: 1, takaran: 100 }] },
+      { menuId: 11, berlakuMulai: 0, isi: [{ bahanId: 2, takaran: 1 }] },
+    ],
+    aktif: [
+      { bahanId: 1, belanjaId: 1, mulai: 0 },
+      { bahanId: 1, belanjaId: 2, mulai: 500 },
+      { bahanId: 2, belanjaId: 4, mulai: 0 },
+    ],
+    belanja: [],
+  };
+  const beli = [
+    { id: 1, bahanId: 1, waktu: 10, nama: "susu A", total: 20000, isiKemasan: 1000, jumlahKemasan: 1 },
+    { id: 2, bahanId: 1, waktu: 400, nama: "susu B", total: 22000, isiKemasan: 1000, jumlahKemasan: 1 },
+    { id: 3, bahanId: 1, waktu: 600, nama: "susu C", total: 22000, isiKemasan: 1000, jumlahKemasan: 1 },
+    { id: 4, bahanId: 2, waktu: 10, nama: "cup", total: 50000, isiKemasan: 100, jumlahKemasan: 1 },
+  ];
+  // susu A: 3 cup lalu diganti (sisanya dianggap habis); susu B dibuka di 500, 4 cup sesudahnya
+  const t = [...taps(10, "terjual", 3, 100), ...taps(10, "sendiri", 4, 700), ...taps(10, "terjual", 9, 2000)];
+  const [susu, cup] = nilaiBahanPada(ctx, beli, t, [10], 1000);
+  assert.deepEqual(susu.aktif, { nama: "susu B", isi: 1000, sisa: 600, nilai: 13200 });
+  assert.deepEqual(susu.cadangan, [{ nama: "susu C", total: 22000 }]);
+  assert.equal(susu.nilai, 35200);
+  assert.equal(susu.dipakaiResep, true);
+  // cup tidak ada di resep menu aktif: dihitung penuh, ditandai
+  assert.equal(cup.nilai, 50000);
+  assert.equal(cup.dipakaiResep, false);
+  // sebelum susu C dibeli & sebelum susu B dibuka: B masih cadangan, A sisa 700
+  const [awal] = nilaiBahanPada(ctx, beli, t, [10], 450);
+  assert.equal(awal.aktif?.nilai, 14000);
+  assert.deepEqual(awal.cadangan, [{ nama: "susu B", total: 22000 }]);
 });
 
 // ─── Balik modal ───────────────────────────────────────────────────

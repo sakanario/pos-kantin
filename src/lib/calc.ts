@@ -339,6 +339,46 @@ export function pemakaianBahan(ctx: HppCtx, taps: TapData[], bahanId: number) {
   return { cup, satuan };
 }
 
+export type BelanjaBahan = {
+  id: number;
+  bahanId: number | null;
+  waktu: number;
+  nama: string;
+  total: number;
+  isiKemasan: number | null;
+  jumlahKemasan: number | null;
+};
+
+/**
+ * Perkiraan nilai bahan yang masih ada pada waktu `t` (spec §4.8): sisa kemasan yang sedang dipakai
+ * (isi − pemakaian menurut resep sejak dibuka) + kemasan yang belum dibuka, dinilai dengan harga belinya.
+ * Kemasan lama dianggap habis begitu kemasan baru dipakai. `dipakaiResep` = ada di resep menu aktif.
+ */
+export function nilaiBahanPada(ctx: HppCtx, belanja: BelanjaBahan[], taps: TapData[], menuAktif: number[], t: number) {
+  const pernahDipakai = new Set(ctx.aktif.filter((a) => a.mulai <= t).map((a) => a.belanjaId));
+  return ctx.bahan.map((b) => {
+    const dibeli = belanja.filter((x) => x.bahanId === b.id && x.waktu <= t);
+    const aktifRow = terakhirPada(ctx.aktif.filter((a) => a.bahanId === b.id), (a) => a.mulai, t);
+    const beli = aktifRow?.belanjaId != null ? dibeli.find((x) => x.id === aktifRow.belanjaId) : undefined;
+    let aktif: { nama: string; isi: number; sisa: number; nilai: number } | null = null;
+    if (aktifRow && beli) {
+      const dari = Math.max(aktifRow.mulai, beli.waktu);
+      const isi = (beli.isiKemasan ?? 0) * (beli.jumlahKemasan ?? 0);
+      const pakai = pemakaianBahan(ctx, taps.filter((x) => x.waktu > dari && x.waktu <= t), b.id).satuan;
+      const sisa = Math.min(isi, Math.max(0, isi - pakai));
+      aktif = { nama: beli.nama, isi, sisa, nilai: isi > 0 ? Math.round((sisa / isi) * beli.total) : 0 };
+    }
+    const cadangan = dibeli.filter((x) => !pernahDipakai.has(x.id)).map((x) => ({ nama: x.nama, total: x.total }));
+    return {
+      bahanId: b.id,
+      aktif,
+      cadangan,
+      nilai: (aktif?.nilai ?? 0) + sum(cadangan.map((x) => x.total)),
+      dipakaiResep: menuAktif.some((id) => resepPada(ctx, id, t).some((r) => r.bahanId === b.id && r.takaran > 0)),
+    };
+  });
+}
+
 // ─── Grafik harian barang jadi (CR-006) ──────────────────────────
 
 const WIB_MS = 7 * 60 * 60 * 1000;

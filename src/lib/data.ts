@@ -11,6 +11,7 @@ import {
   hargaSatuanBelanja,
   hitungBep,
   hppPada,
+  nilaiBahanPada,
   pemakaianBahan,
   resepPada,
   untungDariTap,
@@ -368,34 +369,58 @@ export async function getBep() {
 }
 
 /**
- * Uang & barang per tutup buku terakhir (atau setup awal): saldo + modal barang jadi yang masih ada.
+ * Uang & barang per tutup buku terakhir (atau setup awal): saldo + modal barang jadi yang masih ada
+ * + perkiraan nilai bahan (sisa kemasan dipakai + kemasan belum dibuka) pada waktu tutup buku itu.
  */
 export async function getUangBarang() {
   const terakhir = await getTutupTerakhir();
   if (!terakhir) return null;
   const stok = stokDari(terakhir);
-  const [semuaMenu, beli, taps, hargaJual] = await Promise.all([
+  const t = terakhir.waktu;
+  const [semuaMenu, beli, taps, hargaJual, ctx, tapsSampai] = await Promise.all([
     getMenu(),
-    db.select().from(belanja).where(and(eq(belanja.kategori, "barang"), gt(belanja.waktu, terakhir.waktu))),
-    db.select().from(tapEvent).where(and(eq(tapEvent.jenis, "sendiri"), gt(tapEvent.waktu, terakhir.waktu))),
+    db.select().from(belanja).where(and(eq(belanja.kategori, "barang"), gt(belanja.waktu, t))),
+    db.select().from(tapEvent).where(and(eq(tapEvent.jenis, "sendiri"), gt(tapEvent.waktu, t))),
     getSemuaHarga(),
+    getHppCtx(),
+    db.select().from(tapEvent).where(lte(tapEvent.waktu, t)),
   ]);
   const now = Date.now();
+  const menuAktif = semuaMenu.filter((m) => m.jenis === "racikan" && m.aktif).map((m) => m.id);
+  const bahanSejak = ctx.belanja.filter((b) => b.waktu > t);
+  const barang = semuaMenu
+    .filter((m) => m.jenis === "barang_jadi" && (m.aktif || (stok[m.id]?.sisa ?? 0) > 0))
+    .map((m) => {
+      const sisa = stok[m.id]?.sisa ?? 0;
+      const modalPerPcs = stok[m.id]?.avgModal ?? 0;
+      return {
+        nama: m.nama,
+        sisa,
+        modalPerPcs,
+        modal: Math.round(sisa * modalPerPcs),
+        hargaJual: hargaPada(hargaJual, m.id, now),
+        // Pergerakan sesudah tutup buku; yang terjual baru diketahui saat tutup buku berikutnya
+        dibeliSejak: beli.filter((b) => b.menuId === m.id).reduce((a, b) => a + (b.qtyPcs ?? 0), 0),
+        sendiriSejak: jumlah(taps.filter((x) => x.menuId === m.id)),
+      };
+    });
+  const bahanAda = nilaiBahanPada(ctx, ctx.belanja, tapsSampai, menuAktif, t)
+    .map((x) => {
+      const b = ctx.bahan.find((y) => y.id === x.bahanId)!;
+      return { ...x, nama: b.nama, satuan: b.satuan };
+    })
+    .filter((x) => x.nilai > 0)
+    .sort((a, b) => b.nilai - a.nilai);
   return {
     saldo: terakhir.saldoKantong,
     waktu: terakhir.waktu,
     dariSetup: terakhir.hasilJson === null,
-    barang: semuaMenu
-      .filter((m) => m.jenis === "barang_jadi" && (m.aktif || (stok[m.id]?.sisa ?? 0) > 0))
-      .map((m) => ({
-        nama: m.nama,
-        sisa: stok[m.id]?.sisa ?? 0,
-        modalPerPcs: stok[m.id]?.avgModal ?? 0,
-        hargaJual: hargaPada(hargaJual, m.id, now),
-        // Pergerakan sesudah tutup buku; yang terjual baru diketahui saat tutup buku berikutnya
-        dibeliSejak: beli.filter((b) => b.menuId === m.id).reduce((a, b) => a + (b.qtyPcs ?? 0), 0),
-        sendiriSejak: jumlah(taps.filter((t) => t.menuId === m.id)),
-      })),
+    barang,
+    totalBarang: barang.reduce((a, b) => a + b.modal, 0),
+    bahan: bahanAda,
+    totalBahan: bahanAda.reduce((a, b) => a + b.nilai, 0),
+    // Belanja bahan sesudah tutup buku: belum masuk (saldo tutup buku belum dikurangi belanja ini)
+    bahanSejak: { jumlah: bahanSejak.length, total: bahanSejak.reduce((a, b) => a + b.total, 0) },
   };
 }
 
