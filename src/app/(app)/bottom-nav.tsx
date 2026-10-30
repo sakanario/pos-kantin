@@ -34,7 +34,7 @@ const ikon = {
 };
 
 const items: { href: string; label: string; icon: keyof typeof ikon; juga?: string[] }[] = [
-  { href: "/", label: "Beranda", icon: "beranda" },
+  { href: "/admin", label: "Beranda", icon: "beranda" },
   { href: "/catat", label: "Catat", icon: "catat" },
   { href: "/tutup-buku", label: "Tutup Buku", icon: "tutup" },
   { href: "/laporan", label: "Laporan", icon: "laporan" },
@@ -48,7 +48,7 @@ export function BottomNav() {
       <ul className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-full border-[length:var(--stroke)] border-outline bg-accent p-1.5 shadow-pop-lg">
         {items.map((it) => {
           const cocok = (h: string) => path === h || path.startsWith(`${h}/`);
-          const active = it.href === "/" ? path === "/" : [it.href, ...(it.juga ?? [])].some(cocok);
+          const active = [it.href, ...(it.juga ?? [])].some(cocok);
           return (
             <li key={it.href}>
               <Link

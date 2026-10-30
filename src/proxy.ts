@@ -6,12 +6,25 @@ function publik(pathname: string) {
   return pathname === "/pesan" || pathname.startsWith("/pesan/");
 }
 
+// `/` = katalog pembeli (rewrite ke /pesan; URL tetap `/`). Beranda pemilik di /admin, masuk lewat /login.
 // Cek optimistis: hanya memastikan cookie sesi ada. Validasi sebenarnya di requireAuth().
 export function proxy(request: NextRequest) {
-  if (publik(request.nextUrl.pathname)) {
+  const { pathname } = request.nextUrl;
+  if (pathname === "/pesan") {
+    // Link & QR lama
+    const url = request.nextUrl.clone();
+    url.pathname = "/";
+    return NextResponse.redirect(url);
+  }
+  if (pathname === "/" || publik(pathname)) {
     // Penanda untuk root layout: halaman pembeli memakai tema pembeli sendiri (lib/tema-server.ts)
     const headers = new Headers(request.headers);
     headers.set(HEADER_AREA, "pembeli");
+    if (pathname === "/") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/pesan";
+      return NextResponse.rewrite(url, { request: { headers } });
+    }
     return NextResponse.next({ request: { headers } });
   }
   if (!request.cookies.has("sesi")) {

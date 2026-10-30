@@ -52,7 +52,7 @@ src/lib/calc.ts        rumus 1 periode + HPP (fungsi murni) — satu-satunya sum
 src/lib/data.ts        query baca (periode berjalan, riwayat, ringkasan harian, dll.)
 src/lib/hitung-ulang.ts hitung ulang hasil semua tutup buku sejak waktu tertentu
 src/app/actions.ts     semua server action (tulis). Setiap action memanggil requireAuth()
-src/app/(app)/         halaman setelah login: beranda, catat (belanja/kopi/kas + edit), tutup-buku,
+src/app/(app)/         halaman setelah login: admin (beranda; `/` = katalog pembeli lewat rewrite di proxy.ts), catat (belanja/kopi/kas + edit), tutup-buku,
                        laporan (+ /[id] detail), lainnya (+ /menu, /bahan, /uang-barang, /pengeluaran, /riwayat-pesanan, /qr-katalog),
                        pesanan (pesanan online), setelan
 src/app/login, setup   tanpa login

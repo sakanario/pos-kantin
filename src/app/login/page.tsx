@@ -8,7 +8,7 @@ import { LoginForm } from "./login-form";
 export default async function LoginPage() {
   await connection();
   if (!(await isSetupDone())) redirect("/setup");
-  if (await isLoggedIn()) redirect("/");
+  if (await isLoggedIn()) redirect("/admin");
   return (
     <main className="mx-auto flex min-h-dvh max-w-sm flex-col justify-center px-6">
       <div className="mb-8 text-center">

@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Kantin: Beng Beng & Kopi",
     short_name: "Kantin",
     description: "Pencatatan profit Beng Beng & Kopi Susu Gula Aren",
-    start_url: "/",
+    start_url: "/admin",
     display: "standalone",
     // krem latar logo Kopi Ksatria (layar pembuka saat aplikasi dibuka dari HP)
     background_color: "#faf6ec",

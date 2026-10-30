@@ -48,7 +48,7 @@ export async function loginAction(_: FormState, fd: FormData): Promise<FormState
   const hasil = await cekPin(str(fd, "pin"));
   if (!hasil.ok) return { error: hasil.pesan };
   await startSession();
-  redirect("/");
+  redirect("/admin");
 }
 
 export async function logoutAction() {

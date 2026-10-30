@@ -4,10 +4,10 @@ import { alamatAsal } from "@/lib/alamat";
 import { NAMA_KANTIN } from "@/lib/katalog";
 import { CetakButton } from "./cetak-button";
 
-/** Lembar siap cetak berisi QR ke /pesan untuk ditempel di meja kantin. */
+/** Lembar siap cetak berisi QR ke katalog (`/`) untuk ditempel di meja kantin. */
 export default async function QrKatalogPage() {
   const { asal, lokal } = await alamatAsal();
-  const url = `${asal}/pesan`;
+  const url = `${asal}/`;
   const svg = await QRCode.toString(url, { type: "svg", margin: 1, errorCorrectionLevel: "M", color: { dark: "#2b100c", light: "#ffffff" } });
 
   return (
