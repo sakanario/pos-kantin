@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { rupiah } from "@/lib/format";
-import { getPesananAktif, getPesananSelesai, LABEL_STATUS, type PesananLengkap } from "@/lib/pesanan";
+import { getPesananAktif, getPesananSelesai, LABEL_STATUS, pesananUji, type PesananLengkap } from "@/lib/pesanan";
 import { hariIniWib } from "@/lib/data";
 import { Pantau } from "@/app/pesan/hidup";
 import { TombolBatal } from "./tombol-batal";
@@ -62,6 +62,7 @@ function KartuPesanan({ p }: { p: PesananLengkap }) {
         <div className="min-w-0 flex-1">
           <p className="font-bold">
             {p.nama} <span className="badge ml-1 bg-card-raised">{p.cara === "delivery" ? "🛵 Delivery" : "🙋 Pickup"}</span>
+            {pesananUji(p) && <span className="badge ml-1 bg-accent-soft">UJI</span>}
           </p>
           <p className="text-xs text-muted">
             {LABEL_STATUS[p.status]} · {rupiah(p.total)}
@@ -77,7 +78,7 @@ function KartuPesanan({ p }: { p: PesananLengkap }) {
       </ul>
       {p.catatan && <p className="rounded-xl bg-accent-soft px-3 py-2 text-sm">📝 {p.catatan}</p>}
       <TombolMaju id={p.id} status={p.status} cara={p.cara} />
-      <TombolBatal id={p.id} nomor={p.nomor} total={p.total} tolak={p.status === "lunas"} />
+      <TombolBatal id={p.id} nomor={p.nomor} total={p.total} tolak={p.status === "lunas"} uji={pesananUji(p)} />
     </div>
   );
 }

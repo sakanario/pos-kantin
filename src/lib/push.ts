@@ -74,7 +74,7 @@ export async function kabariPesananLunas(pesananId: number) {
   const item = await db.select().from(pesananItem).where(eq(pesananItem.pesananId, pesananId));
   const isi = item.map((i) => `${i.qty}× ${i.nama}${i.lessSugar ? " (less sugar)" : ""}`).join(", ");
   await kirimKeSemua({
-    title: `Pesanan #${p.nomor} · ${p.nama}`,
+    title: `${p.gatewayJson?.uji ? "[UJI] " : ""}Pesanan #${p.nomor} · ${p.nama}`,
     body: `${isi}${p.cara === "delivery" ? " · Delivery" : ""}`,
     url: "/pesanan",
     tag: `pesanan-${p.id}`,

@@ -118,6 +118,8 @@ export type StatusPesanan = (typeof STATUS_PESANAN)[number];
 
 /** Tagihan Midtrans per cara bayar (order_id berbeda: `<kode>-qris`, `<kode>-gopay`). */
 export type DataGateway = {
+  // Dibuat dengan kunci sandbox: pesanan uji (tanpa tap, tanpa potongan, tidak masuk laporan)
+  uji?: true;
   qris?: { orderId: string; qr: string; qrUrl: string | null };
   gopay?: { orderId: string; deeplink: string };
 };
