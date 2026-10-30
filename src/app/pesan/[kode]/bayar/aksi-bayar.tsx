@@ -2,12 +2,27 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { batalkanPesananAction, simulasiBayarAction } from "../../actions";
+import { batalkanPesananAction, bayarGopayAction, simulasiBayarAction } from "../../actions";
 
-export function AksiBayar({ kode, png, palsu }: { kode: string; png: string; palsu: boolean }) {
+const SIMULATOR_QRIS = "https://simulator.sandbox.midtrans.com/v2/qris/index";
+
+export function AksiBayar({
+  kode,
+  png,
+  palsu,
+  gopay,
+  sandbox,
+}: {
+  kode: string;
+  png: string;
+  palsu: boolean;
+  gopay: boolean;
+  sandbox: { qrUrl: string | null } | null;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  const [tersalin, setTersalin] = useState(false);
 
   return (
     <>
@@ -20,8 +35,50 @@ export function AksiBayar({ kode, png, palsu }: { kode: string; png: string; pal
           Simpan gambar QR
         </a>
         <p className="text-[13px] text-muted">Lalu buka GoPay / OVO / DANA / m-banking → Scan → pilih gambar dari galeri.</p>
-        {/* Tahap 3b: tombol "Bayar pakai GoPay" (deeplink Midtrans) */}
+        {gopay && (
+          <>
+            <button
+              type="button"
+              disabled={pending}
+              className="btn-ghost font-display"
+              onClick={() =>
+                startTransition(async () => {
+                  setError(null);
+                  const r = await bayarGopayAction(kode);
+                  if ("error" in r) return setError(r.error);
+                  window.location.href = r.url;
+                })
+              }
+            >
+              {pending ? "Membuka GoPay…" : "Bayar pakai GoPay"}
+            </button>
+            {error && <p className="animate-muncul text-sm font-semibold text-bad">{error}</p>}
+          </>
+        )}
       </div>
+
+      {sandbox && (
+        <div className="card animate-masuk space-y-2 border-2 border-dashed border-warn" style={{ animationDelay: "190ms" }}>
+          <p className="text-sm font-semibold">🧪 Sandbox Midtrans (uang bohongan)</p>
+          <p className="text-[13px] text-muted">
+            QRIS: buka simulator, tempel URL gambar QR, lalu bayar. GoPay: tombol di atas membuka simulator GoPay.
+          </p>
+          <div className="flex gap-2">
+            <a href={SIMULATOR_QRIS} target="_blank" rel="noreferrer" className="btn-sun flex-1">
+              Buka simulator QRIS
+            </a>
+            {sandbox.qrUrl && (
+              <button
+                type="button"
+                className="btn-ghost flex-1"
+                onClick={() => navigator.clipboard.writeText(sandbox.qrUrl!).then(() => setTersalin(true))}
+              >
+                {tersalin ? "Tersalin ✓" : "Salin URL QR"}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       {palsu && (
         <div className="card animate-masuk space-y-2 border-2 border-dashed border-warn" style={{ animationDelay: "190ms" }}>

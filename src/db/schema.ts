@@ -116,6 +116,12 @@ export const tutupBuku = sqliteTable("tutup_buku", {
 export const STATUS_PESANAN = ["menunggu_bayar", "lunas", "diterima", "dibuat", "siap", "diantar", "kedaluwarsa", "batal"] as const;
 export type StatusPesanan = (typeof STATUS_PESANAN)[number];
 
+/** Tagihan Midtrans per cara bayar (order_id berbeda: `<kode>-qris`, `<kode>-gopay`). */
+export type DataGateway = {
+  qris?: { orderId: string; qr: string; qrUrl: string | null };
+  gopay?: { orderId: string; deeplink: string };
+};
+
 export const pesanan = sqliteTable("pesanan", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   kode: text("kode").notNull().unique(), // acak, untuk link /pesan/[kode]
@@ -129,6 +135,7 @@ export const pesanan = sqliteTable("pesanan", {
   metode: text("metode"), // mis. "qris", "gopay" (dari gateway)
   gateway: text("gateway").notNull(), // "palsu" | "midtrans"
   gatewayRef: text("gateway_ref"),
+  gatewayJson: text("gateway_json", { mode: "json" }).$type<DataGateway>(), // tagihan di gateway (QR, deeplink)
   perangkat: text("perangkat").notNull(), // id acak dari cookie pembeli
   dibuat: integer("dibuat").notNull(),
   kedaluwarsaPada: integer("kedaluwarsa_pada").notNull(),

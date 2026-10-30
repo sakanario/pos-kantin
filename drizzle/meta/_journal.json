@@ -71,6 +71,13 @@
       "when": 1792162425396,
       "tag": "0009_foto_atur",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1793321773506,
+      "tag": "0010_gateway_json",
+      "breakpoints": true
     }
   ]
 }

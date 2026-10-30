@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import QRCode from "qrcode";
 import { rupiah } from "@/lib/format";
 import { NAMA_KANTIN } from "@/lib/katalog";
+import { midtransProduksi } from "@/lib/midtrans";
 import { getPesananKode, LABEL_STATUS, sisaBayar } from "@/lib/pesanan";
 import { ikonJam } from "@/components/ikon";
 import { Pantau, SisaWaktu } from "../../hidup";
@@ -36,13 +37,27 @@ export default async function BayarPage(props: PageProps<"/pesan/[kode]/bayar">)
     );
   }
 
-  // Gateway palsu: isi QR hanya penanda (tidak bisa dibayar). Tahap 3b: QRIS dari Midtrans.
-  const isiQr = `PALSU-${p.kode}`;
+  // Gateway palsu: isi QR hanya penanda (tidak bisa dibayar). Midtrans: QRIS dinamis yang dibuat saat pesan.
+  const palsu = p.gateway === "palsu";
+  const isiQr = palsu ? `PALSU-${p.kode}` : p.gatewayJson?.qris?.qr;
+  if (!isiQr) {
+    return (
+      <main className="mx-auto flex min-h-dvh max-w-md animate-masuk flex-col gap-4 px-4 pt-10 text-center">
+        <h1 className="text-2xl font-bold">QR belum tersedia</h1>
+        <p className="text-muted">Pembayaran sedang gangguan. Silakan pesan lagi sebentar, atau pesan langsung di kantin.</p>
+        <Link href="/pesan/keranjang" className="btn-primary self-center">
+          Pesan lagi
+        </Link>
+      </main>
+    );
+  }
   const [svg, png] = await Promise.all([
     QRCode.toString(isiQr, { type: "svg", margin: 1, errorCorrectionLevel: "M" }),
     QRCode.toDataURL(isiQr, { margin: 2, width: 600 }),
   ]);
-  const palsu = p.gateway === "palsu";
+  const midtrans = p.gateway === "midtrans";
+  // Sandbox: QR hanya bisa "dibayar" lewat simulator Midtrans, yang meminta URL gambar QR
+  const sandbox = midtrans && !midtransProduksi ? { qrUrl: p.gatewayJson?.qris?.qrUrl ?? null } : null;
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-[18px] px-4 pb-10 pt-7">
@@ -60,7 +75,7 @@ export default async function BayarPage(props: PageProps<"/pesan/[kode]/bayar">)
         </p>
       </div>
 
-      <AksiBayar kode={p.kode} png={png} palsu={palsu} />
+      <AksiBayar kode={p.kode} png={png} palsu={palsu} gopay={midtrans} sandbox={sandbox} />
 
       <p className="animate-masuk text-center text-sm text-muted" style={{ animationDelay: "240ms" }}>Halaman ini pindah sendiri setelah pembayaran masuk.</p>
     </main>

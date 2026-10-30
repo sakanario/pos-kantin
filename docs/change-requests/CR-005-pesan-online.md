@@ -1,6 +1,6 @@
 # CR-005: Katalog menu, pesan online, payment gateway, antrean & notifikasi
 
-Status: **Tahap 1, 2, 3a, 4 selesai**, 3b sebagian (batal/refund & riwayat selesai; **Midtrans belum**) (2026-10-16)
+Status: **Tahap 1, 2, 3a, 3b, 4 selesai** (Midtrans sandbox: 2026-10-30; production menunggu review bisnis)
 Tanggal: 2026-10-13
 
 ## Latar belakang
@@ -120,6 +120,12 @@ uang_hilang    = selisih + potongan                                  // yang dit
   (`src/app/pesan/keranjang.ts`). Kedaluwarsa ditandai saat dibaca (`tandaiKedaluwarsa`). Keranjang berubah →
   pesanan belum bayar sebelumnya dibatalkan, jadi praktis hanya 1 per HP. Pesanan kedaluwarsa/batal yang ternyata
   dibayar tetap dicatat lunas (`dibayar IS NULL` = syarat idempoten). Tidak ada tombol GoPay di gateway palsu.
+
+**Implementasi Midtrans (2026-10-30)**: Core API, `lib/midtrans.ts`. Tagihan QRIS (`<kode>-qris`) dibuat saat pesanan
+dibuat; tagihan GoPay (`<kode>-gopay`) dibuat saat tombol "Bayar pakai GoPay" ditekan. Disimpan di `pesanan.gateway_json`
+(migrasi 0010). Webhook `/api/gateway`: cek tanda tangan → baca ulang status dari Midtrans → `tandaiLunas` → batalkan
+tagihan pasangannya. Potongan dihitung sendiri: QRIS 0,7%, GoPay 2% (`TARIF_POTONGAN`). Env: `GATEWAY=midtrans`,
+`MIDTRANS_SERVER_KEY`, `MIDTRANS_CLIENT_KEY`, `MIDTRANS_PRODUCTION=true` untuk production.
 
 **Gateway: Midtrans** (pendaftaran sedang review bisnis, per 2026-10-16). Tahap 3 dikerjakan di sandbox
 Midtrans dulu; production menunggu review disetujui. Yang dicek sebelum lanjut: potongan QRIS, webhook
@@ -276,7 +282,7 @@ Tahap 2
 Tahap 3
 - [ ] Order uji di sandbox: bayar → lunas → tap terjual muncul di Beranda → status bisa dimajukan sampai Diambil.
   (3a: sudah lewat gateway palsu; sandbox Midtrans di 3b)
-- [ ] Webhook ganda tidak mencatat dua kali; tanda tangan palsu ditolak.
+- [x] Webhook ganda tidak mencatat dua kali; tanda tangan palsu ditolak. (diuji 2026-10-30 di sandbox)
 - [x] Order kedaluwarsa setelah 15 menit; perangkat ke-4 order belum bayar ditolak.
 - [x] Batal (refund dari Kantong / pribadi) menghapus tap dan (pribadi) membuat setor modal.
   Hanya untuk pesanan yang lunas sesudah tutup buku terakhir (tap yang dihapus & uang refund di periode yang sama).

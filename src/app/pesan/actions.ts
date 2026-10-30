@@ -4,11 +4,12 @@
 // lib/pesanan.ts; harga selalu dari database.
 
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { COOKIE_TEMA_PEMBELI, type TemaPembeli } from "@/lib/tema";
 import { aturKodePesananku, getKodePesananku, getPerangkat, ingatKode, pastikanPerangkat } from "@/lib/pembeli";
 import {
   batalkanBelumBayar,
+  bayarGopay,
   buatPesanan,
   gatewayAktif,
   getPesananKode,
@@ -56,6 +57,14 @@ export async function bersihkanRiwayatAction() {
   const tetap = new Set(semua.filter((p) => sedangBerjalan(p.status)).map((p) => p.kode));
   await aturKodePesananku(kode.filter((k) => tetap.has(k)));
   revalidatePath("/pesan", "layout");
+}
+
+/** Tombol "Bayar pakai GoPay" (Midtrans): deeplink ke aplikasi GoPay, kembali ke struk setelah bayar. */
+export async function bayarGopayAction(kode: string): Promise<{ url: string } | { error: string }> {
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host");
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  return bayarGopay(String(kode), `${proto}://${host}/pesan/${encodeURIComponent(String(kode))}`);
 }
 
 /** Gateway palsu saja: berlaku seperti notifikasi "lunas" dari gateway. */

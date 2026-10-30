@@ -2,10 +2,20 @@ import "server-only";
 import { randomBytes } from "node:crypto";
 import { and, asc, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { kas, menu, pesanan, pesananItem, tapEvent, type Pesanan, type PesananItem, type StatusPesanan } from "@/db/schema";
+import { kas, menu, pesanan, pesananItem, tapEvent, type DataGateway, type Pesanan, type PesananItem, type StatusPesanan } from "@/db/schema";
 import { getKatalog, getTutupTerakhir } from "./data";
 import { awalHariWib, isoTanggalWib, tanggalPendek } from "./format";
 import { hitungUlangSejak } from "./hitung-ulang";
+import {
+  batalkanTagihan,
+  kodeDariOrderId,
+  lunasMidtrans,
+  statusMidtrans,
+  tagihGopay,
+  tagihQris,
+  TARIF_POTONGAN,
+  waktuMidtrans,
+} from "./midtrans";
 import { kabariPesananLunas } from "./push";
 
 // Pesanan online (CR-005 Tahap 3). Lunas ditentukan gateway (webhook / simulasi gateway palsu), bukan halaman
@@ -25,7 +35,7 @@ export type Gateway = "palsu" | "midtrans";
 export function gatewayAktif(): Gateway | null {
   const g = process.env.GATEWAY;
   if (g === "palsu") return process.env.VERCEL ? null : "palsu";
-  if (g === "midtrans") return null; // Tahap 3b
+  if (g === "midtrans") return process.env.MIDTRANS_SERVER_KEY ? "midtrans" : null;
   return null;
 }
 
@@ -279,6 +289,7 @@ export async function buatPesanan(raw: PesananInput, perangkat: string): Promise
   const sama = belum.find((p) => p.total === total && tandaKeranjang({ ...p, item: p.item }) === tanda);
   if (sama) return { kode: sama.kode };
   if (belum.length > 0) {
+    await Promise.all(belum.map((p) => batalkanTagihanPesanan(p.gatewayJson)));
     await db
       .update(pesanan)
       .set({ status: "batal", diperbarui: now })
@@ -310,15 +321,59 @@ export async function buatPesanan(raw: PesananInput, perangkat: string): Promise
     })
     .returning({ id: pesanan.id });
   await db.insert(pesananItem).values(baris.map((b) => ({ ...b, pesananId: row.id })));
+
+  if (gateway === "midtrans") {
+    try {
+      const qris = await tagihQris(`${kode}-qris`, total, MASA_BAYAR_MS);
+      await db.update(pesanan).set({ gatewayJson: { qris } }).where(eq(pesanan.id, row.id));
+    } catch (e) {
+      console.error(e);
+      await db.update(pesanan).set({ status: "batal", diperbarui: Date.now() }).where(eq(pesanan.id, row.id));
+      return { error: "Pembayaran sedang gangguan. Coba lagi sebentar, atau pesan langsung di kantin." };
+    }
+  }
   return { kode };
+}
+
+/** Batalkan semua tagihan gateway sebuah pesanan (kecuali `kecuali`). Tidak melempar error. */
+async function batalkanTagihanPesanan(g: DataGateway | null, kecuali?: string) {
+  const id = [g?.qris?.orderId, g?.gopay?.orderId].filter((x): x is string => !!x && x !== kecuali);
+  await Promise.all(id.map(batalkanTagihan));
+}
+
+/**
+ * Tombol "Bayar pakai GoPay": buat tagihan GoPay (sekali per pesanan) dan kembalikan deeplink-nya. Setelah bayar,
+ * aplikasi GoPay kembali ke `kembaliKe`.
+ */
+export async function bayarGopay(kode: string, kembaliKe: string): Promise<{ url: string } | { error: string }> {
+  const p = await getPesananKode(kode);
+  if (!p || p.gateway !== "midtrans") return { error: "Pesanan tidak ditemukan." };
+  if (p.status !== "menunggu_bayar") return { error: "Pesanan ini sudah tidak menunggu pembayaran." };
+  if (p.gatewayJson?.gopay) return { url: p.gatewayJson.gopay.deeplink };
+  try {
+    const gopay = await tagihGopay(`${kode}-gopay`, p.total, sisaBayar(p), kembaliKe);
+    await db
+      .update(pesanan)
+      .set({ gatewayJson: { ...p.gatewayJson, gopay } })
+      .where(eq(pesanan.id, p.id));
+    return { url: gopay.deeplink };
+  } catch (e) {
+    console.error(e);
+    // Tekan ganda: tagihan sudah dibuat oleh tekan pertama
+    const lagi = await getPesananKode(kode);
+    if (lagi?.gatewayJson?.gopay) return { url: lagi.gatewayJson.gopay.deeplink };
+    return { error: "GoPay sedang gangguan. Pakai QRIS di atas ya." };
+  }
 }
 
 /** Pembeli membatalkan pesanan yang belum dibayar (hanya dari perangkat yang membuatnya). */
 export async function batalkanBelumBayar(kode: string, perangkat: string) {
-  await db
+  const [row] = await db
     .update(pesanan)
     .set({ status: "batal", diperbarui: Date.now() })
-    .where(and(eq(pesanan.kode, kode), eq(pesanan.perangkat, perangkat), eq(pesanan.status, "menunggu_bayar")));
+    .where(and(eq(pesanan.kode, kode), eq(pesanan.perangkat, perangkat), eq(pesanan.status, "menunggu_bayar")))
+    .returning({ gatewayJson: pesanan.gatewayJson });
+  if (row) await batalkanTagihanPesanan(row.gatewayJson);
 }
 
 // ─── Lunas ───────────────────────────────────────────────────────
@@ -365,6 +420,32 @@ export async function tandaiLunas(a: { kode: string; dibayar: number; potongan: 
   if (terakhir && terakhir.hasilJson !== null && a.dibayar <= terakhir.waktu) await hitungUlangSejak(a.dibayar);
   await kabariPesananLunas(row.id); // web push ke HP pengguna (Tahap 4); tidak pernah melempar error
   return true;
+}
+
+/**
+ * Notifikasi Midtrans (webhook, tanda tangan sudah dicek): status dibaca ulang langsung dari Midtrans, bukan dari
+ * isi notifikasi. Lunas → `tandaiLunas` dengan potongan sesuai cara bayar, lalu tagihan cara bayar lain dibatalkan.
+ * Melempar error bila Midtrans tidak bisa dihubungi (webhook menjawab 500 supaya Midtrans mengulang).
+ */
+export async function prosesNotifikasiMidtrans(orderId: string): Promise<void> {
+  const kode = kodeDariOrderId(orderId);
+  if (!kode) return;
+  const st = await statusMidtrans(orderId);
+  if (!st || !lunasMidtrans(st)) return;
+  const p = await getPesananKode(kode);
+  if (!p || p.gateway !== "midtrans") return;
+  if (Number(st.gross_amount) !== p.total) {
+    console.error(`Midtrans ${orderId}: nominal ${st.gross_amount} ≠ total pesanan ${p.total}`);
+    return;
+  }
+  const metode = st.payment_type === "gopay" ? "gopay" : "qris";
+  const lunas = await tandaiLunas({
+    kode,
+    dibayar: waktuMidtrans(st.settlement_time) ?? Date.now(),
+    potongan: p.total * TARIF_POTONGAN[metode],
+    metode,
+  });
+  if (lunas) await batalkanTagihanPesanan(p.gatewayJson, orderId);
 }
 
 /**
