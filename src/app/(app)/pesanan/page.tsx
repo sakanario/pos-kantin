@@ -15,7 +15,7 @@ export default async function PesananPage() {
   return (
     <main>
       <Pantau ms={10000} />
-      <PageHeader title="Pesanan" back="/" sub="Diperbarui otomatis tiap 10 detik" />
+      <PageHeader title="Pesanan" back="/admin" sub="Diperbarui otomatis tiap 10 detik" />
       <div className="space-y-4 px-4">
         <section>
           <h2 className="mb-2 text-sm font-bold text-muted">Aktif ({aktif.length})</h2>

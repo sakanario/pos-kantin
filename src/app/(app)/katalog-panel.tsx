@@ -15,7 +15,7 @@ export function KatalogPanel({ buka, menu }: { buka: boolean; menu: MenuKatalog[
         <h2 className="font-bold">Katalog pembeli</h2>
         <span className="flex gap-3 text-sm font-bold text-accent">
           <Link href="/pesanan">Pesanan ›</Link>
-          <Link href="/pesan">Katalog ›</Link>
+          <Link href="/">Katalog ›</Link>
         </span>
       </div>
       <Sakelar

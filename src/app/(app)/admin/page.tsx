@@ -4,9 +4,9 @@ import { SaldoCard } from "@/components/saldo-card";
 import { getKatalog, getPengingatKemasan, getPeriodeBerjalan } from "@/lib/data";
 import { getJumlahPesananAktif } from "@/lib/pesanan";
 import { plus, rupiah, tanggalJam } from "@/lib/format";
-import { KatalogPanel } from "./katalog-panel";
-import { PengingatKemasan } from "./pengingat-kemasan";
-import { TapPanel } from "./tap-panel";
+import { KatalogPanel } from "../katalog-panel";
+import { PengingatKemasan } from "../pengingat-kemasan";
+import { TapPanel } from "../tap-panel";
 
 export default async function Beranda() {
   const [p, pengingat, katalog, pesananAktif] = await Promise.all([
