@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { rupiah } from "@/lib/format";
-import { LABEL_STATUS, type PesananLengkap } from "@/lib/pesanan";
+import { LABEL_STATUS, pesananUji, type PesananLengkap } from "@/lib/pesanan";
 
 export const ringkasItem = (p: PesananLengkap) =>
   p.item.map((i) => `${i.qty}× ${i.nama}${i.lessSugar ? " (less sugar)" : ""}`).join(", ");
@@ -17,6 +17,7 @@ export function BarisPesanan({ p, jam }: { p: PesananLengkap; jam?: string }) {
           <span className="block font-medium">
             {p.nama}
             {p.cara === "delivery" && <span className="ml-1.5 text-xs text-muted">🛵</span>}
+            {pesananUji(p) && <span className="badge ml-1.5 bg-accent-soft">UJI</span>}
           </span>
           <span className="block truncate text-xs text-muted">
             {jam && <span className="num">{jam} · </span>}

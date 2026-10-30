@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/page-header";
 import { bulanSekarang } from "@/lib/data";
 import { bulanWib, hariTanggal, isoTanggalWib, jam, rupiah, tanggalJam } from "@/lib/format";
-import { getPesananId, LABEL_STATUS } from "@/lib/pesanan";
+import { getPesananId, LABEL_STATUS, pesananUji } from "@/lib/pesanan";
 
 /** Detail satu pesanan online untuk pemilik: isi, uang (potongan gateway, refund), dan waktu-waktunya. */
 export default async function DetailPesanan(props: PageProps<"/lainnya/riwayat-pesanan/[id]">) {
@@ -28,7 +28,9 @@ export default async function DetailPesanan(props: PageProps<"/lainnya/riwayat-p
       <div className="space-y-4 px-4">
         <section className="card">
           <div className="mb-2 flex items-center justify-between gap-3">
-            <span className="font-bold">{p.nama}</span>
+            <span className="font-bold">
+              {p.nama} {pesananUji(p) && <span className="badge ml-1 bg-accent-soft">UJI</span>}
+            </span>
             <span className={`badge ${batal ? "bg-bad-soft text-bad" : "bg-card-raised"}`}>{LABEL_STATUS[p.status]}</span>
           </div>
           {baris("Cara ambil", p.cara === "delivery" ? "🛵 Delivery" : "🙋 Pickup")}

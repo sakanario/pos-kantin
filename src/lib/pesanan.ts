@@ -10,6 +10,7 @@ import {
   batalkanTagihan,
   kodeDariOrderId,
   lunasMidtrans,
+  midtransProduksi,
   statusMidtrans,
   tagihGopay,
   tagihQris,
@@ -45,6 +46,12 @@ export function potonganPalsu(total: number) {
 }
 
 export type PesananLengkap = Pesanan & { item: PesananItem[] };
+
+/**
+ * Pesanan uji = dibuat selama Midtrans masih sandbox (mis. dicoba pihak Midtrans). Tetap tampil & bisa diproses
+ * di /pesanan, tapi tidak dicatat: tanpa tap otomatis, potongan 0, refund tidak dicatat sebagai setor.
+ */
+export const pesananUji = (p: Pick<Pesanan, "gatewayJson">) => !!p.gatewayJson?.uji;
 
 const STATUS_AKTIF: StatusPesanan[] = ["lunas", "diterima", "dibuat"];
 const STATUS_SELESAI: StatusPesanan[] = ["siap", "diantar"];
@@ -220,9 +227,12 @@ export async function getPesananPertama(): Promise<number | null> {
   return row?.dibayar ?? null;
 }
 
-/** Sudah pernah ada pesanan lunas? (input saldo gateway di Tutup Buku tampil) */
+/** Sudah pernah ada pesanan lunas (bukan uji)? (input saldo gateway di Tutup Buku tampil) */
 export async function adaPesananLunas(): Promise<boolean> {
-  const row = await db.query.pesanan.findFirst({ where: isNotNull(pesanan.dibayar), columns: { id: true } });
+  const row = await db.query.pesanan.findFirst({
+    where: and(isNotNull(pesanan.dibayar), sql`json_extract(${pesanan.gatewayJson}, '$.uji') is null`),
+    columns: { id: true },
+  });
   return !!row;
 }
 
@@ -303,6 +313,7 @@ export async function buatPesanan(raw: PesananInput, perangkat: string): Promise
   if (n >= MAKS_BELUM_BAYAR) return { error: "Masih ada pesanan yang belum dibayar. Bayar atau batalkan dulu ya." };
 
   const kode = kodeAcak();
+  const uji = gateway === "midtrans" && !midtransProduksi;
   const [row] = await db
     .insert(pesanan)
     .values({
@@ -318,6 +329,7 @@ export async function buatPesanan(raw: PesananInput, perangkat: string): Promise
       dibuat: now,
       kedaluwarsaPada: now + MASA_BAYAR_MS,
       diperbarui: now,
+      gatewayJson: uji ? { uji } : null,
     })
     .returning({ id: pesanan.id });
   await db.insert(pesananItem).values(baris.map((b) => ({ ...b, pesananId: row.id })));
@@ -325,7 +337,7 @@ export async function buatPesanan(raw: PesananInput, perangkat: string): Promise
   if (gateway === "midtrans") {
     try {
       const qris = await tagihQris(`${kode}-qris`, total, MASA_BAYAR_MS);
-      await db.update(pesanan).set({ gatewayJson: { qris } }).where(eq(pesanan.id, row.id));
+      await db.update(pesanan).set({ gatewayJson: { ...(uji && { uji }), qris } }).where(eq(pesanan.id, row.id));
     } catch (e) {
       console.error(e);
       await db.update(pesanan).set({ status: "batal", diperbarui: Date.now() }).where(eq(pesanan.id, row.id));
@@ -388,22 +400,28 @@ export async function batalkanBelumBayar(kode: string, perangkat: string) {
  *   sisa stok saat tutup buku).
  * - Waktu bayar di periode yang sudah ditutup → hitung ulang.
  * - Kirim notifikasi ke HP pengguna.
+ * - Pesanan uji (sandbox): potongan 0 dan tanpa tap, jadi tidak memengaruhi laporan.
  */
 export async function tandaiLunas(a: { kode: string; dibayar: number; potongan: number; metode: string }): Promise<boolean> {
   const awalHari = awalHariWib(isoTanggalWib(a.dibayar));
+  const uji = sql`json_extract(${pesanan.gatewayJson}, '$.uji') is not null`;
   const [row] = await db
     .update(pesanan)
     .set({
       status: "lunas",
       dibayar: a.dibayar,
-      potongan: Math.max(0, Math.round(a.potongan)),
+      potongan: sql`case when ${uji} then 0 else ${Math.max(0, Math.round(a.potongan))} end`,
       metode: a.metode,
       diperbarui: Date.now(),
       nomor: sql`(select coalesce(max(p2.nomor), 0) + 1 from pesanan p2 where p2.dibayar >= ${awalHari} and p2.dibayar < ${awalHari + 86400000})`,
     })
     .where(and(eq(pesanan.kode, a.kode), isNull(pesanan.dibayar)))
-    .returning({ id: pesanan.id });
+    .returning({ id: pesanan.id, gatewayJson: pesanan.gatewayJson });
   if (!row) return false;
+  if (pesananUji(row)) {
+    await kabariPesananLunas(row.id);
+    return true;
+  }
 
   const item = await db
     .select({ menuId: pesananItem.menuId, qty: pesananItem.qty, jenis: menu.jenis })
@@ -468,10 +486,10 @@ export async function batalkanLunas(id: number, refundDari: "kantong" | "pribadi
   await db.batch([
     db
       .update(pesanan)
-      .set({ status: "batal", refundDari, diperbarui: now })
+      .set({ status: "batal", refundDari: pesananUji(p) ? null : refundDari, diperbarui: now })
       .where(and(eq(pesanan.id, id), eq(pesanan.status, p.status))),
     db.delete(tapEvent).where(eq(tapEvent.pesananId, id)),
-    ...(refundDari === "pribadi"
+    ...(refundDari === "pribadi" && !pesananUji(p)
       ? [
           db.insert(kas).values({
             waktu: now,
