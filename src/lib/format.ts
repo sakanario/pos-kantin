@@ -57,6 +57,11 @@ export function tanggalJam(ms: number): string {
   });
 }
 
+/** "11.07" (jam WIB). */
+export function jam(ms: number): string {
+  return new Date(ms).toLocaleTimeString("id-ID", { timeZone: TZ, hour: "2-digit", minute: "2-digit" });
+}
+
 /** "YYYY-MM-DD" untuk waktu `ms` di zona WIB. */
 export function isoTanggalWib(ms: number): string {
   return new Date(ms + WIB_OFFSET_MS).toISOString().slice(0, 10);

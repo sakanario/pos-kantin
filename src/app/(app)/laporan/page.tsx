@@ -35,7 +35,7 @@ export default async function LaporanPage(props: PageProps<"/laporan">) {
     b.uangBersih += h.uangBersih;
     b.omzet += h.omzetNyata;
     b.belanja += h.belanjaTotal;
-    b.selisih += h.selisih;
+    b.selisih += h.uangHilang ?? h.selisih; // tanpa potongan gateway (snapshot lama: selisih)
     for (const m of h.menu) {
       const x = b.menu.get(m.nama) ?? {
         terjual: 0,
@@ -147,14 +147,14 @@ export default async function LaporanPage(props: PageProps<"/laporan">) {
                       <div className="font-medium">
                         {r.dari ? tanggal(r.dari) : "?"} – {tanggal(r.waktu)}
                       </div>
-                      <div className={`text-xs ${r.hasil!.selisih < 0 ? "text-bad" : "text-muted"}`}>
+                      <div className={`text-xs ${(r.hasil!.uangHilang ?? r.hasil!.selisih) < 0 ? "text-bad" : "text-muted"}`}>
                         {r.basi
                           ? "dihitung dengan rumus lama"
                           : r.hasil!.menu
                               .filter((m) => m.terjual !== 0)
                               .map((m) => `${m.terjual} ${m.nama}`)
                               .join(" · ") || "belum ada yang terjual"}
-                        {r.hasil!.selisih !== 0 && ` · selisih ${rupiah(r.hasil!.selisih)}`}
+                        {(r.hasil!.uangHilang ?? r.hasil!.selisih) !== 0 && ` · selisih ${rupiah(r.hasil!.uangHilang ?? r.hasil!.selisih)}`}
                       </div>
                     </div>
                     {r.basi ? (

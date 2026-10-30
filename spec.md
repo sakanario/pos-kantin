@@ -22,6 +22,8 @@ Aturan kebiasaan:
 - Pembeli yang transfer diberi **nomor rekening Kantong Kantin**. Transfer yang nyasar ke rekening utama dipindahkan manual.
 - Belanja **sebaiknya dibayar dari Kantong Kantin**. Belanja yang dibayar dari rekening pribadi tetap boleh, dan dicatat dengan sumber "pribadi" (otomatis dianggap setor modal).
 - Konversi cash ke saldo kantong **tidak dicatat** di aplikasi. Itu hanya perpindahan bentuk omzet.
+- **Saldo payment gateway** (pesan online, CR-005) = kantong kedua: dibaca saat tutup buku, sudah bersih dari
+  potongan. Pencairan gateway → Kantong Kantin **tidak dicatat** (gateway turun, Kantong naik, totalnya tetap).
 - Cash **selalu** disetor (ditransfer) ke Kantong Kantin sebelum tutup buku, jadi tidak ada input "cash belum disetor" (kolom `cash_belum_disetor` selalu 0).
 
 ## 3. Menu & bahan (CR-003)
@@ -61,7 +63,7 @@ hpp_menu(t)    = Σ takaran(resep yang berlaku pada t) × harga_bahan(t)
 
 Navigasi bawah: ☕ Beranda · 📝 Catat · 🔒 Tutup Buku · 📊 Laporan · ☰ Lainnya.
 Tab **Lainnya** (`/lainnya`) berisi daftar: 🍽️ Menu (§4.6), 🧂 Bahan (§4.6), 💰 Uang & Barang (§4.8),
-🧾 Riwayat Pengeluaran (`/lainnya/pengeluaran`), ⚙️ Setelan (`/setelan`). Tab ini aktif di `/lainnya*` dan
+🧾 Riwayat Pengeluaran (`/lainnya/pengeluaran`), 📋 Riwayat Pesanan (§4.10), 🔳 QR katalog (§4.9), ⚙️ Setelan (`/setelan`). Tab ini aktif di `/lainnya*` dan
 `/setelan`; halaman di bawahnya punya tombol "‹ Kembali".
 
 ### 4.1 Beranda (tap counter)
@@ -73,6 +75,10 @@ Tab **Lainnya** (`/lainnya`) berisi daftar: 🍽️ Menu (§4.6), 🧂 Bahan (§
   - Setiap tap memunculkan notifikasi ±5 detik "+1 Creamy Latte · **Batalkan**" (Batalkan = tap kebalikannya).
   - Koreksi telat: tombol **Koreksi −1** di pojok → semua tombol berubah jadi −1 (merah) untuk **satu** tekan,
     lalu kembali normal. Tombol yang hitungan periodenya 0 tidak bisa dikurangi.
+- Kartu **Pesanan online perlu dibuat** (N) di atas, bila ada pesanan lunas yang belum selesai → `/pesanan`.
+- Kartu **Katalog pembeli** (hanya bila ada menu di katalog, §4.9): sakelar besar **Kantin buka / tutup**
+  (`settings.kantin_buka`) dan daftar menu katalog dengan tombol **Ada / Habis** per menu (semua jenis; tidak reset
+  otomatis).
 - Kartu "Periode berjalan": untung hari ini & periode ini, terjual per racikan, belanja, stok tersedia per barang jadi.
 - **Untung** (hari ini / periode ini) = Σ racikan terjual × (jual − HPP saat tap) − Σ racikan sendiri × HPP − barang
   jadi sendiri × modal rata-rata terakhir. Untung barang jadi terjual baru dihitung saat tutup buku.
@@ -84,7 +90,7 @@ Tab **Lainnya** (`/lainnya`) berisi daftar: 🍽️ Menu (§4.6), 🧂 Bahan (§
 - Kartu **Balik modal** (sesudah kartu saldo), uang nyata saja, sampai tutup buku terakhir:
   ```
   modal_masuk  = saldo_awal_setup + cash_awal_setup + Σ setor + Σ belanja dari uang pribadi
-  uang_kembali = saldo_kantong_terakhir + cash_terakhir + Σ tarik
+  uang_kembali = saldo_kantong_terakhir + saldo_gateway_terakhir + cash_terakhir + Σ tarik
   posisi       = uang_kembali − modal_masuk        // = Σ uang_bersih semua periode
   ```
   `posisi < 0` → "Sisa modal belum kembali" + progress `uang_kembali / modal_masuk`; `posisi ≥ 0` → "Sudah balik modal, untung bersih sejak mulai".
@@ -111,7 +117,9 @@ Tab **Penjualan** di Catat: input manual hari sebelumnya, pilih menu + terjual/s
 - Field: tanggal, jenis, nominal, catatan
 
 ### 4.4 Tutup Buku (wizard, idealnya seminggu sekali)
-1. Input **saldo Kantong Kantin** saat ini, dengan pengingat: *pastikan cash di kotak sudah ditransfer ke kantong sebelum melihat saldo*
+1. Input **saldo Kantong Kantin** saat ini, dengan pengingat: *pastikan cash di kotak sudah ditransfer ke kantong sebelum melihat saldo*.
+   Bila pesan online sudah dipakai (saldo gateway terakhir ≠ 0; Tahap 3: juga bila ada pesanan lunas), langkah ini
+   menjadi **"1. Saldo"** dengan input kedua **Saldo gateway** (disimpan di `saldo_gateway`; selain itu 0).
 2. Input **sisa stok** per barang jadi (aktif, atau nonaktif yang masih punya stok)
 3. **Hari apa saja kantin buka?** (CR-006, hanya bila ada barang jadi): daftar semua tanggal WIB dari tutup buku
    sebelumnya (periode pertama: waktu setup) sampai sekarang; pengguna menghapus centang hari libur. Minimal satu
@@ -139,7 +147,7 @@ Fokus ke laporan saja (kartu saldo & Riwayat Pengeluaran ada di Lainnya, CR-004)
 - Rekap bulanan (gabungan periode yang tutup bukunya jatuh di bulan tersebut), dengan dua bagian: **Terjual** (per menu: jumlah terjual, untung dari yang terjual = `untung + nilai_sendiri`) dan **Dimakan / diminum sendiri** (per menu: jumlah, `−nilai_sendiri`). Tiap bagian punya baris total; untung bulan = total terjual + total dimakan/diminum sendiri.
 - Angka utama tiap periode & bulan: **untung jualan**; angka kedua (lebih kecil): **uang bersih**
 - **Grafik harian** (CR-006), satu kartu berisi dua grafik batang bertumpuk per menu (urut `menu.urutan`, warna
-  `--grafik-1..6` per gaya/tema, berulang bila lebih dari 6 menu; angka di atas batang = total hari itu; `title` =
+  `--grafik-1..6` per tema, berulang bila lebih dari 6 menu; angka di atas batang = total hari itu; `title` =
   rincian per menu; keterangan warna hanya menu yang terjual di rentang itu):
   - **Racikan terjual**: Σ tap terjual per hari.
   - **Barang jadi terjual · perkiraan**: terjual tiap periode dibagi ke hari bukanya (§5.6), hanya sampai tanggal
@@ -153,6 +161,12 @@ Fokus ke laporan saja (kartu saldo & Riwayat Pengeluaran ada di Lainnya, CR-004)
 nama, jenis (saat dibuat), harga jual, urutan, dan untuk racikan **resep** (bahan + takaran, biaya per baris).
 HPP & untung (%) dihitung langsung saat mengetik dari harga bahan yang aktif sekarang. Ubah harga jual → baris baru di
 `harga` (berlaku sejak sekarang); ubah resep → versi resep baru. Tombol Nonaktifkan / Aktifkan lagi.
+Kartu **Katalog pembeli** (menu yang sudah ada; langsung tersimpan): sakelar **Tampil di katalog**, **Bisa less sugar**
+(racikan), dan **Foto** dari kamera/galeri. Foto dikecilkan di browser (sisi terpanjang 800 px, WebP; JPEG bila browser
+tidak bisa WebP; maks 400 KB) lalu disimpan mentah di `menu.foto`. **Atur foto** (otomatis terbuka setelah unggah,
+atau tombol ✂️ Atur): seret untuk menggeser, slider zoom 1–3×, pratinjau 84 & 40 px, Atur ulang. Disimpan sebagai
+bingkai `menu.foto_atur` (titik fokus x/y % + zoom); foto asli tidak diubah, ganti foto → bingkai kembali ke tengah.
+Bingkai berlaku sama di katalog, panel gula, dan Beranda (`gayaFoto` di `lib/foto.ts`).
 
 **Bahan** (`/lainnya/bahan`): daftar bahan (harga per satuan sekarang + kemasan yang aktif), form bahan baru
 (nama, satuan, harga awal), dan daftar **"Belanja bahan belum ditandai"** (belanja lama dari sebelum CR-003): pilih
@@ -176,6 +190,62 @@ kemasan lama adalah harga awal.
 **Setelan**: Hitung ulang semua laporan (rumus terbaru; juga setelah data diubah langsung di DB; laporan dengan
 snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 
+### 4.9 Katalog pembeli `/pesan` (CR-005, publik tanpa login)
+- Pesan online aktif bila env `GATEWAY` diisi (3a: `palsu`, hanya di laptop). Tanpa gateway: lihat saja.
+- Tombol `+` (racikan dengan less sugar → panel "GULA Normal | Less sugar" + jumlah; lainnya → stepper `− n +`),
+  bar keranjang mengambang "N item · Rp X · Lanjut". Keranjang & nama terakhir disimpan di HP (localStorage).
+- **Pilihan terakhir jadi bawaan** (localStorage `kantin.pilihan`, disimpan saat pesanan dibuat): gula **per menu**
+  (Creamy Latte terakhir less sugar → panel gula langsung "Less sugar") dan **Pickup / Delivery**. Catatan tidak diingat
+  (posisi meja beda tiap hari). Menu yang dipesan normal & less sugar sekaligus: baris terakhir di keranjang yang dipakai.
+- `/pesan/keranjang`: daftar + stepper, nama, **Pickup / Delivery** (catatan selalu opsional; untuk Delivery ada saran menulis posisi), catatan, Bayar.
+  Harga & ketersediaan dicek ulang di server. Keranjang sama dengan pesanan belum bayar → pesanan itu dipakai lagi;
+  berubah → yang lama dibatalkan. Maks 3 pesanan belum bayar per HP (cookie `perangkat`).
+- `/pesan/[kode]/bayar`: total, QR (berlaku 15 menit, hitung mundur), Simpan gambar QR, Batalkan pesanan; pindah sendiri
+  ke struk setelah lunas (polling 3 detik). Kedaluwarsa → "Pesan lagi" (keranjang masih ada).
+- `/pesan/[kode]` = struk & lacak: status 4 langkah (Lunas → Diterima → Dibuat → Siap diambil / Diantar),
+  kode pesanan (huruf besar) di atas rincian, item, total + metode, QR ke halaman itu sendiri. Polling 5 detik sampai selesai. Membukanya menambah ke Pesananku.
+- Katalog: kartu **Menunggu pembayaran** (sisa waktu, Lanjut bayar) / **Pembayaran kedaluwarsa**; tombol **Pesananku**
+  (badge = pesanan berjalan) → `/pesan/riwayat` (cookie `pesananku`, 30 hari, tidak termasuk yang tidak jadi dibayar):
+  **Sedang berjalan** (nomor + status, atau "Menunggu pembayaran" + sisa waktu → halaman bayar) dan **Selesai**
+  (tanggal · nomor · status, item, total, tombol **Pesan lagi** = isi ulang keranjang; menu habis dilewati dan
+  diberi tahu di keranjang). Tombol sapu di label SELESAI → dialog "Bersihkan riwayat selesai?" (hanya daftar di HP
+  ini; database tidak berubah).
+- **Lunas** (webhook / simulasi): nomor antrean = terbesar hari itu (WIB) + 1; racikan → tap `terjual` (delta = qty,
+  waktu = dibayar, `pesanan_id`); barang jadi tidak di-tap; potongan disimpan; idempoten (`dibayar` masih kosong).
+
+### 4.10 Pesanan (`/pesanan`, pakai PIN)
+- **Aktif**: kartu per pesanan lunas yang belum selesai (nomor, nama, Pickup/Delivery, item + less sugar, catatan),
+  satu tombol maju: **Terima → Mulai dibuat → Siap diambil / Sudah diantar**. Diperbarui otomatis tiap 10 detik.
+- **Selesai · hari ini**, dengan keterangan refund untuk yang dibatalkan; link **Riwayat ›**.
+- **Riwayat Pesanan** (`/lainnya/riwayat-pesanan`, dari Lainnya / link di atas): per bulan ‹ › menurut waktu bayar.
+  Ringkasan: jumlah pesanan & total (tanpa yang batal), **Terlaris** (3 menu, jumlah porsi), filter Semua / Selesai /
+  Batal (`?status=`). **Pilih tanggal** (kalender HP, `?tgl=`) = satu hari saja, "Semua hari" untuk kembali. Daftar
+  dikelompokkan per hari ("Jum, 16 Okt · 6 pesanan · Rp 60.000"), tiap baris dengan jam bayar.
+- **Detail pesanan** (`/lainnya/riwayat-pesanan/[id]`, ketuk baris di Riwayat atau Selesai hari ini; hanya pesanan
+  lunas): nama, status, cara ambil, catatan, kode; isi + harga satuan; uang (dibayar + metode, potongan gateway, masuk ke
+  saldo gateway; bila batal: refund dari Kantong / uang pribadi); waktu dipesan, dibayar, status terakhir.
+- **Notifikasi** (Setelan → "Notifikasi pesanan online", web push, bisa beberapa HP): saat lunas muncul
+  "Pesanan #7 · Budi" / "1× Kopi Susu SKM", ketuk → `/pesanan`. Tombol Aktifkan / Kirim uji / Matikan. Hanya dari
+  https:// atau localhost.
+- **Tolak pesanan…** (status Lunas) / **Batalkan pesanan…** (Diterima / Dibuat): pengguna mengembalikan uang pembeli
+  sendiri, lalu memilih **Kantong Kantin** (hapus tap pesanan; saldo Kantong turun sendiri) atau **Uang pribadi**
+  (hapus tap + catat setor modal sebesar total). Potongan gateway tetap biaya. Hanya untuk pesanan yang lunas di
+  periode berjalan (sesudah tutup buku terakhir). Struk pembeli menampilkan "dibatalkan kantin".
+- Header: logo, "Kopi Ksatria", label ● Buka / ● Tutup, tagline. Bagian **KOPI** (racikan) dan **CAMILAN** (barang jadi).
+- Hanya menu `aktif && di_katalog`, harga jual yang berlaku sekarang. Tanpa foto → ubin krem + ikon garis.
+- Habis: foto pudar, harga dicoret, pil "Habis". Tutup: kartu "Kantin sedang tutup" di atas daftar.
+- Foto: `/pesan/foto/[menuId]?v=<foto_versi>`, `Cache-Control: immutable` bila `v` cocok (ganti foto → URL baru).
+- **Tema pembeli**: tombol bulan/matahari di header katalog. Bawaan **terang**, tidak ikut setelan HP; pilihan disimpan
+  di cookie `tema_pembeli` (terpisah dari tema pengguna di Setelan). `proxy.ts` menandai request `/pesan` (header
+  `x-area`), root layout memilih tema dari situ.
+- **Ketuk foto** di kartu menu → pratinjau foto utuh (tidak dipotong) + nama & harga; tutup dengan ✕, ketuk latar, Esc.
+- **Animasi** (semua halaman `/pesan`, `src/app/pesan/gerak.tsx` + keyframe `animate-*` di `globals.css`): kartu masuk
+  berurutan, tombol membal saat ditekan, badge/angka "pop" saat berubah, bar keranjang naik, panel/dialog/pratinjau
+  masuk & keluar (panel bawah: handle bisa diseret, lepas jauh / kibas = tutup, selain itu memantul balik), pilihan Normal/Less sugar & Pickup/Delivery dengan pil meluncur, struk: langkah aktif
+  berdenyut, langkah yang selesai pop saat status berubah. Mati otomatis bila HP memilih "kurangi gerakan".
+- **QR katalog** (`/lainnya/qr-katalog`): lembar siap cetak berisi QR ke `<host yang sedang dipakai>/pesan`;
+  peringatan bila dibuka dari localhost / IP WiFi (buka dari domain online sebelum mencetak).
+
 ### 4.7 Setup Awal (pertama kali dibuka)
 - Buat PIN
 - Saldo awal Kantong Kantin
@@ -185,6 +255,7 @@ snapshot lama menampilkan ajakan ke tombol ini), Ganti PIN, Keluar.
 Uang yang sekarang berbentuk saldo dan barang, **per tutup buku terakhir** (atau setup awal):
 ```
 Saldo Kantong Kantin                 Rp125.000
+Saldo gateway (belum dicairkan)          Rp0        ← hanya tampil bila ≠ 0 (CR-005)
 Barang jualan (modal)                 Rp21.618    ← Σ sisa × modal rata-rata (tutup_buku.stok_json)
 Bahan (perkiraan)                   ±Rp95.000    ← nilaiBahanPada(), lihat di bawah
 Total                                Rp241.618
@@ -212,6 +283,8 @@ Total                                Rp241.618
 | Simbol | Arti |
 |---|---|
 | `S0`, `S1` | Saldo kantong awal (tutup buku sebelumnya) & akhir |
+| `G0`, `G1` | Saldo payment gateway awal & akhir (CR-005; 0 bila tidak dipakai) |
+| `P` | Potongan gateway: Σ potongan pesanan yang lunas di periode, termasuk yang kemudian dibatalkan |
 | `C` | Cash belum disetor (akhir); `C0` dari periode sebelumnya. Sejak CR-001 selalu 0 (data lama bisa berisi nilai) |
 | `M` | Total Setor Modal |
 | `T` | Total Tarik (uang) |
@@ -245,18 +318,20 @@ Kalau terjual negatif → tampilkan peringatan (kemungkinan salah input). `{ sis
 
 ### 5.3 Uang bersih (uang nyata)
 ```
-omzet_nyata = (S1 − S0) + (C − C0) − M + T + Bk
+omzet_nyata = (S1 + G1) − (S0 + G0) + (C − C0) − M + T + Bk
 uang_bersih = omzet_nyata − B
 ```
 - `Bp` masuk ke `B` (biaya), tetapi tidak memengaruhi saldo → otomatis setara setor modal.
+- Potongan gateway sudah terpotong dari `G1`, jadi otomatis mengurangi uang bersih (tidak dicatat sebagai belanja).
 - Pasti, tapi naik-turun mengikuti hari belanja. Dijumlah semua periode = posisi balik modal (§4.1).
 - Tidak bergantung HPP: mengubah resep / harga bahan tidak mengubah uang bersih, omzet, maupun selisih.
 - Nilai stok barang jadi **tidak** masuk angka mana pun (hanya info di rincian & Uang & Barang).
 
 ### 5.3b Untung jualan (perkiraan per item, angka utama)
 ```
-untung_jualan = Σ untung semua menu
+untung_jualan = Σ untung semua menu − P
 ```
+- Potongan gateway **tidak** dibagi per menu; tampil sebagai satu baris "💳 Potongan payment gateway".
 - **Konsumsi pribadi = biaya**: yang dikonsumsi sendiri mengurangi untung (bahannya habis, uang tidak kembali).
   Contoh: jual 3 kopi (10.000, HPP 7.000) → +9.000; minum 1 → −7.000; untung 2.000.
 - **Bahan terbuang = biaya**: `untung_jualan −= Σ jumlah × harga bahan pada waktu dicatat` (per bahan di
@@ -268,8 +343,11 @@ untung_jualan = Σ untung semua menu
 ### 5.4 Pembanding (seharusnya)
 ```
 omzet_seharusnya = Σ omzet_seh semua menu
-selisih          = omzet_nyata − omzet_seharusnya     // negatif = uang hilang
+selisih          = omzet_nyata − omzet_seharusnya
+uang_hilang      = selisih + P                         // yang ditampilkan "Uang kurang / lebih"; negatif = uang hilang
 ```
+- Contoh 1 kopi Rp10.000 lewat app, potongan Rp70, HPP 7.000: omzet nyata 9.930, selisih −70, uang hilang 0,
+  untung jualan 2.930, uang bersih 9.930. Snapshot laporan lama (tanpa `uangHilang`) memakai `selisih`.
 - Selisih hanya diketahui **total**, tidak bisa dipisah per menu.
 
 ### 5.5 Contoh tampilan laporan
@@ -314,10 +392,25 @@ Tidak ada foreign key di level DB; kolom `*_id` hanya rujukan.
 
 ```
 settings
-  key TEXT PK, value TEXT            -- pin_hash, setup_done, pin_gagal, tunda_pengingat
+  key TEXT PK, value TEXT            -- pin_hash, setup_done, pin_gagal, tunda_pengingat, kantin_buka ('1'/'0')
 
 menu
-  id, nama, jenis ('racikan' | 'barang_jadi'), aktif BOOL, urutan INTEGER
+  id, nama, jenis ('racikan' | 'barang_jadi'), aktif BOOL, urutan INTEGER,
+  di_katalog BOOL, habis BOOL, bisa_less_sugar BOOL,   -- katalog /pesan (CR-005)
+  foto BLOB NULL (WebP/JPEG mentah), foto_versi INTEGER NULL (waktu foto diganti),
+  foto_atur TEXT NULL ({"x":50,"y":50,"z":1}: bingkai thumbnail)
+
+pesanan                              -- pesan online (CR-005)
+  id, kode TEXT UNIQUE (acak, link), nomor NULL (antrean harian, saat lunas), nama, cara ('pickup' | 'delivery'),
+  catatan NULL, status ('menunggu_bayar' | 'lunas' | 'diterima' | 'dibuat' | 'siap' | 'diantar' | 'kedaluwarsa' | 'batal'),
+  total, potongan (gateway, saat lunas), metode NULL, gateway ('palsu' | 'midtrans'), gateway_ref NULL, perangkat,
+  dibuat, kedaluwarsa_pada, dibayar NULL, diperbarui, refund_dari NULL ('kantong' | 'pribadi')
+
+pesanan_item
+  id, pesanan_id, menu_id, nama (saat pesan), qty, harga (saat pesan), less_sugar BOOL
+
+push_langganan                       -- web push ke HP pengguna (CR-005 Tahap 4)
+  id, endpoint UNIQUE, p256dh, auth, perangkat NULL (mis. "Android · Chrome"), dibuat
 
 bahan
   id, nama, satuan ('gr' | 'pcs'), harga_awal REAL (per satuan)
@@ -332,7 +425,8 @@ harga                                -- harga jual, riwayat
   id, menu_id, nilai INTEGER, berlaku_mulai
 
 tap_event
-  id, waktu, menu_id, jenis ('terjual' | 'sendiri'), delta INTEGER (+1 / −1 / N manual), manual BOOL
+  id, waktu, menu_id, jenis ('terjual' | 'sendiri'), delta INTEGER (+1 / −1 / N manual), manual BOOL,
+  pesanan_id NULL (tap otomatis dari pesanan online)
 
 belanja
   id, waktu, kategori ('bahan' | 'barang' | 'lain'), nama TEXT,
@@ -345,6 +439,7 @@ kas
 
 tutup_buku
   id, waktu, saldo_kantong INTEGER, cash_belum_disetor INTEGER DEFAULT 0,
+  saldo_gateway INTEGER DEFAULT 0    -- saldo payment gateway (CR-005), sudah bersih dari potongan
   stok_json TEXT                     -- { [menuId]: { sisa, avgModal } } barang jadi
   hasil_json TEXT                    -- snapshot seluruh angka laporan
   hari_buka_json TEXT NULL           -- ["2026-10-11","2026-10-13"] tanggal WIB buka (CR-006); NULL = periode lama
@@ -371,6 +466,7 @@ belanja lama, mengisi resep, lalu "Hitung ulang semua laporan".
 
 - Satu pengguna, login dengan **PIN** (4–6 digit)
 - PIN disimpan sebagai hash (bcrypt/argon2)
+- Halaman publik tanpa login: `/pesan` dan turunannya (`proxy.ts`; bukan `/pesanan`). Semua halaman lain minta PIN.
 - Sesi berupa cookie `httpOnly`, `secure`, dan ditandatangani (masa berlaku panjang, misal 30 hari)
 - Pembatasan percobaan: jeda setelah 5 kali salah
 

@@ -1,10 +1,11 @@
 import { PageHeader } from "@/components/page-header";
 import { getPeriodeBerjalan } from "@/lib/data";
+import { adaPesananLunas } from "@/lib/pesanan";
 import { hariTanggal, rupiah, tanggalJam } from "@/lib/format";
 import { TutupBukuWizard } from "./wizard";
 
 export default async function TutupBukuPage() {
-  const p = await getPeriodeBerjalan();
+  const [p, pakaiGateway] = await Promise.all([getPeriodeBerjalan(), adaPesananLunas()]);
   if (!p) return null;
   return (
     <main>
@@ -15,6 +16,8 @@ export default async function TutupBukuPage() {
             .filter((m) => m.jenis === "barang_jadi" && (m.aktif || m.stokTersedia !== 0 || m.stokAwal !== 0))
             .map((m) => ({ id: m.id, nama: m.nama, maks: m.stokTersedia }))}
           infoSaldoLalu={rupiah(p.terakhir.saldoKantong)}
+          // Input saldo gateway hanya bila pesan online sudah dipakai (CR-005)
+          infoGatewayLalu={pakaiGateway || p.terakhir.saldoGateway !== 0 ? rupiah(p.terakhir.saldoGateway) : null}
           hari={p.hariBuka.map((h) => ({ ...h, label: hariTanggal(h.iso) }))}
         />
       </div>

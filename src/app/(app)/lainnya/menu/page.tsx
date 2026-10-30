@@ -38,6 +38,7 @@ export default async function DaftarMenuPage() {
                         <div className="num text-xs text-muted">
                           {m.jenis === "racikan" ? "HPP" : "modal"} {rupiah(m.modal)} · untung {rupiah(m.hargaJual - m.modal)}
                           {m.jenis === "racikan" && m.resep.length === 0 && " · ⚠️ resep kosong"}
+                          {m.aktif && m.diKatalog && (m.habis ? " · 🛒 katalog (habis)" : " · 🛒 katalog")}
                         </div>
                       </div>
                       <span className="num text-sm">{rupiah(m.hargaJual)}</span>

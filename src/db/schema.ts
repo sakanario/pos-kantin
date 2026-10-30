@@ -1,4 +1,4 @@
-import { integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
+import { blob, integer, real, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 // Semua nominal dalam integer rupiah. Semua waktu dalam epoch milidetik (UTC).
 // Tidak ada foreign key di level DB; kolom *_id hanya rujukan.
@@ -16,6 +16,16 @@ export const menu = sqliteTable("menu", {
   jenis: text("jenis", { enum: ["racikan", "barang_jadi"] }).notNull(),
   aktif: integer("aktif", { mode: "boolean" }).notNull().default(true),
   urutan: integer("urutan").notNull().default(0),
+  // Katalog publik /pesan (CR-005)
+  diKatalog: integer("di_katalog", { mode: "boolean" }).notNull().default(false),
+  habis: integer("habis", { mode: "boolean" }).notNull().default(false),
+  bisaLessSugar: integer("bisa_less_sugar", { mode: "boolean" }).notNull().default(false),
+  // Foto WebP/JPEG mentah (bukan base64), disajikan lewat /pesan/foto/[id]?v=foto_versi.
+  // Jangan ikut di-select di query biasa (lihat getMenu di lib/data.ts).
+  foto: blob("foto", { mode: "buffer" }),
+  fotoVersi: integer("foto_versi"), // waktu foto terakhir diganti; null = tanpa foto
+  // Bingkai thumbnail: {"x":50,"y":50,"z":1} (titik fokus % dan zoom 1–3). Null = tengah, tanpa zoom.
+  fotoAtur: text("foto_atur"),
 });
 
 export const bahan = sqliteTable("bahan", {
@@ -58,6 +68,8 @@ export const tapEvent = sqliteTable("tap_event", {
   delta: integer("delta").notNull(),
   // true = diisi manual dari tab Kopi (untuk hari sebelumnya), false = tap langsung
   manual: integer("manual", { mode: "boolean" }).notNull().default(false),
+  // Tap otomatis dari pesanan online yang lunas (CR-005); null = tap biasa
+  pesananId: integer("pesanan_id"),
 });
 
 export const belanja = sqliteTable("belanja", {
@@ -99,6 +111,8 @@ export const tutupBuku = sqliteTable("tutup_buku", {
   waktu: integer("waktu").notNull(),
   saldoKantong: integer("saldo_kantong").notNull(),
   cashBelumDisetor: integer("cash_belum_disetor").notNull().default(0),
+  // Saldo payment gateway (kantong kedua, pesan online CR-005). Sudah bersih dari potongan gateway.
+  saldoGateway: integer("saldo_gateway").notNull().default(0),
   // { [menuId]: { sisa, avgModal } } untuk barang jadi; sisa = input, avgModal = hasil hitung (berantai)
   stokJson: text("stok_json").notNull().default("{}"),
   hasilJson: text("hasil_json"),
@@ -106,6 +120,62 @@ export const tutupBuku = sqliteTable("tutup_buku", {
   hariBukaJson: text("hari_buka_json"),
 });
 
+// Pesanan online dari katalog /pesan (CR-005 Tahap 3).
+// Alur status: menunggu_bayar → lunas → diterima → dibuat → siap (pickup) / diantar (delivery).
+// menunggu_bayar bisa jadi kedaluwarsa (15 menit) atau batal. Lunas = `dibayar` terisi (ditentukan gateway).
+export const STATUS_PESANAN = ["menunggu_bayar", "lunas", "diterima", "dibuat", "siap", "diantar", "kedaluwarsa", "batal"] as const;
+export type StatusPesanan = (typeof STATUS_PESANAN)[number];
+
+/** Tagihan Midtrans per cara bayar (order_id berbeda: `<kode>-qris`, `<kode>-gopay`). */
+export type DataGateway = {
+  qris?: { orderId: string; qr: string; qrUrl: string | null };
+  gopay?: { orderId: string; deeplink: string };
+};
+
+export const pesanan = sqliteTable("pesanan", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  kode: text("kode").notNull().unique(), // acak, untuk link /pesan/[kode]
+  nomor: integer("nomor"), // antrean, mulai 1 tiap hari WIB; diberikan saat lunas
+  nama: text("nama").notNull(),
+  cara: text("cara", { enum: ["pickup", "delivery"] }).notNull(),
+  catatan: text("catatan"),
+  status: text("status", { enum: STATUS_PESANAN }).notNull(),
+  total: integer("total").notNull(),
+  potongan: integer("potongan").notNull().default(0), // potongan gateway (biaya), diisi saat lunas
+  metode: text("metode"), // mis. "qris", "gopay" (dari gateway)
+  gateway: text("gateway").notNull(), // "palsu" | "midtrans"
+  gatewayRef: text("gateway_ref"),
+  gatewayJson: text("gateway_json", { mode: "json" }).$type<DataGateway>(), // tagihan di gateway (QR, deeplink)
+  perangkat: text("perangkat").notNull(), // id acak dari cookie pembeli
+  dibuat: integer("dibuat").notNull(),
+  kedaluwarsaPada: integer("kedaluwarsa_pada").notNull(),
+  dibayar: integer("dibayar"),
+  diperbarui: integer("diperbarui").notNull(), // waktu status terakhir berubah
+  refundDari: text("refund_dari", { enum: ["kantong", "pribadi"] }), // batal setelah lunas (Tahap 3b)
+});
+
+export const pesananItem = sqliteTable("pesanan_item", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  pesananId: integer("pesanan_id").notNull(),
+  menuId: integer("menu_id").notNull(),
+  nama: text("nama").notNull(), // nama menu saat pesan
+  qty: integer("qty").notNull(),
+  harga: integer("harga").notNull(), // harga satuan saat pesan
+  lessSugar: integer("less_sugar", { mode: "boolean" }).notNull().default(false),
+});
+
+// Langganan web push (HP pengguna yang mengaktifkan notifikasi pesanan, CR-005 Tahap 4). Bisa lebih dari satu.
+export const pushLangganan = sqliteTable("push_langganan", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  perangkat: text("perangkat"), // keterangan singkat dari user agent
+  dibuat: integer("dibuat").notNull(),
+});
+
+export type Pesanan = typeof pesanan.$inferSelect;
+export type PesananItem = typeof pesananItem.$inferSelect;
 export type Belanja = typeof belanja.$inferSelect;
 export type Kas = typeof kas.$inferSelect;
 export type TapEvent = typeof tapEvent.$inferSelect;

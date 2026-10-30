@@ -11,7 +11,8 @@ const ipLokal = Object.values(networkInterfaces())
 const nextConfig: NextConfig = {
   // libsql memakai binary native untuk file SQLite lokal
   serverExternalPackages: ["@libsql/client", "libsql"],
-  allowedDevOrigins: ipLokal,
+  // + domain ngrok (`ngrok http 3000`), supaya dev bisa dibuka lewat https dari HP (mis. tes notifikasi)
+  allowedDevOrigins: [...ipLokal, "*.ngrok-free.app", "*.ngrok-free.dev", "*.ngrok.app", "*.ngrok.dev"],
 };
 
 export default nextConfig;

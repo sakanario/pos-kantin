@@ -30,6 +30,7 @@ export default async function DetailLaporan(props: PageProps<"/laporan/[id]">) {
         {terakhir && <BatalkanTutupBukuButton
             id={r.id}
             saldo={r.saldoKantong}
+            saldoGateway={r.saldoGateway}
             sisa={(r.hasil.menu ?? []).filter((m) => m.jenis === "barang_jadi").map((m) => `${m.nama}: ${m.sisa} pcs`)}
           />}
       </div>

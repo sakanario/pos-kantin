@@ -1,0 +1,1 @@
+ALTER TABLE `pesanan` ADD `gateway_json` text;

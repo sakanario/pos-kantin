@@ -6,6 +6,8 @@ const menu = [
   { href: "/lainnya/bahan", icon: "🧂", label: "Bahan", sub: "Harga bahan, kemasan yang dipakai" },
   { href: "/lainnya/uang-barang", icon: "💰", label: "Uang & Barang", sub: "Saldo, stok barang, potensi" },
   { href: "/lainnya/pengeluaran", icon: "🧾", label: "Riwayat Pengeluaran", sub: "Semua belanja per bulan" },
+  { href: "/lainnya/riwayat-pesanan", icon: "📋", label: "Riwayat Pesanan", sub: "Pesanan online per bulan, terlaris" },
+  { href: "/lainnya/qr-katalog", icon: "🔳", label: "QR katalog", sub: "Cetak QR menu untuk meja kantin" },
   { href: "/setelan", icon: "⚙️", label: "Setelan", sub: "PIN, hitung ulang laporan" },
 ];
 

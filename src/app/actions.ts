@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { bahan, bahanAktif, bahanTerbuang, belanja, harga, kas, menu, resep, tapEvent, tutupBuku } from "@/db/schema";
+import { bahan, bahanAktif, bahanTerbuang, belanja, harga, kas, menu, resep, tapEvent, tutupBuku, type StatusPesanan } from "@/db/schema";
 import { cekPin, endSession, hashPin, isValidPin, requireAuth, startSession } from "@/lib/auth";
 import { daftarTanggal, hargaPada, hariBukaBawaan, hitungPeriode, pemakaianBahan, resepPada, type HasilPeriode } from "@/lib/calc";
 import {
@@ -19,9 +19,12 @@ import {
   stokDari,
 } from "@/lib/data";
 import { hitungUlangSejak } from "@/lib/hitung-ulang";
+import { FOTO_MAKS_BYTE, jenisFoto, rapikanAtur, type AturFoto } from "@/lib/foto";
 import { awalHariWib, desimal, isoTanggalWib, parseDesimal, parseRupiah } from "@/lib/format";
+import { batalkanLunas, majukanPesanan } from "@/lib/pesanan";
+import { hapusLangganan, kirimKeSemua, simpanLangganan, type Langganan } from "@/lib/push";
 import { getSetting, isSetupDone, setSetting } from "@/lib/settings";
-import { COOKIE_GAYA, COOKIE_TEMA, isGaya, isTema, type Gaya, type Tema } from "@/lib/tema";
+import { COOKIE_TEMA, isTema, type Tema } from "@/lib/tema";
 
 export type FormState = { error?: string; ok?: string } | undefined;
 
@@ -69,20 +72,13 @@ export async function aturTemaAction(tema: Tema) {
   revalidatePath("/", "layout");
 }
 
-export async function aturGayaAction(gaya: Gaya) {
-  await requireAuth();
-  if (!isGaya(gaya)) return;
-  (await cookies()).set(COOKIE_GAYA, gaya, { path: "/", maxAge: 60 * 60 * 24 * 365 * 5, sameSite: "lax" });
-  revalidatePath("/", "layout");
-}
-
 // ─── Tap ─────────────────────────────────────────────────────────
 
 export async function tapAction(menuId: number, jenis: "terjual" | "sendiri", delta: 1 | -1) {
   await requireAuth();
   const terakhir = await getTutupTerakhir();
   if (!terakhir) return { error: "Setup belum selesai." };
-  const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId) });
+  const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId), columns: { foto: false } });
   if (!m) return { error: "Menu tidak ditemukan." };
   if (m.jenis === "barang_jadi" && jenis === "terjual") return { error: "Barang jadi terjual dihitung saat tutup buku." };
 
@@ -220,7 +216,7 @@ async function bacaBelanja(fd: FormData) {
     if (!nama) nama = b.nama;
   } else if (kategori === "barang") {
     menuId = Number(str(fd, "menu_id"));
-    const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId) });
+    const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId), columns: { foto: false } });
     if (!m || m.jenis !== "barang_jadi") return { error: "Pilih barangnya dulu." };
     jumlahKemasan = parseRupiah(fd.get("jumlah_kemasan"));
     isiKemasan = parseRupiah(fd.get("isi_kemasan"));
@@ -440,7 +436,7 @@ export async function hapusKasAction(id: number) {
 export async function tambahPenjualanManualAction(_: FormState, fd: FormData): Promise<FormState> {
   await requireAuth();
   const menuId = Number(str(fd, "menu_id"));
-  const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId) });
+  const m = await db.query.menu.findFirst({ where: eq(menu.id, menuId), columns: { foto: false } });
   if (!m) return { error: "Pilih menunya dulu." };
   const jenis: "terjual" | "sendiri" = str(fd, "jenis") === "sendiri" ? "sendiri" : "terjual";
   if (m.jenis === "barang_jadi" && jenis === "terjual") return { error: "Barang jadi terjual dihitung saat tutup buku." };
@@ -482,21 +478,23 @@ export async function hapusPenjualanManualAction(id: number) {
 
 // Cash selalu disetor ke kantong sebelum tutup buku, jadi cash_belum_disetor disimpan 0.
 // hariBuka: tanggal WIB yang dicentang buka (langkah "Hari buka"), untuk grafik harian barang jadi.
-export type TutupBukuInput = { saldo: number; sisa: Record<number, number>; hariBuka: string[] };
+// saldoGateway: saldo payment gateway (CR-005), 0 bila pesan online belum dipakai.
+export type TutupBukuInput = { saldo: number; saldoGateway: number; sisa: Record<number, number>; hariBuka: string[] };
 
 async function hitungTutupBuku(input: TutupBukuInput, waktu: number) {
   const terakhir = await getTutupTerakhir();
   if (!terakhir) throw new Error("Setup belum selesai.");
   const data = await getDataPeriode(awalData(terakhir), waktu);
   return hitungPeriode(
-    { saldoKantong: terakhir.saldoKantong, cashBelumDisetor: terakhir.cashBelumDisetor, stok: stokDari(terakhir) },
-    { waktu, saldoKantong: input.saldo, cashBelumDisetor: 0, sisa: input.sisa },
+    { saldoKantong: terakhir.saldoKantong, cashBelumDisetor: terakhir.cashBelumDisetor, saldoGateway: terakhir.saldoGateway, stok: stokDari(terakhir) },
+    { waktu, saldoKantong: input.saldo, cashBelumDisetor: 0, saldoGateway: input.saldoGateway, sisa: input.sisa },
     data,
   );
 }
 
 function validasiTutupBuku(input: TutupBukuInput): string | null {
   if (!Number.isFinite(input.saldo) || input.saldo < 0) return "Saldo kantong tidak valid.";
+  if (!Number.isInteger(input.saldoGateway) || input.saldoGateway < 0) return "Saldo gateway tidak valid.";
   for (const n of Object.values(input.sisa)) if (!Number.isInteger(n) || n < 0) return "Sisa stok tidak valid.";
   if (!Array.isArray(input.hariBuka) || input.hariBuka.some((t) => typeof t !== "string")) return "Hari buka tidak valid.";
   if (Object.keys(input.sisa).length > 0 && input.hariBuka.length === 0) return "Centang minimal satu hari kantin buka.";
@@ -534,6 +532,7 @@ export async function simpanTutupBukuAction(input: TutupBukuInput): Promise<{ er
       waktu,
       saldoKantong: input.saldo,
       cashBelumDisetor: 0,
+      saldoGateway: input.saldoGateway,
       stokJson: JSON.stringify(hasil.stok),
       hasilJson: JSON.stringify(hasil),
       hariBukaJson: JSON.stringify(hariBuka),
@@ -591,7 +590,7 @@ export async function simpanMenuAction(id: number | null, _: FormState, fd: Form
   await requireAuth();
   const nama = str(fd, "nama");
   if (!nama) return { error: "Nama menu wajib diisi." };
-  const lama = id ? await db.query.menu.findFirst({ where: eq(menu.id, id) }) : undefined;
+  const lama = id ? await db.query.menu.findFirst({ where: eq(menu.id, id), columns: { foto: false } }) : undefined;
   if (id && !lama) return { error: "Menu tidak ditemukan." };
   const jenis: "racikan" | "barang_jadi" = lama?.jenis ?? (str(fd, "jenis") === "barang_jadi" ? "barang_jadi" : "racikan");
   const hargaJual = parseRupiah(fd.get("harga_jual"));
@@ -651,6 +650,90 @@ export async function aturAktifMenuAction(id: number, aktif: boolean) {
   await requireAuth();
   await db.update(menu).set({ aktif }).where(eq(menu.id, id));
   refreshSemua();
+}
+
+// ─── Katalog (/pesan) ────────────────────────────────────────────
+
+/** Sakelar katalog per menu: tampil di katalog, habis, bisa less sugar. */
+export async function aturKatalogMenuAction(id: number, patch: { diKatalog?: boolean; habis?: boolean; bisaLessSugar?: boolean }) {
+  await requireAuth();
+  const set: typeof patch = {};
+  for (const k of ["diKatalog", "habis", "bisaLessSugar"] as const) if (typeof patch[k] === "boolean") set[k] = patch[k];
+  if (Object.keys(set).length === 0) return;
+  await db.update(menu).set(set).where(eq(menu.id, id));
+  refreshSemua();
+}
+
+/** Foto menu, sudah dikecilkan di browser (lihat lainnya/menu/katalog-menu.tsx). */
+export async function simpanFotoMenuAction(id: number, fd: FormData): Promise<FormState & { fotoVersi?: number }> {
+  await requireAuth();
+  const f = fd.get("foto");
+  if (!(f instanceof Blob) || f.size === 0) return { error: "Pilih fotonya dulu." };
+  if (f.size > FOTO_MAKS_BYTE) return { error: "Foto terlalu besar (maks 400 KB setelah dikecilkan)." };
+  const bytes = new Uint8Array(await f.arrayBuffer());
+  if (!jenisFoto(bytes)) return { error: "Format foto tidak dikenali." };
+  const fotoVersi = Date.now();
+  // Foto baru → bingkai lama tidak berlaku lagi
+  await db.update(menu).set({ foto: Buffer.from(bytes), fotoVersi, fotoAtur: null }).where(eq(menu.id, id));
+  refreshSemua();
+  return { ok: "Foto disimpan.", fotoVersi };
+}
+
+/** Bingkai thumbnail (geser + zoom). Foto asli tidak diubah. */
+export async function aturFotoMenuAction(id: number, atur: AturFoto): Promise<FormState> {
+  await requireAuth();
+  await db.update(menu).set({ fotoAtur: JSON.stringify(rapikanAtur(atur)) }).where(eq(menu.id, id));
+  refreshSemua();
+  return { ok: "Tampilan foto disimpan." };
+}
+
+export async function hapusFotoMenuAction(id: number) {
+  await requireAuth();
+  await db.update(menu).set({ foto: null, fotoVersi: null, fotoAtur: null }).where(eq(menu.id, id));
+  refreshSemua();
+}
+
+/** /pesanan: maju satu langkah (Terima → Dibuat → Siap diambil / Diantar). */
+export async function majukanPesananAction(id: number, dari: StatusPesanan) {
+  await requireAuth();
+  await majukanPesanan(id, dari);
+  refreshSemua();
+}
+
+/** /pesanan: tolak / batalkan pesanan lunas; refund dilakukan pengguna sendiri. */
+export async function batalkanPesananLunasAction(id: number, refundDari: "kantong" | "pribadi"): Promise<string | undefined> {
+  await requireAuth();
+  if (refundDari !== "kantong" && refundDari !== "pribadi") return "Pilih sumber uang refund.";
+  const err = await batalkanLunas(id, refundDari);
+  refreshSemua();
+  return err ?? undefined;
+}
+
+export async function aturKantinBukaAction(buka: boolean) {
+  await requireAuth();
+  await setSetting("kantin_buka", buka ? "1" : "0");
+  refreshSemua();
+}
+
+// ─── Notifikasi pesanan (web push) ───────────────────────────────
+
+export async function simpanLanggananAction(sub: Langganan, perangkat: string): Promise<FormState> {
+  await requireAuth();
+  if (!sub?.endpoint?.startsWith("https://") || !sub.keys?.p256dh || !sub.keys?.auth) return { error: "Langganan tidak valid." };
+  await simpanLangganan(sub, String(perangkat ?? "").slice(0, 60));
+  return { ok: "Notifikasi aktif di HP ini." };
+}
+
+export async function hapusLanggananAction(endpoint: string) {
+  await requireAuth();
+  await hapusLangganan(String(endpoint));
+}
+
+export async function kirimNotifikasiUjiAction(): Promise<FormState> {
+  await requireAuth();
+  const r = await kirimKeSemua({ title: "Notifikasi uji", body: "Pesanan online akan muncul seperti ini.", url: "/pesanan", tag: "uji" });
+  if (r.terkirim === 0) return { error: "Tidak ada HP yang menerima. Aktifkan notifikasi dulu." };
+  return { ok: `Terkirim ke ${r.terkirim} HP.` };
 }
 
 // ─── Pengaturan ──────────────────────────────────────────────────

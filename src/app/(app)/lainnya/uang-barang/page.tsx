@@ -56,10 +56,11 @@ export default async function UangBarangPage() {
       <div className="space-y-4 px-4">
         <section className="card">
           <Row label="Saldo Kantong Kantin" value={rupiah(u.saldo)} />
+          {u.saldoGateway !== 0 && <Row label="Saldo gateway (belum dicairkan)" value={rupiah(u.saldoGateway)} />}
           <Row label="Barang jualan (modal)" value={rupiah(u.totalBarang)} />
           <Row label="Bahan (perkiraan)" value={`±${rupiah(u.totalBahan)}`} />
           <div className="my-1 border-t border-line" />
-          <Row label="Total" value={rupiah(u.saldo + u.totalBarang + u.totalBahan)} strong />
+          <Row label="Total" value={rupiah(u.saldo + u.saldoGateway + u.totalBarang + u.totalBahan)} strong />
         </section>
 
         <section className="card">

@@ -1,7 +1,7 @@
 import "server-only";
-import { and, asc, desc, eq, gt, isNull, lt, lte } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, gt, isNotNull, isNull, lt, lte, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { bahan, bahanAktif, bahanTerbuang, belanja, harga, kas, menu, resep, tapEvent, tutupBuku, type TutupBuku } from "@/db/schema";
+import { bahan, bahanAktif, bahanTerbuang, belanja, harga, kas, menu, pesanan, resep, tapEvent, tutupBuku, type TutupBuku } from "@/db/schema";
 import {
   bagiPerHari,
   daftarTanggal,
@@ -23,6 +23,7 @@ import {
   type PeriodeData,
   type Stok,
 } from "./calc";
+import { bacaAtur } from "./foto";
 import { awalHariWib, bulanWib, isoTanggalWib } from "./format";
 import { getSetting } from "./settings";
 
@@ -40,9 +41,46 @@ export async function getSemuaHarga(): Promise<HargaRow[]> {
 }
 
 /** Semua menu (aktif & nonaktif), urut tampilan. */
-export async function getMenu(): Promise<MenuDef[]> {
-  return db.select().from(menu).orderBy(asc(menu.urutan), asc(menu.id));
+export async function getMenu() {
+  return db.select(kolomMenu).from(menu).orderBy(asc(menu.urutan), asc(menu.id));
 }
+
+// Semua kolom menu kecuali `foto` (BLOB): foto hanya dibaca oleh route /pesan/foto/[id].
+const k = getTableColumns(menu);
+const kolomMenu = {
+  id: k.id,
+  nama: k.nama,
+  jenis: k.jenis,
+  aktif: k.aktif,
+  urutan: k.urutan,
+  diKatalog: k.diKatalog,
+  habis: k.habis,
+  bisaLessSugar: k.bisaLessSugar,
+  fotoVersi: k.fotoVersi,
+  fotoAtur: k.fotoAtur,
+};
+
+/** Menu katalog untuk halaman publik /pesan & Beranda: aktif && di_katalog, harga jual sekarang. */
+export async function getKatalog() {
+  const [semua, h, buka] = await Promise.all([getMenu(), getSemuaHarga(), getSetting("kantin_buka")]);
+  const now = Date.now();
+  return {
+    buka: buka === "1",
+    menu: semua
+      .filter((m) => m.aktif && m.diKatalog)
+      .map((m) => ({
+        id: m.id,
+        nama: m.nama,
+        jenis: m.jenis,
+        habis: m.habis,
+        bisaLessSugar: m.bisaLessSugar,
+        fotoVersi: m.fotoVersi,
+        atur: bacaAtur(m.fotoAtur),
+        harga: hargaPada(h, m.id, now),
+      })),
+  };
+}
+export type MenuKatalog = Awaited<ReturnType<typeof getKatalog>>["menu"][number];
 
 /** Bahan, resep, pembelian aktif, dan belanja bahan: semua yang dibutuhkan untuk HPP. */
 export async function getHppCtx() {
@@ -72,7 +110,7 @@ export function awalData(tutupSebelumnya: { waktu: number; hasilJson: string | n
 export async function getDataPeriode(dari: number, sampai: number) {
   const rentang = <T extends typeof belanja | typeof kas | typeof tapEvent | typeof bahanTerbuang>(t: T) =>
     and(gt(t.waktu, dari), lte(t.waktu, sampai));
-  const [b, k, t, tb, h, m, hpp] = await Promise.all([
+  const [b, k, t, tb, h, m, hpp, [pot]] = await Promise.all([
     db.select().from(belanja).where(rentang(belanja)).orderBy(desc(belanja.waktu)),
     db.select().from(kas).where(rentang(kas)).orderBy(desc(kas.waktu)),
     db.select().from(tapEvent).where(rentang(tapEvent)).orderBy(asc(tapEvent.waktu)),
@@ -80,8 +118,13 @@ export async function getDataPeriode(dari: number, sampai: number) {
     getSemuaHarga(),
     getMenu(),
     getHppCtx(),
+    // Potongan gateway: pesanan yang lunas di periode, termasuk yang kemudian dibatalkan (CR-005)
+    db
+      .select({ n: sql<number>`coalesce(sum(${pesanan.potongan}), 0)` })
+      .from(pesanan)
+      .where(and(isNotNull(pesanan.dibayar), gt(pesanan.dibayar, dari), lte(pesanan.dibayar, sampai))),
   ]);
-  return { belanja: b, kas: k, taps: t, terbuang: tb, harga: h, menu: m, hpp } satisfies PeriodeData;
+  return { belanja: b, kas: k, taps: t, terbuang: tb, harga: h, menu: m, hpp, potongan: pot?.n ?? 0 } satisfies PeriodeData;
 }
 
 const jumlah = (taps: { delta: number }[]) => taps.reduce((a, t) => a + t.delta, 0);
@@ -296,6 +339,7 @@ export async function getSaldoTerakhir() {
     .orderBy(desc(kas.waktu), desc(kas.id));
   return {
     saldo: terakhir.saldoKantong,
+    saldoGateway: terakhir.saldoGateway,
     waktu: terakhir.waktu,
     dariSetup: terakhir.hasilJson === null,
     kasSejak,
@@ -362,6 +406,7 @@ export async function getBep() {
       belanjaPribadi: total(b, (x) => x.total, false),
       saldoTerakhir: terakhir.saldoKantong,
       cashTerakhir: terakhir.cashBelumDisetor,
+      gatewayTerakhir: terakhir.saldoGateway,
       tarik: total(tarik, (x) => x.nominal, false),
     }),
     waktu: terakhir.waktu,
@@ -417,6 +462,7 @@ export async function getUangBarang() {
     .sort((a, b) => b.nilai - a.nilai);
   return {
     saldo: terakhir.saldoKantong,
+    saldoGateway: terakhir.saldoGateway,
     waktu: terakhir.waktu,
     dariSetup: terakhir.hasilJson === null,
     barang,

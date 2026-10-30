@@ -112,7 +112,7 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
                   type="button"
                   disabled={!bisa}
                   onClick={() => tap(m.id, "terjual")}
-                  className={`h-14 w-24 shrink-0 rounded-[var(--r-ctl)] font-display text-2xl font-extrabold poster:w-16 ${koreksi ? "btn-danger" : "btn-primary"}`}
+                  className={`h-14 w-24 shrink-0 rounded-[var(--r-ctl)] font-display text-2xl font-extrabold ${koreksi ? "btn-danger" : "btn-primary"}`}
                 >
                   {koreksi ? "−1" : "+1"}
                 </button>

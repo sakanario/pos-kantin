@@ -44,3 +44,9 @@ next-env.d.ts
 *.db
 *.db-journal
 !.env.example
+
+# backup data pengguna (salinan DB sebelum ubah skema, ekspor Turso) & file sementara SQLite
+*.db-shm
+*.db-wal
+*.db.bak*
+backup-*.json

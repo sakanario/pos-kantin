@@ -413,3 +413,78 @@ test("Contoh CR-006: tutup buku Senin 07.00 lalu Selasa 20.00", () => {
   for (const [h, n] of [...bagiPerHari(10, p1), ...bagiPerHari(8, p2)]) grafik.set(h, (grafik.get(h) ?? 0) + n);
   assert.deepEqual([...grafik], [["2026-10-11", 10], ["2026-10-12", 4], ["2026-10-13", 4]]);
 });
+
+// ─── Saldo gateway & potongan (CR-005 Tahap 2) ───────────────────
+
+test("Contoh CR-005: 1 kopi Rp10.000 lewat app, potongan Rp70", () => {
+  const h = hitungPeriode(
+    { saldoKantong: 0, cashBelumDisetor: 0, saldoGateway: 0, stok: {} },
+    { waktu: 1000, saldoKantong: 0, cashBelumDisetor: 0, saldoGateway: 9930, sisa: {} },
+    data({ taps: taps(KOPI, "terjual", 1), hpp: hppTetap(7000), potongan: 70 }),
+  );
+  assert.equal(h.omzetNyata, 9930);
+  assert.equal(h.omzetSeharusnya, 10000);
+  assert.equal(h.selisih, -70);
+  assert.equal(h.potongan, 70);
+  assert.equal(h.uangHilang, 0);
+  assert.equal(m(h, KOPI).untung, 3000); // per menu tanpa potongan
+  assert.equal(h.untungJualan, 2930);
+  assert.equal(h.uangBersih, 9930);
+});
+
+test("pencairan gateway → Kantong di tengah periode tidak mengubah omzet", () => {
+  // 2 kopi online (potongan 2 × 70), lalu cair Rp15.000 ke Kantong, lalu 1 kopi bayar langsung ke Kantong
+  const h = hitungPeriode(
+    { saldoKantong: 50000, cashBelumDisetor: 0, saldoGateway: 0, stok: {} },
+    { waktu: 1000, saldoKantong: 50000 + 15000 + 10000, cashBelumDisetor: 0, saldoGateway: 19860 - 15000, sisa: {} },
+    data({ taps: taps(KOPI, "terjual", 3), hpp: hppTetap(7000), potongan: 140 }),
+  );
+  assert.equal(h.omzetNyata, 29860);
+  assert.equal(h.selisih, -140);
+  assert.equal(h.uangHilang, 0);
+  assert.equal(h.untungJualan, 3 * 3000 - 140);
+  assert.equal(h.gatewayAwal, 0);
+  assert.equal(h.gatewayAkhir, 4860);
+});
+
+test("tanpa saldo gateway & potongan: hasil sama seperti sebelum CR-005", () => {
+  const h = hitungPeriode(
+    { saldoKantong: 50000, cashBelumDisetor: 0, stok: {} },
+    { waktu: 1000, saldoKantong: 70000, cashBelumDisetor: 0, sisa: {} },
+    data({ taps: taps(KOPI, "terjual", 2), hpp: hppTetap(7000) }),
+  );
+  assert.equal(h.omzetNyata, 20000);
+  assert.equal(h.potongan, 0);
+  assert.equal(h.uangHilang, h.selisih);
+  assert.equal(h.untungJualan, 6000);
+});
+
+test("balik modal menghitung saldo gateway yang belum dicairkan", () => {
+  const bep = hitungBep({ saldoAwal: 0, cashAwal: 0, setor: 0, belanjaPribadi: 20000, saldoTerakhir: 5000, cashTerakhir: 0, gatewayTerakhir: 9930, tarik: 0 });
+  assert.equal(bep.uangKembali, 14930);
+  assert.equal(bep.posisi, -5070);
+});
+
+test("pesanan dibatalkan, refund dari Kantong: potongan tetap biaya, uang hilang 0", () => {
+  // Pesanan Rp10.000 lunas (gateway +9.930), lalu dibatalkan: tap dihapus, Rp10.000 dikembalikan dari Kantong
+  const h = hitungPeriode(
+    { saldoKantong: 50000, cashBelumDisetor: 0, saldoGateway: 0, stok: {} },
+    { waktu: 1000, saldoKantong: 40000, cashBelumDisetor: 0, saldoGateway: 9930, sisa: {} },
+    data({ taps: [], hpp: hppTetap(7000), potongan: 70 }),
+  );
+  assert.equal(h.omzetNyata, -70);
+  assert.equal(h.uangHilang, 0);
+  assert.equal(h.untungJualan, -70);
+  assert.equal(h.uangBersih, -70);
+});
+
+test("pesanan dibatalkan, refund dari uang pribadi = setor modal sebesar total", () => {
+  const h = hitungPeriode(
+    { saldoKantong: 50000, cashBelumDisetor: 0, saldoGateway: 0, stok: {} },
+    { waktu: 1000, saldoKantong: 50000, cashBelumDisetor: 0, saldoGateway: 9930, sisa: {} },
+    data({ taps: [], hpp: hppTetap(7000), potongan: 70, kas: [{ jenis: "setor", nominal: 10000 }] }),
+  );
+  assert.equal(h.omzetNyata, -70);
+  assert.equal(h.uangHilang, 0);
+  assert.equal(h.untungJualan, -70);
+});

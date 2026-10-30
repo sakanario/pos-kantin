@@ -19,6 +19,11 @@ Pengguna bukan akuntan: jelaskan dengan contoh angka, bukan istilah.
   sendiri − sisa), modal rata-rata tertimbang.
 - Dua angka per periode: **untung jualan** (per item, pakai HPP/modal) dan **uang bersih** (omzet nyata − belanja).
 - Setor modal / tarik tidak mengubah profit; fungsinya mengoreksi perubahan saldo.
+- Saldo payment gateway (pesan online, CR-005) = kantong kedua di tutup buku; potongan gateway = biaya yang
+  mengurangi untung jualan, dan "uang hilang" = selisih + potongan. Pencairan gateway → Kantong tidak dicatat.
+- Pesanan online yang lunas = tap terjual otomatis (racikan saja; barang jadi tetap dari sisa stok). Pembayarannya
+  tidak dicatat sebagai uang; uangnya terbaca dari saldo gateway saat tutup buku.
+- Env `GATEWAY=palsu` = tombol "Simulasikan bayar" (lunas tanpa uang). Hanya untuk laptop; ditolak di Vercel.
 - Konsumsi pribadi (tap "Sendiri") = biaya: mengurangi untung jualan.
 - Bahan terbuang (basi/tumpah) = biaya juga, tapi dicatat per bahan (`bahan_terbuang`), bukan lewat tap "Sendiri".
 
@@ -49,10 +54,16 @@ src/lib/data.ts        query baca (periode berjalan, riwayat, ringkasan harian, 
 src/lib/hitung-ulang.ts hitung ulang hasil semua tutup buku sejak waktu tertentu
 src/app/actions.ts     semua server action (tulis). Setiap action memanggil requireAuth()
 src/app/(app)/         halaman setelah login: beranda, catat (belanja/kopi/kas + edit), tutup-buku,
-                       laporan (+ /[id] detail), lainnya (+ /menu, /bahan, /uang-barang, /pengeluaran), setelan
+                       laporan (+ /[id] detail), lainnya (+ /menu, /bahan, /uang-barang, /pengeluaran, /riwayat-pesanan, /qr-katalog),
+                       pesanan (pesanan online), setelan
 src/app/login, setup   tanpa login
-src/db/schema.ts       11 tabel: settings, menu, bahan, resep, bahan_aktif, harga, tap_event, belanja, kas, tutup_buku,
-                       bahan_terbuang
+src/app/pesan/         halaman pembeli (CR-005, tanpa login): katalog, keranjang, [kode]/bayar, [kode] (struk),
+                       riwayat, foto/[id]; actions.ts = server action publik (validasi ulang di lib/pesanan.ts)
+src/lib/pesanan.ts     pesanan online: buat, kedaluwarsa, tandaiLunas (idempoten, tap otomatis), majukan, batalkanLunas
+src/lib/push.ts        web push saat pesanan lunas (public/sw.js; kunci VAPID di env)
+src/db/schema.ts       14 tabel: settings, menu, bahan, resep, bahan_aktif, harga, tap_event, belanja, kas, tutup_buku,
+                       pesanan, pesanan_item, push_langganan, bahan_terbuang
+                       (menu.foto = BLOB: jangan ikut di-select, pakai getMenu / columns: { foto: false })
 scripts/seed-dummy.ts  generator dummy.db (pakai calc.ts yang sama)
 ```
 
@@ -86,10 +97,16 @@ scripts/seed-dummy.ts  generator dummy.db (pakai calc.ts yang sama)
 - **`Date.now()` di render** ditolak lint (react-hooks/purity) → hitung di `lib/data.ts`.
 - **Akses dari HP** (IP LAN): `allowedDevOrigins` di `next.config.ts` diisi IP laptop otomatis;
   tanpa itu JS diblokir di dev dan tombol tidak berfungsi. IP berubah → restart dev server.
-- **Gaya & tema tampilan** (cookie per perangkat, Setelan): `data-gaya="poster"` dan `data-theme` di <html>
-  (root layout). Design system di `docs/design-system/{pop,poster}/`. Bentuk yang beda per gaya pakai variabel
-  (`--r-sm/md/lg/ctl`, `--stroke*`, `--pop-shadow*`, `--font-ui/judul`) atau varian `poster:`; jangan pakai
-  `--radius-*`/`--shadow-*` untuk variabel sendiri (bentrok dengan tema bawaan Tailwind).
+- **Tampilan**: satu gaya saja, Kantin Latte (`docs/design-system/latte/`). Gaya Pop & Poster dihapus
+  2026-10-16 supaya UI baru cukup dicek di terang & gelap. Tema terang/gelap/ikut HP = cookie per perangkat
+  (Setelan) → `data-theme` di <html>. Halaman pembeli `/pesan` punya tema sendiri (cookie `tema_pembeli`, bawaan terang,
+  tidak ikut HP), dipilih root layout lewat header `x-area` dari `proxy.ts` (`lib/tema-server.ts`). Warna & bentuk lewat variabel di `globals.css` (`--r-sm/md/lg/ctl`,
+  `--stroke*`, `--pop-shadow*`, `--font-ui/judul`); jangan pakai `--radius-*`/`--shadow-*` untuk variabel
+  sendiri (bentrok dengan tema bawaan Tailwind).
+- **Dialog `position: fixed` di dalam `.card`**: kartu kaca memakai `backdrop-filter`, yang menjadi containing block
+  untuk elemen fixed (dialog jadi terkurung di kartu). Render dialog seperti itu lewat `createPortal(…, document.body)`.
+- **File `"use client"`**: fungsi/konstanta yang diekspor darinya tidak bisa dipanggil dari komponen server
+  (error "Attempted to call X() from the server"). Taruh helper bersama di `src/lib/` (mis. `lib/gerak.ts`).
 - **Tailwind v4**: kelas kustom (`card`, `input`, `btn-primary`, …) didefinisikan dengan `@utility`
   di `globals.css`, bukan `@layer components`.
 - Next.js menolak dua `next dev` di folder yang sama.

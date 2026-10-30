@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "fc6a70a3-5eb7-446c-8717-7bdea15154d1",
+  "id": "dab87af4-13ce-4070-852f-6c25b5f7b621",
   "prevId": "fef092cd-b5e6-4ff1-9b59-d5a15b19b4de",
   "tables": {
     "bahan": {
@@ -71,51 +71,6 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "bahan_terbuang": {
-      "name": "bahan_terbuang",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "integer",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": true
-        },
-        "waktu": {
-          "name": "waktu",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "bahan_id": {
-          "name": "bahan_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "jumlah": {
-          "name": "jumlah",
-          "type": "real",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "catatan": {
-          "name": "catatan",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         }
       },
@@ -341,6 +296,44 @@
           "notNull": true,
           "autoincrement": false,
           "default": 0
+        },
+        "di_katalog": {
+          "name": "di_katalog",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "habis": {
+          "name": "habis",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "bisa_less_sugar": {
+          "name": "bisa_less_sugar",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "foto": {
+          "name": "foto",
+          "type": "blob",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "foto_versi": {
+          "name": "foto_versi",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {},

@@ -10,10 +10,13 @@ import { parseRupiah } from "@/lib/format";
 export function TutupBukuWizard({
   barang,
   infoSaldoLalu,
+  infoGatewayLalu,
   hari,
 }: {
   barang: { id: number; nama: string; maks: number }[];
   infoSaldoLalu: string;
+  /** Diisi bila pesan online sudah dipakai: input saldo gateway ikut tampil. */
+  infoGatewayLalu: string | null;
   hari: { iso: string; label: string; bawaan: boolean }[];
 }) {
   // Tombol + hidden input, bukan checkbox: form reset React 19 tidak mengubah state ini
@@ -27,6 +30,7 @@ export function TutupBukuWizard({
   function hitung(fd: FormData) {
     const i: TutupBukuInput = {
       saldo: parseRupiah(fd.get("saldo")),
+      saldoGateway: infoGatewayLalu === null ? 0 : parseRupiah(fd.get("saldo_gateway")),
       sisa: Object.fromEntries(barang.map((b) => [b.id, parseRupiah(fd.get(`sisa_${b.id}`))])),
       hariBuka: fd.getAll("hari_buka").map(String),
     };
@@ -71,12 +75,22 @@ export function TutupBukuWizard({
   return (
     <form action={hitung} className="space-y-4">
       <section className="card space-y-2">
-        <h2 className="font-bold">1. Saldo Kantong Kantin</h2>
+        <h2 className="font-bold">{infoGatewayLalu === null ? "1. Saldo Kantong Kantin" : "1. Saldo"}</h2>
         <p className="text-sm text-muted">
           Pastikan cash di kotak sudah ditransfer ke kantong sebelum melihat saldo.
         </p>
         <p className="text-sm text-muted">Buka Jago, lihat saldo Kantong Kantin sekarang. Tutup buku lalu: {infoSaldoLalu}.</p>
+        {infoGatewayLalu !== null && <label className="label">Kantong Kantin</label>}
         <RupiahInput name="saldo" required defaultValue={input?.saldo} />
+        {infoGatewayLalu !== null && (
+          <div className="space-y-1 pt-2">
+            <label className="label">Saldo gateway (pesan online)</label>
+            <p className="text-sm text-muted">
+              Buka dashboard payment gateway, lihat saldo yang belum dicairkan. Tutup buku lalu: {infoGatewayLalu}.
+            </p>
+            <RupiahInput name="saldo_gateway" required defaultValue={input?.saldoGateway} />
+          </div>
+        )}
       </section>
 
       {barang.length > 0 && (

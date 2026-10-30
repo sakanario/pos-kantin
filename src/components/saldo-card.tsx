@@ -15,6 +15,9 @@ export async function SaldoCard() {
         <p className="text-xs text-muted">
           {s.dariSetup ? `tercatat saat setup awal ${tanggal(s.waktu)}` : `tercatat saat tutup buku ${tanggalJam(s.waktu)}`}
         </p>
+        {s.saldoGateway !== 0 && (
+          <p className="num mt-1 text-sm text-muted">+ saldo gateway {rupiah(s.saldoGateway)} (belum dicairkan)</p>
+        )}
       </div>
       {s.kasSejak.length > 0 && (
         <div className="border-t border-line pt-2">

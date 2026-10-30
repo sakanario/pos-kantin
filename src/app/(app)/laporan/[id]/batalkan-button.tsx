@@ -4,7 +4,17 @@ import { batalkanTutupBukuAction } from "@/app/actions";
 import { KonfirmasiButton } from "@/components/konfirmasi";
 import { rupiah } from "@/lib/format";
 
-export function BatalkanTutupBukuButton({ id, saldo, sisa }: { id: number; saldo: number; sisa: string[] }) {
+export function BatalkanTutupBukuButton({
+  id,
+  saldo,
+  saldoGateway,
+  sisa,
+}: {
+  id: number;
+  saldo: number;
+  saldoGateway: number;
+  sisa: string[];
+}) {
   return (
     <div className="space-y-2">
       <KonfirmasiButton
@@ -19,6 +29,7 @@ export function BatalkanTutupBukuButton({ id, saldo, sisa }: { id: number; saldo
             <p>Isian yang dihapus (catat kalau mau tutup buku ulang):</p>
             <ul className="list-disc pl-5">
               <li>Saldo kantong: {rupiah(saldo)}</li>
+              {saldoGateway !== 0 && <li>Saldo gateway: {rupiah(saldoGateway)}</li>}
               {sisa.map((s) => (
                 <li key={s}>Sisa {s}</li>
               ))}

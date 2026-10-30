@@ -40,8 +40,50 @@
     {
       "idx": 5,
       "version": "6",
-      "when": 1792554190153,
-      "tag": "0005_bahan_terbuang",
+      "when": 1792157387296,
+      "tag": "0005_katalog",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792158176195,
+      "tag": "0006_saldo_gateway",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792159163747,
+      "tag": "0007_pesanan",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1792161142112,
+      "tag": "0008_push_langganan",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1792162425396,
+      "tag": "0009_foto_atur",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1793321773506,
+      "tag": "0010_gateway_json",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1793323393344,
+      "tag": "0011_bahan_terbuang",
       "breakpoints": true
     }
   ]

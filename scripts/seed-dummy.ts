@@ -309,8 +309,9 @@ for (let i = 1; i < tutupRows.length; i++) {
 await db.insert(schema.settings).values([
   { key: "pin_hash", value: await bcrypt.hash(PIN, 10) },
   { key: "setup_done", value: "1" },
+  { key: "kantin_buka", value: "1" },
 ]);
-await db.insert(schema.menu).values(menu);
+await db.insert(schema.menu).values(menu.map((m) => ({ ...m, diKatalog: true, bisaLessSugar: m.id === SKM })));
 await db.insert(schema.harga).values(harga);
 await db.insert(schema.bahan).values(Object.values(BAHAN).map((b) => ({ id: b.id, nama: b.nama, satuan: b.satuan, hargaAwal: b.hargaAwal })));
 await db.insert(schema.resep).values(hpp.resep.map((r) => ({ menuId: r.menuId, berlakuMulai: r.berlakuMulai, isiJson: JSON.stringify(r.isi) })));

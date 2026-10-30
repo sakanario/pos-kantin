@@ -1,13 +1,20 @@
 import Link from "next/link";
 import { BepCard } from "@/components/bep-card";
 import { SaldoCard } from "@/components/saldo-card";
-import { getPengingatKemasan, getPeriodeBerjalan } from "@/lib/data";
+import { getKatalog, getPengingatKemasan, getPeriodeBerjalan } from "@/lib/data";
+import { getJumlahPesananAktif } from "@/lib/pesanan";
 import { plus, rupiah, tanggalJam } from "@/lib/format";
+import { KatalogPanel } from "./katalog-panel";
 import { PengingatKemasan } from "./pengingat-kemasan";
 import { TapPanel } from "./tap-panel";
 
 export default async function Beranda() {
-  const [p, pengingat] = await Promise.all([getPeriodeBerjalan(), getPengingatKemasan()]);
+  const [p, pengingat, katalog, pesananAktif] = await Promise.all([
+    getPeriodeBerjalan(),
+    getPengingatKemasan(),
+    getKatalog(),
+    getJumlahPesananAktif(),
+  ]);
   if (!p) return null;
   const { hariSejakTutup } = p;
   const aktif = p.menu.filter((m) => m.aktif);
@@ -31,6 +38,16 @@ export default async function Beranda() {
         </span>
       </header>
 
+      {pesananAktif > 0 && (
+        <Link href="/pesanan" className="card flex items-center gap-3 border-accent bg-accent-soft">
+          <span className="num flex size-11 items-center justify-center rounded-full bg-accent font-display text-lg font-extrabold text-accent-fg">
+            {pesananAktif}
+          </span>
+          <span className="flex-1 font-bold">Pesanan online perlu dibuat</span>
+          <span className="text-muted">›</span>
+        </Link>
+      )}
+
       <PengingatKemasan items={pengingat} />
 
       {aktif.length === 0 ? (
@@ -40,6 +57,8 @@ export default async function Beranda() {
       ) : (
         <TapPanel menu={aktif} />
       )}
+
+      {katalog.menu.length > 0 && <KatalogPanel buka={katalog.buka} menu={katalog.menu} />}
 
       <section className="card space-y-2">
         <div className="flex items-baseline justify-between">
