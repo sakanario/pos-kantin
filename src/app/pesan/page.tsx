@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FooterPembeli } from "@/components/footer-pembeli";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { getKatalog } from "@/lib/data";
@@ -130,6 +131,7 @@ export default async function KatalogPage() {
       {menu.length === 0 && <p className="card animate-masuk text-sm text-muted">Menu belum tersedia. Coba lagi nanti ya.</p>}
 
       <KatalogClient menu={menu} bisaPesan={buka && adaPesan} adaPesan={adaPesan} />
+      <FooterPembeli />
     </main>
   );
 }

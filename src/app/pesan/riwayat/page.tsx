@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FooterPembeli } from "@/components/footer-pembeli";
 import { connection } from "next/server";
 import { getKatalog } from "@/lib/data";
 import { rupiah } from "@/lib/format";
@@ -82,6 +83,7 @@ export default async function RiwayatPage() {
           </div>
         </>
       )}
+      <FooterPembeli />
     </main>
   );
 }
