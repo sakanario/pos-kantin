@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { FooterPembeli } from "@/components/footer-pembeli";
 import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 import QRCode from "qrcode";
@@ -106,6 +107,7 @@ export default async function StrukPage(props: PageProps<"/pesan/[kode]">) {
           </Link>
         )
       )}
+      <FooterPembeli />
     </main>
   );
 }

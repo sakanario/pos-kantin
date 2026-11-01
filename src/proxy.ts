@@ -1,9 +1,12 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { HEADER_AREA } from "@/lib/tema";
 
-/** Halaman publik tanpa login: katalog pembeli `/pesan` dan turunannya (bukan `/pesanan`). */
+/** Halaman legal publik (syarat review payment gateway). */
+const LEGAL = ["/syarat-ketentuan", "/kebijakan-pengembalian"];
+
+/** Halaman publik tanpa login: katalog pembeli `/pesan` dan turunannya (bukan `/pesanan`), halaman legal. */
 function publik(pathname: string) {
-  return pathname === "/pesan" || pathname.startsWith("/pesan/");
+  return pathname === "/pesan" || pathname.startsWith("/pesan/") || LEGAL.includes(pathname);
 }
 
 // `/` = katalog pembeli (rewrite ke /pesan; URL tetap `/`). Beranda pemilik di /admin, masuk lewat /login.
