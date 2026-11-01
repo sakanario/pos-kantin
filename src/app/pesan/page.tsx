@@ -32,7 +32,7 @@ export default async function KatalogPage() {
   const { milikku, belumBayar, sisaBayarMs, kedaluwarsa, berjalan } = await getPesananku(kode, perangkat);
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-4 pb-32 pt-7">
+    <main className="mx-auto flex min-h-dvh max-w-md flex-col gap-5 px-4 pb-32 pt-7 md:max-w-3xl md:gap-7 md:px-8 md:pt-12">
       <header className="animate-masuk space-y-2.5">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
@@ -45,7 +45,7 @@ export default async function KatalogPage() {
               className="size-[52px] shrink-0 rounded-[var(--r-md)] bg-card-raised object-cover shadow-pop"
             />
             <div className="min-w-0">
-              <h1 className="text-[26px] font-bold leading-[30px]">{NAMA_KANTIN}</h1>
+              <h1 className="text-[26px] font-bold leading-[30px] md:text-[34px] md:leading-[40px]">{NAMA_KANTIN}</h1>
               <StatusBuka buka={buka} />
             </div>
           </div>

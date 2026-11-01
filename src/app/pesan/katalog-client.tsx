@@ -58,33 +58,35 @@ export function KatalogClient({ menu, bisaPesan, adaPesan }: { menu: MenuKatalog
             <h2 className="animate-masuk font-display text-xs font-semibold tracking-[.12em] text-muted" style={ke(judul)}>
               {judul}
             </h2>
-            {items.map((m) => (
-              <div key={m.id} className="card flex animate-masuk items-center gap-3.5 p-3" style={ke(m.id)}>
-                {m.fotoVersi !== null ? (
-                  <button
-                    type="button"
-                    aria-label={`Lihat foto ${m.nama}`}
-                    onClick={() => setLihatFoto(m)}
-                    className="shrink-0 rounded-[var(--r-md)] transition-transform duration-150 active:scale-95"
-                  >
-                    <FotoMenu id={m.id} jenis={m.jenis} fotoVersi={m.fotoVersi} atur={m.atur} className={m.habis ? "opacity-45" : ""} />
-                  </button>
-                ) : (
-                  <FotoMenu id={m.id} jenis={m.jenis} fotoVersi={m.fotoVersi} className={m.habis ? "opacity-45" : ""} />
-                )}
-                <div className="min-w-0 flex-1">
-                  <h3 className={`text-[17px] font-semibold leading-[22px] ${m.habis ? "text-muted" : ""}`}>{m.nama}</h3>
-                  <p className={`num mt-1 font-display text-[15px] font-semibold text-muted ${m.habis ? "line-through" : ""}`}>
-                    {rupiah(m.harga)}
-                  </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {items.map((m) => (
+                <div key={m.id} className="card flex animate-masuk items-center gap-3.5 p-3" style={ke(m.id)}>
+                  {m.fotoVersi !== null ? (
+                    <button
+                      type="button"
+                      aria-label={`Lihat foto ${m.nama}`}
+                      onClick={() => setLihatFoto(m)}
+                      className="shrink-0 rounded-[var(--r-md)] transition-transform duration-150 active:scale-95"
+                    >
+                      <FotoMenu id={m.id} jenis={m.jenis} fotoVersi={m.fotoVersi} atur={m.atur} className={m.habis ? "opacity-45" : ""} />
+                    </button>
+                  ) : (
+                    <FotoMenu id={m.id} jenis={m.jenis} fotoVersi={m.fotoVersi} className={m.habis ? "opacity-45" : ""} />
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <h3 className={`text-[17px] font-semibold leading-[22px] ${m.habis ? "text-muted" : ""}`}>{m.nama}</h3>
+                    <p className={`num mt-1 font-display text-[15px] font-semibold text-muted ${m.habis ? "line-through" : ""}`}>
+                      {rupiah(m.harga)}
+                    </p>
+                  </div>
+                  {m.habis ? (
+                    <span className="animate-muncul rounded-full bg-bad-soft px-3.5 py-2 font-display text-sm font-bold text-bad">Habis</span>
+                  ) : adaPesan ? (
+                    <TombolTambah m={m} keranjang={keranjang} bisaPesan={bisaPesan} onPilihGula={() => setPilihGula(m)} />
+                  ) : null}
                 </div>
-                {m.habis ? (
-                  <span className="animate-muncul rounded-full bg-bad-soft px-3.5 py-2 font-display text-sm font-bold text-bad">Habis</span>
-                ) : adaPesan ? (
-                  <TombolTambah m={m} keranjang={keranjang} bisaPesan={bisaPesan} onPilihGula={() => setPilihGula(m)} />
-                ) : null}
-              </div>
-            ))}
+              ))}
+            </div>
           </section>
         ),
       )}
