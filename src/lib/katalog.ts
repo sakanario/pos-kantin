@@ -4,11 +4,8 @@ export const TAGLINE_KATALOG = "Pesan dari HP, ambil atau dianterin ke meja";
 
 /** Identitas & kontak penjual: footer halaman pembeli dan halaman legal (review payment gateway). */
 export const PENGELOLA = "Satria L";
-export const KONTAK = {
-  instagram: { label: "@kopi.ksatria", href: "https://instagram.com/kopi.ksatria/" },
-  email: { label: "eruko12@gmail.com", href: "mailto:eruko12@gmail.com" },
-  whatsapp: { label: "0897-8862-262", href: "https://wa.me/628978862262" },
-} as const;
+/** Satu-satunya kontak publik (email & WhatsApp sengaja tidak ditampilkan). */
+export const INSTAGRAM = "https://instagram.com/kopi.ksatria/";
 /** Ubah tanggal ini setiap isi Syarat & Ketentuan / Kebijakan Pengembalian Dana berubah. */
 export const LEGAL_DIPERBARUI = "1 November 2026";
 /** Jam operasional yang ditulis di Syarat & Ketentuan (status Buka/Tutup sebenarnya diatur di Setelan). */

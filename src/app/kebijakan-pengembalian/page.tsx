@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { KontakPenjual } from "@/components/footer-pembeli";
+import { TombolInstagram } from "@/components/footer-pembeli";
 import { Bagian, Daftar, HalamanLegal } from "@/components/halaman-legal";
 import { HARI_REFUND, NAMA_KANTIN } from "@/lib/katalog";
 
@@ -41,7 +41,7 @@ export default function KebijakanPengembalianPage() {
         <Daftar>
           <li>
             Jika produk yang kamu terima salah, kurang, atau rusak (misalnya kopi tumpah, kemasan camilan rusak), sampaikan
-            komplain <b>paling lambat di hari yang sama</b> lewat kontak di bawah.
+            komplain <b>paling lambat di hari yang sama</b> lewat DM Instagram kami (tombol di bagian Kontak).
           </li>
           <li>Sertakan nomor pesanan dan, jika bisa, foto produknya.</li>
           <li>Kami akan mengganti produknya, atau mengembalikan dana sebesar harga produk tersebut jika penggantian tidak memungkinkan.</li>
@@ -65,7 +65,7 @@ export default function KebijakanPengembalianPage() {
 
       <Bagian judul="5. Cara dan waktu pengembalian">
         <Daftar>
-          <li>Hubungi kami lewat kontak di bawah dengan menyebut nomor pesanan dan alasannya.</li>
+          <li>Hubungi kami lewat DM Instagram dengan menyebut nomor pesanan dan alasannya.</li>
           <li>
             Jika disetujui, dana dikembalikan dalam <b>{HARI_REFUND}</b> ke metode pembayaran asal (lewat Midtrans) atau
             ditransfer ke rekening/e-wallet atas nama pembeli.
@@ -75,7 +75,10 @@ export default function KebijakanPengembalianPage() {
       </Bagian>
 
       <Bagian judul="6. Kontak">
-        <KontakPenjual />
+        <div className="flex items-center gap-3">
+          <TombolInstagram />
+          <span>Kirim DM ke Instagram {NAMA_KANTIN}.</span>
+        </div>
       </Bagian>
     </HalamanLegal>
   );

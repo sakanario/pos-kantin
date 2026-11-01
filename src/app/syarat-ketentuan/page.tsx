@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { KontakPenjual } from "@/components/footer-pembeli";
+import { TombolInstagram } from "@/components/footer-pembeli";
 import { Bagian, Daftar, HalamanLegal } from "@/components/halaman-legal";
 import { JAM_OPERASIONAL, NAMA_KANTIN, PENGELOLA } from "@/lib/katalog";
 
@@ -112,8 +112,11 @@ export default function SyaratKetentuanPage() {
       </Bagian>
 
       <Bagian judul="9. Kontak">
-        <p>Untuk pertanyaan, komplain, atau pengajuan pengembalian dana, hubungi kami:</p>
-        <KontakPenjual />
+        <p>Untuk pertanyaan, komplain, atau pengajuan pengembalian dana, hubungi kami lewat DM Instagram:</p>
+        <div className="flex items-center gap-3">
+          <TombolInstagram />
+          <span>Kirim DM ke Instagram {NAMA_KANTIN}.</span>
+        </div>
       </Bagian>
     </HalamanLegal>
   );
