@@ -24,12 +24,12 @@ export default function LoadingLaporan() {
             <Grafik judul="Barang jadi terjual · perkiraan" batang={BARANG} />
           </div>
         </section>
-        <div>
-          <h2 className="mb-2 text-sm font-bold text-muted">Per bulan · untung jualan</h2>
-          <div className="space-y-2">
-            <CardSkeleton rows={3} />
-            <CardSkeleton rows={2} />
+        <div className="space-y-2">
+          <h2 className="text-sm font-bold text-muted">Per bulan</h2>
+          <div className="flex h-10 items-center justify-center">
+            <Bone className="h-4 w-28" />
           </div>
+          <CardSkeleton rows={4} />
         </div>
       </div>
     </main>

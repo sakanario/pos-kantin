@@ -1,19 +1,14 @@
 import Link from "next/link";
+import { NavBulan } from "@/components/nav-bulan";
 import { PageHeader } from "@/components/page-header";
 import { bulanSekarang, hariIniWib } from "@/lib/data";
-import { bulanWib, hariTanggal, isoTanggalWib, jam, namaBulan, rupiah } from "@/lib/format";
+import { bulanDariParam, bulanWib, geserBulan, hariTanggal, isoTanggalWib, jam, rupiah } from "@/lib/format";
 import { getPesananBulan, getPesananPertama, type PesananLengkap } from "@/lib/pesanan";
 import { BarisPesanan } from "../../pesanan/baris-pesanan";
 import { PilihTanggal } from "./pilih-tanggal";
 
 type Filter = "selesai" | "batal";
 const SELESAI = ["siap", "diantar"];
-
-function geserBulan(ym: string, n: number): string {
-  const [y, m] = ym.split("-").map(Number);
-  const d = new Date(Date.UTC(y, m - 1 + n, 1));
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-}
 
 const cocok = (p: PesananLengkap, f: Filter | null) =>
   !f || (f === "batal" ? p.status === "batal" : SELESAI.includes(p.status));
@@ -36,7 +31,7 @@ export default async function RiwayatPesananPage(props: PageProps<"/lainnya/riwa
   const sekarang = bulanSekarang();
   const hariIni = hariIniWib();
   const tgl = typeof sp.tgl === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sp.tgl) && sp.tgl <= hariIni ? sp.tgl : null;
-  const bulan = tgl ? tgl.slice(0, 7) : typeof sp.bulan === "string" && /^\d{4}-\d{2}$/.test(sp.bulan) && sp.bulan <= sekarang ? sp.bulan : sekarang;
+  const bulan = tgl ? tgl.slice(0, 7) : bulanDariParam(sp.bulan, sekarang);
   const filter: Filter | null = sp.status === "selesai" || sp.status === "batal" ? sp.status : null;
 
   const [semua, pertama] = await Promise.all([getPesananBulan(bulan), getPesananPertama()]);
@@ -82,23 +77,11 @@ export default async function RiwayatPesananPage(props: PageProps<"/lainnya/riwa
     <main>
       <PageHeader title="Riwayat Pesanan" back="/lainnya" />
       <div className="space-y-4 px-4">
-        <div className="flex items-center justify-between">
-          {adaSebelum ? (
-            <Link href={href({ bulan: sebelum, tgl: null })} className="btn-ghost px-3 py-1.5" aria-label="Bulan sebelumnya">
-              ‹
-            </Link>
-          ) : (
-            <span className="w-10" />
-          )}
-          <span className="font-medium">{namaBulan(bulan)}</span>
-          {adaSesudah ? (
-            <Link href={href({ bulan: sesudah, tgl: null })} className="btn-ghost px-3 py-1.5" aria-label="Bulan berikutnya">
-              ›
-            </Link>
-          ) : (
-            <span className="w-10" />
-          )}
-        </div>
+        <NavBulan
+          bulan={bulan}
+          sebelum={adaSebelum ? href({ bulan: sebelum, tgl: null }) : null}
+          sesudah={adaSesudah ? href({ bulan: sesudah, tgl: null }) : null}
+        />
 
         <section className="card">
           <div className="flex items-baseline justify-between">

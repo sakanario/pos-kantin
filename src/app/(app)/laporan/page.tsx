@@ -2,33 +2,27 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { getGrafikHarian, getRiwayatTutupBuku, hariIniWib } from "@/lib/data";
 import { LaporanBasi } from "@/components/laporan-basi";
-import { bulanWib, isoTanggalWib, namaBulan, plus, rupiah, tanggal } from "@/lib/format";
+import { NavBulan } from "@/components/nav-bulan";
+import { bulanWib, geserBulan, isoTanggalWib, plus, rupiah, tanggal } from "@/lib/format";
 import { GrafikBatang, NavGrafik, rentangGrafik } from "./grafik";
 
 export default async function LaporanPage(props: PageProps<"/laporan">) {
   const [sp, riwayat] = await Promise.all([props.searchParams, getRiwayatTutupBuku()]);
   const setup = riwayat.at(-1);
-  const r = rentangGrafik(sp, hariIniWib(), setup ? isoTanggalWib(setup.waktu) : null);
+  const hariIni = hariIniWib();
+  const r = rentangGrafik(sp, hariIni, setup ? isoTanggalWib(setup.waktu) : null);
+  // Rekap per bulan mengikuti grafik: bulan yang ditampilkan grafik (mode Minggu: bulan minggu itu, sama dengan tombol Bulan)
+  const bulan = r.keBulan.slice(0, 7);
   const grafik = await getGrafikHarian(r.dari, r.sampai, riwayat);
   const periode = riwayat.filter((r) => r.hasil);
   const adaBasi = periode.some((r) => r.basi);
 
-  // Rekap bulanan: gabungan periode yang tutup bukunya jatuh di bulan tersebut
-  type Rekap = {
-    untung: number;
-    uangBersih: number;
-    omzet: number;
-    belanja: number;
-    selisih: number;
-    // untung = dari yang terjual saja; konsumsi sendiri dipisah (untung menu = untung − nilaiSendiri)
-    menu: Map<string, { terjual: number; untung: number; sendiri: number; nilaiSendiri: number; satuan: string }>;
-  };
-  const bulanan = new Map<string, Rekap>();
+  // Rekap bulanan: gabungan periode yang tutup bukunya jatuh di bulan yang dipilih
+  let rekap: Rekap | null = null;
   for (const r of periode) {
-    if (r.basi) continue;
+    if (r.basi || bulanWib(r.waktu) !== bulan) continue;
     const h = r.hasil!;
-    const k = bulanWib(r.waktu);
-    const b = bulanan.get(k) ?? { untung: 0, uangBersih: 0, omzet: 0, belanja: 0, selisih: 0, menu: new Map() };
+    const b: Rekap = rekap ?? { untung: 0, uangBersih: 0, omzet: 0, belanja: 0, selisih: 0, menu: new Map() };
     b.untung += h.untungJualan;
     b.uangBersih += h.uangBersih;
     b.omzet += h.omzetNyata;
@@ -48,8 +42,13 @@ export default async function LaporanPage(props: PageProps<"/laporan">) {
       x.nilaiSendiri += m.nilaiSendiri;
       b.menu.set(m.nama, x);
     }
-    bulanan.set(k, b);
+    rekap = b;
   }
+
+  const sebelum = geserBulan(bulan, -1);
+  const sesudah = geserBulan(bulan, 1);
+  // ‹ › di rekap ikut menggeser grafik (ke mode Bulan) supaya keduanya selalu bulan yang sama
+  const hrefBulan = (b: string) => r.href("bulan", `${b}-01`);
 
   return (
     <main>
@@ -72,42 +71,20 @@ export default async function LaporanPage(props: PageProps<"/laporan">) {
           )}
         </section>
 
-        {bulanan.size > 0 && (
-          <section>
-            <h2 className="mb-2 text-sm font-bold text-muted">Per bulan · untung jualan</h2>
-            <div className="space-y-2">
-              {[...bulanan.entries()].map(([k, b]) => (
-                <div key={k} className="card">
-                  <div className="flex items-baseline justify-between">
-                    <h3 className="font-bold">{namaBulan(k)}</h3>
-                    <span className="text-right">
-                      <span className={`num block text-lg font-semibold ${b.untung < 0 ? "text-bad" : ""}`}>
-                        {plus(b.untung)}
-                      </span>
-                      <span className="num block text-xs text-muted">uang bersih {plus(b.uangBersih)}</span>
-                    </span>
-                  </div>
-                  <div className="num mt-1 grid grid-cols-2 gap-x-4 text-sm text-muted">
-                    <span>Omzet {rupiah(b.omzet)}</span>
-                    <span className="text-right">Belanja {rupiah(b.belanja)}</span>
-                    <span />
-                    <span className={`text-right ${b.selisih < 0 ? "text-bad" : ""}`}>Selisih {rupiah(b.selisih)}</span>
-                  </div>
-                  <RekapMenu
-                    judul="Terjual"
-                    baris={[...b.menu.entries()]
-                      .filter(([, x]) => x.terjual !== 0 || x.untung !== 0)
-                      .map(([nama, x]) => ({ nama, jumlah: `${x.terjual} ${x.satuan}`, nilai: x.untung }))}
-                  />
-                  <RekapMenu
-                    judul="Dimakan / diminum sendiri"
-                    baris={[...b.menu.entries()]
-                      .filter(([, x]) => x.sendiri !== 0 || x.nilaiSendiri !== 0)
-                      .map(([nama, x]) => ({ nama, jumlah: `${x.sendiri} ${x.satuan}`, nilai: -x.nilaiSendiri }))}
-                  />
-                </div>
-              ))}
-            </div>
+        {setup && periode.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="text-sm font-bold text-muted">Per bulan</h2>
+            <NavBulan
+              bulan={bulan}
+              sebelum={sebelum >= bulanWib(setup.waktu) ? hrefBulan(sebelum) : null}
+              sesudah={sesudah <= hariIni.slice(0, 7) ? hrefBulan(sesudah) : null}
+              scroll={false}
+            />
+            {rekap ? (
+              <RekapBulan b={rekap} />
+            ) : (
+              <p className="card text-sm text-muted">Belum ada tutup buku di bulan ini.</p>
+            )}
           </section>
         )}
 
@@ -161,6 +138,50 @@ export default async function LaporanPage(props: PageProps<"/laporan">) {
         </section>
       </div>
     </main>
+  );
+}
+
+type Rekap = {
+  untung: number;
+  uangBersih: number;
+  omzet: number;
+  belanja: number;
+  selisih: number;
+  // untung = dari yang terjual saja; konsumsi sendiri dipisah (untung menu = untung − nilaiSendiri)
+  menu: Map<string, { terjual: number; untung: number; sendiri: number; nilaiSendiri: number; satuan: string }>;
+};
+
+function RekapBulan({ b }: { b: Rekap }) {
+  return (
+    <div className="card">
+      <div className="flex items-baseline justify-between">
+        <h3 className="font-bold">Untung jualan</h3>
+        <span className="text-right">
+          <span className={`num block text-lg font-semibold ${b.untung < 0 ? "text-bad" : ""}`}>
+            {plus(b.untung)}
+          </span>
+          <span className="num block text-xs text-muted">uang bersih {plus(b.uangBersih)}</span>
+        </span>
+      </div>
+      <div className="num mt-1 grid grid-cols-2 gap-x-4 text-sm text-muted">
+        <span>Omzet {rupiah(b.omzet)}</span>
+        <span className="text-right">Belanja {rupiah(b.belanja)}</span>
+        <span />
+        <span className={`text-right ${b.selisih < 0 ? "text-bad" : ""}`}>Selisih {rupiah(b.selisih)}</span>
+      </div>
+      <RekapMenu
+        judul="Terjual"
+        baris={[...b.menu.entries()]
+          .filter(([, x]) => x.terjual !== 0 || x.untung !== 0)
+          .map(([nama, x]) => ({ nama, jumlah: `${x.terjual} ${x.satuan}`, nilai: x.untung }))}
+      />
+      <RekapMenu
+        judul="Dimakan / diminum sendiri"
+        baris={[...b.menu.entries()]
+          .filter(([, x]) => x.sendiri !== 0 || x.nilaiSendiri !== 0)
+          .map(([nama, x]) => ({ nama, jumlah: `${x.sendiri} ${x.satuan}`, nilai: -x.nilaiSendiri }))}
+      />
+    </div>
   );
 }
 

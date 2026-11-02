@@ -1,21 +1,16 @@
 import Link from "next/link";
 import { BelanjaList, labelKategori } from "@/components/belanja-list";
+import { NavBulan } from "@/components/nav-bulan";
 import { PageHeader } from "@/components/page-header";
 import { bulanSekarang, getBelanjaBulan, getBelanjaPertama } from "@/lib/data";
-import { bulanWib, namaBulan, rupiah } from "@/lib/format";
+import { bulanDariParam, bulanWib, geserBulan, rupiah } from "@/lib/format";
 
 type Kategori = keyof typeof labelKategori;
-
-function geserBulan(ym: string, n: number): string {
-  const [y, m] = ym.split("-").map(Number);
-  const d = new Date(Date.UTC(y, m - 1 + n, 1));
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-}
 
 export default async function RiwayatBelanjaPage(props: PageProps<"/lainnya/pengeluaran">) {
   const sp = await props.searchParams;
   const sekarang = bulanSekarang();
-  const bulan = typeof sp.bulan === "string" && /^\d{4}-\d{2}$/.test(sp.bulan) ? sp.bulan : sekarang;
+  const bulan = bulanDariParam(sp.bulan, sekarang);
   const kategori = typeof sp.kategori === "string" && sp.kategori in labelKategori ? (sp.kategori as Kategori) : null;
 
   const [semua, pertama] = await Promise.all([getBelanjaBulan(bulan), getBelanjaPertama()]);
@@ -41,23 +36,11 @@ export default async function RiwayatBelanjaPage(props: PageProps<"/lainnya/peng
     <main>
       <PageHeader title="Riwayat Pengeluaran" back="/lainnya" />
       <div className="space-y-4 px-4">
-        <div className="flex items-center justify-between">
-          {adaSebelum ? (
-            <Link href={href(sebelum, kategori)} className="btn-ghost px-3 py-1.5">
-              ‹
-            </Link>
-          ) : (
-            <span className="w-10" />
-          )}
-          <span className="font-medium">{namaBulan(bulan)}</span>
-          {adaSesudah ? (
-            <Link href={href(sesudah, kategori)} className="btn-ghost px-3 py-1.5">
-              ›
-            </Link>
-          ) : (
-            <span className="w-10" />
-          )}
-        </div>
+        <NavBulan
+          bulan={bulan}
+          sebelum={adaSebelum ? href(sebelum, kategori) : null}
+          sesudah={adaSesudah ? href(sesudah, kategori) : null}
+        />
 
         <section className="card">
           <div className="flex items-baseline justify-between">
