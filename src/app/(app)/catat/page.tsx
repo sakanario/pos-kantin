@@ -21,11 +21,12 @@ export default async function CatatPage(props: PageProps<"/catat">) {
   const info = { setup, tutup };
 
   return (
-    <main>
+    <main data-lebar>
       <PageHeader title="Catat" sub={`Periode berjalan sejak ${tanggalJam(p.terakhir.waktu)}`} />
 
       <CatatTabs aktif={aktif}>
-        <div className="space-y-4 px-4">
+        {/* Desktop: form di kiri, daftar catatan di kanan */}
+        <div className="space-y-4 px-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
           {aktif === "belanja" ? (
             <>
               <BelanjaForm hariIni={p.hariIni} info={info} bahan={formBelanja.bahan} barang={formBelanja.barang} />
@@ -73,7 +74,7 @@ export default async function CatatPage(props: PageProps<"/catat">) {
               </section>
             </>
           )}
-          <p className="text-xs text-muted">
+          <p className="text-xs text-muted lg:col-span-2">
             Tap catatan untuk mengubah atau menghapus. Catatan lama juga bisa diubah; laporan periode yang terdampak dihitung
             ulang otomatis.
           </p>

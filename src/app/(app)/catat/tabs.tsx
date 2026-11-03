@@ -23,7 +23,7 @@ export function CatatTabs({ aktif, children }: { aktif: TabCatat; children: Reac
 
   return (
     <>
-      <div className="mx-4 mb-4 grid grid-cols-3 gap-1 rounded-[var(--r-ctl)] border-[length:var(--stroke)] border-outline bg-card-raised p-1 text-sm shadow-pop">
+      <div className="mx-4 mb-4 grid grid-cols-3 lg:max-w-md gap-1 rounded-[var(--r-ctl)] border-[length:var(--stroke)] border-outline bg-card-raised p-1 text-sm shadow-pop">
         {tabs.map(([t, label, href]) => (
           <button
             key={t}

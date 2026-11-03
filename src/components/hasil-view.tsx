@@ -67,6 +67,8 @@ export function HasilView({ h }: { h: HasilPeriode }) {
       "Omzet nyata (dari saldo)"
     );
   const barang = h.menu.filter((m) => m.jenis === "barang_jadi");
+  // Menu tanpa penjualan & tanpa konsumsi sendiri tidak ditampilkan (semua angkanya 0)
+  const aktif = h.menu.filter((m) => m.terjual !== 0 || m.sendiri !== 0 || m.untung !== 0);
   return (
     <div className="space-y-3">
       {h.peringatan.map((p) => (
@@ -91,8 +93,10 @@ export function HasilView({ h }: { h: HasilPeriode }) {
 
       <section className="card">
         <h3 className="mb-1 font-bold">Untung jualan (perkiraan per item)</h3>
-        {h.menu.length === 0 && <p className="text-sm text-muted">Belum ada menu.</p>}
-        {h.menu.map((m) => (
+        {aktif.length === 0 && (
+          <p className="text-sm text-muted">{h.menu.length === 0 ? "Belum ada menu." : "Belum ada yang terjual."}</p>
+        )}
+        {aktif.map((m) => (
           <UntungMenu key={m.id} m={m} />
         ))}
         {(h.terbuang ?? []).length > 0 && (
@@ -136,7 +140,7 @@ export function HasilView({ h }: { h: HasilPeriode }) {
 
       <section className="card">
         <h3 className="mb-1 font-bold">Omzet: seharusnya vs nyata</h3>
-        {h.menu.map((m) => (
+        {aktif.map((m) => (
           <Row
             key={m.id}
             label={m.jenis === "barang_jadi" ? `${m.nama} ${m.terjual} × ${angka(m.hargaJual ?? 0)}` : `${m.nama} ${m.terjual} cup`}
@@ -171,7 +175,7 @@ export function HasilView({ h }: { h: HasilPeriode }) {
             </div>
           ))}
 
-          {h.menu
+          {aktif
             .filter((m) => m.jenis === "racikan")
             .map((m) => (
               <div key={m.id}>

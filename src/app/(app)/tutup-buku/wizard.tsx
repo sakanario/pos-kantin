@@ -59,7 +59,7 @@ export function TutupBukuWizard({
         </p>
         <HasilView h={hasil} />
         {error && <p className="rounded-2xl border-2 border-bad bg-bad-soft font-semibold px-3 py-2 text-sm text-bad">{error}</p>}
-        <div className="sticky bottom-20 grid grid-cols-2 gap-3 bg-bg py-2">
+        <div className="sticky bottom-20 lg:bottom-4 grid grid-cols-2 gap-3 py-2">
           <button className="btn-ghost" disabled={pending} onClick={() => setHasil(null)}>
             ← Ubah isian
           </button>
@@ -100,14 +100,18 @@ export function TutupBukuWizard({
           {barang.map((b) => (
             <div key={b.id}>
               <label className="label">
-                🍫 {b.nama} <span className="text-xs">(maks. {b.maks} pcs kalau belum ada yang terjual)</span>
+                🍫 {b.nama}{" "}
+                <span className="text-xs">
+                  {b.maks > 0 ? `(maks. ${b.maks} pcs kalau belum ada yang terjual)` : "(stok habis)"}
+                </span>
               </label>
               <div className="relative">
                 <input
                   name={`sisa_${b.id}`}
                   inputMode="numeric"
                   required
-                  defaultValue={input?.sisa[b.id]}
+                  // stok habis → sisa pasti 0, langsung terisi
+                  defaultValue={input?.sisa[b.id] ?? (b.maks > 0 ? undefined : 0)}
                   className="input num pr-12"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted">pcs</span>

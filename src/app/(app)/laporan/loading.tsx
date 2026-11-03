@@ -6,9 +6,9 @@ const BARANG = [44, 44, 32, 32, 60, 52, 52];
 
 export default function LoadingLaporan() {
   return (
-    <main aria-busy="true">
+    <main aria-busy="true" data-lebar>
       <HeaderSkeleton title="Laporan" sub={false} />
-      <div className="space-y-4 px-4">
+      <div className="space-y-4 px-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-6 lg:space-y-0">
         <section className="card space-y-4">
           <div className="space-y-2">
             <div className="flex gap-2">
@@ -24,12 +24,12 @@ export default function LoadingLaporan() {
             <Grafik judul="Barang jadi terjual · perkiraan" batang={BARANG} />
           </div>
         </section>
-        <div>
-          <h2 className="mb-2 text-sm font-bold text-muted">Per bulan · untung jualan</h2>
-          <div className="space-y-2">
-            <CardSkeleton rows={3} />
-            <CardSkeleton rows={2} />
+        <div className="space-y-2">
+          <h2 className="text-sm font-bold text-muted">Per bulan</h2>
+          <div className="flex h-10 items-center justify-center">
+            <Bone className="h-4 w-28" />
           </div>
+          <CardSkeleton rows={4} />
         </div>
       </div>
     </main>

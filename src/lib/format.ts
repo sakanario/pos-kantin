@@ -77,6 +77,18 @@ export function bulanWib(ms: number): string {
   return isoTanggalWib(ms).slice(0, 7);
 }
 
+/** Geser "YYYY-MM" sebanyak `n` bulan. */
+export function geserBulan(ym: string, n: number): string {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + n, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+/** Bulan dari parameter URL `?bulan=YYYY-MM`; tidak valid / di masa depan → bulan berjalan. */
+export function bulanDariParam(v: string | string[] | undefined, sekarang: string): string {
+  return typeof v === "string" && /^\d{4}-(0[1-9]|1[0-2])$/.test(v) && v <= sekarang ? v : sekarang;
+}
+
 export function namaBulan(ym: string): string {
   const [y, m] = ym.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, 15)).toLocaleDateString("id-ID", { month: "long", year: "numeric" });

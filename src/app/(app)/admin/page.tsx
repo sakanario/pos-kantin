@@ -30,7 +30,7 @@ export default async function Beranda() {
   ].join(", ");
 
   return (
-    <main className="space-y-4 px-4 pt-6">
+    <main data-lebar className="space-y-4 px-4 pt-6">
       <header className="flex items-baseline justify-between">
         <h1 className="text-2xl font-extrabold tracking-tight">Kantin</h1>
         <span className="text-sm text-muted">
@@ -38,69 +38,76 @@ export default async function Beranda() {
         </span>
       </header>
 
-      {pesananAktif > 0 && (
-        <Link href="/pesanan" className="card flex items-center gap-3 border-accent bg-accent-soft">
-          <span className="num flex size-11 items-center justify-center rounded-full bg-accent font-display text-lg font-extrabold text-accent-fg">
-            {pesananAktif}
-          </span>
-          <span className="flex-1 font-bold">Pesanan online perlu dibuat</span>
-          <span className="text-muted">›</span>
-        </Link>
-      )}
+      {/* Desktop: tap & pengingat di kiri, ringkasan di kanan */}
+      <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-6 lg:space-y-0">
+        <div className="space-y-4">
+          {pesananAktif > 0 && (
+            <Link href="/pesanan" className="card flex items-center gap-3 border-accent bg-accent-soft">
+              <span className="num flex size-11 items-center justify-center rounded-full bg-accent font-display text-lg font-extrabold text-accent-fg">
+                {pesananAktif}
+              </span>
+              <span className="flex-1 font-bold">Pesanan online perlu dibuat</span>
+              <span className="text-muted">›</span>
+            </Link>
+          )}
 
-      <PengingatKemasan items={pengingat} />
+          <PengingatKemasan items={pengingat} />
 
-      {aktif.length === 0 ? (
-        <Link href="/lainnya/menu" className="card block border-accent bg-accent-soft text-sm">
-          🍽️ Belum ada menu aktif. <span className="font-medium underline">Buat menu</span> dulu supaya bisa tap penjualan.
-        </Link>
-      ) : (
-        <TapPanel menu={aktif} />
-      )}
-
-      {katalog.menu.length > 0 && <KatalogPanel buka={katalog.buka} menu={katalog.menu} />}
-
-      <section className="card space-y-2">
-        <div className="flex items-baseline justify-between">
-          <h2 className="font-bold">Periode berjalan</h2>
-          <span className="text-xs text-muted">sejak {tanggalJam(p.terakhir.waktu)}</span>
+          {aktif.length === 0 ? (
+            <Link href="/lainnya/menu" className="card block border-accent bg-accent-soft text-sm">
+              🍽️ Belum ada menu aktif. <span className="font-medium underline">Buat menu</span> dulu supaya bisa tap penjualan.
+            </Link>
+          ) : (
+            <TapPanel menu={aktif} />
+          )}
         </div>
-        <dl className="num grid grid-cols-2 gap-y-1 text-sm">
-          <dt className="text-muted">
-            Untung hari ini
-            <span className="block text-xs">({rincianHariIni})</span>
-          </dt>
-          <dd className={`text-right font-semibold ${p.untungHariIni < 0 ? "text-bad" : ""}`}>{plus(p.untungHariIni)}</dd>
-          <dt className="text-muted">Untung periode ini</dt>
-          <dd className={`text-right font-semibold ${p.untungPeriode < 0 ? "text-bad" : ""}`}>{plus(p.untungPeriode)}</dd>
-          {racikan.map((m) => (
-            <div key={m.id} className="contents">
-              <dt className="text-muted">{m.nama} terjual</dt>
-              <dd className="text-right">{m.periode.terjual} cup</dd>
-            </div>
-          ))}
-          <dt className="text-muted">Belanja</dt>
-          <dd className="text-right">{rupiah(p.belanjaPeriode)}</dd>
-          {barang.map((m) => (
-            <div key={m.id} className="contents">
-              <dt className="text-muted">Stok {m.nama} (sebelum terjual)</dt>
-              <dd className="text-right">{m.stokTersedia} pcs</dd>
-            </div>
-          ))}
-        </dl>
-        <p className="text-xs text-muted">
-          Untung dari racikan (resep × harga bahan). Untung & sisa barang jadi dihitung saat tutup buku.
-        </p>
-      </section>
 
-      <SaldoCard />
-      <BepCard />
+        <div className="space-y-4">
+          {katalog.menu.length > 0 && <KatalogPanel buka={katalog.buka} menu={katalog.menu} />}
 
-      {hariSejakTutup >= 7 && (
-        <Link href="/tutup-buku" className="card block border-accent bg-accent-soft text-sm">
-          🔒 Sudah {hariSejakTutup} hari sejak tutup buku terakhir. <span className="font-medium underline">Tutup buku sekarang</span>
-        </Link>
-      )}
+          <section className="card space-y-2">
+            <div className="flex items-baseline justify-between">
+              <h2 className="font-bold">Periode berjalan</h2>
+              <span className="text-xs text-muted">sejak {tanggalJam(p.terakhir.waktu)}</span>
+            </div>
+            <dl className="num grid grid-cols-2 gap-y-1 text-sm">
+              <dt className="text-muted">
+                Untung hari ini
+                <span className="block text-xs">({rincianHariIni})</span>
+              </dt>
+              <dd className={`text-right font-semibold ${p.untungHariIni < 0 ? "text-bad" : ""}`}>{plus(p.untungHariIni)}</dd>
+              <dt className="text-muted">Untung periode ini</dt>
+              <dd className={`text-right font-semibold ${p.untungPeriode < 0 ? "text-bad" : ""}`}>{plus(p.untungPeriode)}</dd>
+              {racikan.map((m) => (
+                <div key={m.id} className="contents">
+                  <dt className="text-muted">{m.nama} terjual</dt>
+                  <dd className="text-right">{m.periode.terjual} cup</dd>
+                </div>
+              ))}
+              <dt className="text-muted">Belanja</dt>
+              <dd className="text-right">{rupiah(p.belanjaPeriode)}</dd>
+              {barang.map((m) => (
+                <div key={m.id} className="contents">
+                  <dt className="text-muted">Stok {m.nama} (sebelum terjual)</dt>
+                  <dd className="text-right">{m.stokTersedia} pcs</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="text-xs text-muted">
+              Untung dari racikan (resep × harga bahan). Untung & sisa barang jadi dihitung saat tutup buku.
+            </p>
+          </section>
+
+          <SaldoCard />
+          <BepCard />
+
+          {hariSejakTutup >= 7 && (
+            <Link href="/tutup-buku" className="card block border-accent bg-accent-soft text-sm">
+              🔒 Sudah {hariSejakTutup} hari sejak tutup buku terakhir. <span className="font-medium underline">Tutup buku sekarang</span>
+            </Link>
+          )}
+        </div>
+      </div>
     </main>
   );
 }
