@@ -6,9 +6,9 @@ const BARANG = [44, 44, 32, 32, 60, 52, 52];
 
 export default function LoadingLaporan() {
   return (
-    <main aria-busy="true">
+    <main aria-busy="true" data-lebar>
       <HeaderSkeleton title="Laporan" sub={false} />
-      <div className="space-y-4 px-4">
+      <div className="space-y-4 px-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-6 lg:space-y-0">
         <section className="card space-y-4">
           <div className="space-y-2">
             <div className="flex gap-2">

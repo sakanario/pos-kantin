@@ -9,7 +9,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   if (!(await isSetupDone())) redirect("/setup");
   await requireAuth();
   return (
-    <div className="mx-auto min-h-dvh max-w-md pb-28">
+    // Halaman dengan <main data-lebar> (mis. Laporan) melebar di desktop
+    <div className="mx-auto min-h-dvh max-w-md pb-28 lg:has-[[data-lebar]]:max-w-6xl">
       {children}
       <BottomNav />
     </div>

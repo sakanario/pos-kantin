@@ -52,96 +52,101 @@ export default async function LaporanPage(props: PageProps<"/laporan">) {
   const hrefBulan = (b: string) => r.href("bulan", `${b}-01`);
 
   return (
-    <main>
+    <main data-lebar>
       <PageHeader title="Laporan" />
       <div className="space-y-4 px-4">
         {adaBasi && <LaporanBasi />}
-        <section className="card space-y-4">
-          <NavGrafik r={r} />
-          <GrafikBatang judul="Racikan terjual" seri={grafik.racikan} satuan="cup" mode={r.mode} />
-          {grafik.adaBarangJadi && (
-            <div className="border-t border-line pt-4">
-              <GrafikBatang
-                judul="Barang jadi terjual · perkiraan"
-                seri={grafik.barang}
-                satuan="pcs"
-                mode={r.mode}
-                catatan="Dibagi rata ke hari buka di tiap tutup buku."
-              />
-            </div>
-          )}
-        </section>
-
-        {setup && periode.length > 0 && (
-          <section className="space-y-2">
-            <h2 className="text-sm font-bold text-muted">Per bulan</h2>
-            <NavBulan
-              bulan={bulan}
-              sebelum={sebelum >= bulanWib(setup.waktu) ? hrefBulan(sebelum) : null}
-              sesudah={sesudah <= hariIni.slice(0, 7) ? hrefBulan(sesudah) : null}
-              scroll={false}
-            />
-            {rekap ? (
-              <RekapBulan b={rekap} />
-            ) : (
-              <p className="card text-sm text-muted">Belum ada tutup buku di bulan ini.</p>
+        {/* Desktop: grafik di kiri (tetap terlihat saat kolom kanan digulir), rekap & periode di kanan */}
+        <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_400px] lg:items-start lg:gap-6 lg:space-y-0">
+          <section className="card space-y-4 lg:sticky lg:top-6">
+            <NavGrafik r={r} />
+            <GrafikBatang judul="Racikan terjual" seri={grafik.racikan} satuan="cup" mode={r.mode} />
+            {grafik.adaBarangJadi && (
+              <div className="border-t border-line pt-4">
+                <GrafikBatang
+                  judul="Barang jadi terjual · perkiraan"
+                  seri={grafik.barang}
+                  satuan="pcs"
+                  mode={r.mode}
+                  catatan="Dibagi rata ke hari buka di tiap tutup buku."
+                />
+              </div>
             )}
           </section>
-        )}
 
-        {periode.length === 0 ? (
-          <section>
-            <h2 className="mb-2 text-sm font-bold text-muted">Per periode tutup buku · untung jualan</h2>
-            <p className="card text-sm text-muted">
-              Belum ada tutup buku. Laporan muncul setelah kamu melakukan{" "}
-              <Link href="/tutup-buku" className="text-accent underline">
-                tutup buku
-              </Link>{" "}
-              pertama.
-            </p>
-          </section>
-        ) : (
-          periodeBulan.length > 0 && (
-            <section>
-              <h2 className="mb-2 text-sm font-bold text-muted">Per periode tutup buku · untung jualan</h2>
-              <ul className="card divide-y divide-line p-0">
-                {periodeBulan.map((r) => (
-                  <li key={r.id}>
-                    <Link href={`/laporan/${r.id}`} className="flex items-center justify-between px-4 py-3">
-                      <div>
-                        <div className="font-medium">
-                          {r.dari ? tanggal(r.dari) : "?"} – {tanggal(r.waktu)}
-                        </div>
-                        <div className={`text-xs ${(r.hasil!.uangHilang ?? r.hasil!.selisih) < 0 ? "text-bad" : "text-muted"}`}>
-                          {r.basi
-                            ? "dihitung dengan rumus lama"
-                            : r.hasil!.menu
-                                .filter((m) => m.terjual !== 0)
-                                .map((m) => `${m.terjual} ${m.nama}`)
-                                .join(" · ") || "belum ada yang terjual"}
-                          {(r.hasil!.uangHilang ?? r.hasil!.selisih) !== 0 && ` · selisih ${rupiah(r.hasil!.uangHilang ?? r.hasil!.selisih)}`}
-                        </div>
-                      </div>
-                      {r.basi ? (
-                        <span className="text-sm text-muted">perlu hitung ulang ›</span>
-                      ) : (
-                        <span className="flex items-center gap-1">
-                          <span className="text-right">
-                            <span className={`num block font-semibold ${r.hasil!.untungJualan < 0 ? "text-bad" : ""}`}>
-                              {plus(r.hasil!.untungJualan)}
+          <div className="space-y-4">
+            {setup && periode.length > 0 && (
+              <section className="space-y-2">
+                <h2 className="text-sm font-bold text-muted">Per bulan</h2>
+                <NavBulan
+                  bulan={bulan}
+                  sebelum={sebelum >= bulanWib(setup.waktu) ? hrefBulan(sebelum) : null}
+                  sesudah={sesudah <= hariIni.slice(0, 7) ? hrefBulan(sesudah) : null}
+                  scroll={false}
+                />
+                {rekap ? (
+                  <RekapBulan b={rekap} />
+                ) : (
+                  <p className="card text-sm text-muted">Belum ada tutup buku di bulan ini.</p>
+                )}
+              </section>
+            )}
+
+            {periode.length === 0 ? (
+              <section>
+                <h2 className="mb-2 text-sm font-bold text-muted">Per periode tutup buku · untung jualan</h2>
+                <p className="card text-sm text-muted">
+                  Belum ada tutup buku. Laporan muncul setelah kamu melakukan{" "}
+                  <Link href="/tutup-buku" className="text-accent underline">
+                    tutup buku
+                  </Link>{" "}
+                  pertama.
+                </p>
+              </section>
+            ) : (
+              periodeBulan.length > 0 && (
+                <section>
+                  <h2 className="mb-2 text-sm font-bold text-muted">Per periode tutup buku · untung jualan</h2>
+                  <ul className="card divide-y divide-line p-0">
+                    {periodeBulan.map((r) => (
+                      <li key={r.id}>
+                        <Link href={`/laporan/${r.id}`} className="flex items-center justify-between px-4 py-3">
+                          <div>
+                            <div className="font-medium">
+                              {r.dari ? tanggal(r.dari) : "?"} – {tanggal(r.waktu)}
+                            </div>
+                            <div className={`text-xs ${(r.hasil!.uangHilang ?? r.hasil!.selisih) < 0 ? "text-bad" : "text-muted"}`}>
+                              {r.basi
+                                ? "dihitung dengan rumus lama"
+                                : r.hasil!.menu
+                                    .filter((m) => m.terjual !== 0)
+                                    .map((m) => `${m.terjual} ${m.nama}`)
+                                    .join(" · ") || "belum ada yang terjual"}
+                              {(r.hasil!.uangHilang ?? r.hasil!.selisih) !== 0 && ` · selisih ${rupiah(r.hasil!.uangHilang ?? r.hasil!.selisih)}`}
+                            </div>
+                          </div>
+                          {r.basi ? (
+                            <span className="text-sm text-muted">perlu hitung ulang ›</span>
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              <span className="text-right">
+                                <span className={`num block font-semibold ${r.hasil!.untungJualan < 0 ? "text-bad" : ""}`}>
+                                  {plus(r.hasil!.untungJualan)}
+                                </span>
+                                <span className="num block text-xs text-muted">uang {plus(r.hasil!.uangBersih)}</span>
+                              </span>
+                              <span className="text-muted">›</span>
                             </span>
-                            <span className="num block text-xs text-muted">uang {plus(r.hasil!.uangBersih)}</span>
-                          </span>
-                          <span className="text-muted">›</span>
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )
-        )}
+                          )}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              )
+            )}
+          </div>
+        </div>
       </div>
     </main>
   );
