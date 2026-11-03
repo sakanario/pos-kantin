@@ -100,14 +100,18 @@ export function TutupBukuWizard({
           {barang.map((b) => (
             <div key={b.id}>
               <label className="label">
-                🍫 {b.nama} <span className="text-xs">(maks. {b.maks} pcs kalau belum ada yang terjual)</span>
+                🍫 {b.nama}{" "}
+                <span className="text-xs">
+                  {b.maks > 0 ? `(maks. ${b.maks} pcs kalau belum ada yang terjual)` : "(stok habis)"}
+                </span>
               </label>
               <div className="relative">
                 <input
                   name={`sisa_${b.id}`}
                   inputMode="numeric"
                   required
-                  defaultValue={input?.sisa[b.id]}
+                  // stok habis → sisa pasti 0, langsung terisi
+                  defaultValue={input?.sisa[b.id] ?? (b.maks > 0 ? undefined : 0)}
                   className="input num pr-12"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted">pcs</span>
