@@ -15,7 +15,7 @@ export default function LainnyaPage() {
   return (
     <main>
       <PageHeader title="Lainnya" />
-      <div className="space-y-2 px-4">
+      <div className="space-y-2 px-4 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
         {menu.map((m) => (
           <Link key={m.href} href={m.href} className="card flex items-center justify-between">
             <span>

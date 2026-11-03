@@ -44,8 +44,10 @@ const items: { href: string; label: string; icon: keyof typeof ikon; juga?: stri
 export function BottomNav() {
   const path = usePathname();
   return (
-    <nav className="fixed inset-x-0 print:hidden bottom-0 z-10 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)]">
-      <ul className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-full border-[length:var(--stroke)] border-outline bg-accent p-1.5 shadow-pop-lg">
+    // HP: bar bawah. Desktop (lg): sidebar kiri setinggi layar.
+    <nav className="fixed inset-x-0 print:hidden bottom-0 z-10 px-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] lg:inset-y-0 lg:right-auto lg:w-56 lg:p-4">
+      <ul className="mx-auto grid max-w-md grid-cols-5 gap-1 rounded-full border-[length:var(--stroke)] border-outline bg-accent p-1.5 shadow-pop-lg lg:flex lg:h-full lg:max-w-none lg:flex-col lg:rounded-[var(--r-lg)] lg:p-3">
+        <li className="hidden px-3 pb-4 pt-2 font-display text-xl font-extrabold text-accent-fg lg:block">Kantin</li>
         {items.map((it) => {
           const cocok = (h: string) => path === h || path.startsWith(`${h}/`);
           const active = [it.href, ...(it.juga ?? [])].some(cocok);
@@ -54,7 +56,7 @@ export function BottomNav() {
               <Link
                 href={it.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex flex-col items-center gap-0.5 rounded-[var(--r-ctl)] py-1.5 text-[11px] font-bold ${active ? "bg-card text-fg" : "text-accent-fg/80"}`}
+                className={`flex flex-col items-center gap-0.5 rounded-[var(--r-ctl)] py-1.5 text-[11px] font-bold lg:flex-row lg:gap-3 lg:px-4 lg:py-3 lg:text-sm ${active ? "bg-card text-fg" : "text-accent-fg/80"}`}
               >
                 <svg
                   viewBox="0 0 24 24"

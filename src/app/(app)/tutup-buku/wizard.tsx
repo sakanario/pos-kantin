@@ -59,7 +59,7 @@ export function TutupBukuWizard({
         </p>
         <HasilView h={hasil} />
         {error && <p className="rounded-2xl border-2 border-bad bg-bad-soft font-semibold px-3 py-2 text-sm text-bad">{error}</p>}
-        <div className="sticky bottom-20 grid grid-cols-2 gap-3 py-2">
+        <div className="sticky bottom-20 lg:bottom-4 grid grid-cols-2 gap-3 py-2">
           <button className="btn-ghost" disabled={pending} onClick={() => setHasil(null)}>
             ← Ubah isian
           </button>

@@ -13,16 +13,17 @@ export default async function PesananPage() {
   const [aktif, selesai] = await Promise.all([getPesananAktif(), getPesananSelesai(hariIniWib())]);
 
   return (
-    <main>
+    <main data-lebar>
       <Pantau ms={10000} />
       <PageHeader title="Pesanan" back="/admin" sub="Diperbarui otomatis tiap 10 detik" />
-      <div className="space-y-4 px-4">
+      {/* Desktop: pesanan aktif (grid kartu) di kiri, selesai hari ini di kanan */}
+      <div className="space-y-4 px-4 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-6 lg:space-y-0">
         <section>
           <h2 className="mb-2 text-sm font-bold text-muted">Aktif ({aktif.length})</h2>
           {aktif.length === 0 ? (
             <p className="card text-sm text-muted">Belum ada pesanan yang perlu dibuat.</p>
           ) : (
-            <ul className="space-y-3">
+            <ul className="space-y-3 xl:grid xl:grid-cols-2 xl:items-start xl:gap-3 xl:space-y-0">
               {aktif.map((p) => (
                 <li key={p.id}>
                   <KartuPesanan p={p} />

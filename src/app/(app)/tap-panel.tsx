@@ -161,7 +161,7 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
       {error && <p className="rounded-2xl bg-bad-soft px-3 py-2 text-sm text-bad">{error}</p>}
 
       {terakhir && (
-        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-20 mx-auto max-w-md px-4">
+        <div className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-20 mx-auto max-w-md px-4 lg:bottom-6 lg:left-56">
           <div className="flex items-center justify-between gap-3 rounded-[var(--r-md)] border-[length:var(--stroke)] border-outline bg-fg px-4 py-3 text-sm font-semibold text-card shadow-pop">
             <span className="min-w-0 truncate">
               {terakhir.batal
