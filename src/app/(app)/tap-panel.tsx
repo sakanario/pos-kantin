@@ -122,33 +122,40 @@ export function TapPanel({ menu }: { menu: MenuTap[] }) {
         </ul>
       )}
 
-      <div>
-        <h2 className="mb-2 text-xs font-semibold text-muted">Sendiri (diminum / dimakan, tester, terbuang)</h2>
-        <div className="flex flex-wrap gap-2">
-          {menu.map((m) => {
-            const s = optimistic[m.id];
-            const bisa = !koreksi || s.periode.sendiri > 0;
-            return (
-              <button
-                key={m.id}
-                type="button"
-                disabled={!bisa}
-                onClick={() => tap(m.id, "sendiri")}
-                className={`chip py-1.5 pl-3 pr-1.5 disabled:opacity-40 ${koreksi ? "border-bad" : ""}`}
-              >
-                <span>
-                  {m.jenis === "racikan" ? "🙋" : "🍫"} {m.nama}
-                </span>
-                <span className="num opacity-70">{s.hariIni.sendiri}</span>
-                <span
-                  className={`num badge ${koreksi ? "bg-bad text-card" : "chip-badge"}`}
-                >
-                  {koreksi ? "−1" : "+1"}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+      <div className="space-y-2">
+        <h2 className="text-xs font-semibold text-muted">Sendiri (diminum / dimakan, tester, terbuang)</h2>
+        {/* Dikelompokkan per jenis; ikon cukup di judul kelompok, angka hanya bila sudah ada */}
+        {(
+          [
+            ["racikan", "☕ Diminum"],
+            ["barang_jadi", "🍫 Dimakan"],
+          ] as const
+        ).map(([jenis, judul]) => {
+          const grup = menu.filter((m) => m.jenis === jenis);
+          if (grup.length === 0) return null;
+          return (
+            <div key={jenis} className="flex flex-wrap items-center gap-2">
+              <span className="w-full text-xs text-muted">{judul}</span>
+              {grup.map((m) => {
+                const s = optimistic[m.id];
+                const bisa = !koreksi || s.periode.sendiri > 0;
+                return (
+                  <button
+                    key={m.id}
+                    type="button"
+                    disabled={!bisa}
+                    onClick={() => tap(m.id, "sendiri")}
+                    className={`chip py-1.5 pl-3 pr-1.5 disabled:opacity-40 ${koreksi ? "border-bad" : ""}`}
+                  >
+                    <span>{m.nama}</span>
+                    {s.hariIni.sendiri !== 0 && <span className="num opacity-70">{s.hariIni.sendiri}</span>}
+                    <span className={`num badge ${koreksi ? "bg-bad text-card" : "chip-badge"}`}>{koreksi ? "−1" : "+1"}</span>
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
 
       {error && <p className="rounded-2xl bg-bad-soft px-3 py-2 text-sm text-bad">{error}</p>}
